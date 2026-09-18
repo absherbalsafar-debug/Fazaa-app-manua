@@ -1,5 +1,34 @@
 {
   "version": "7",
   "dialect": "mysql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1789686821679,
+      "tag": "0000_outgoing_micromax",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1789687942465,
+      "tag": "0001_redundant_wong",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1789688424028,
+      "tag": "0002_dazzling_mattie_franklin",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1789766878107,
+      "tag": "0003_opposite_colonel_america",
+      "breakpoints": true
+    }
+  ]
 }
