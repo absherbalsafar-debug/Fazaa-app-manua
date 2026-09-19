@@ -39,6 +39,7 @@ export default function AuthPhone() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const role = getRegistrationRole(window.location.search);
+  const mode = new URLSearchParams(window.location.search).get("mode") === "login" ? "login" : "register";
   const selectedRole = roleLabels[role];
   const RoleIcon = role === "provider" ? BriefcaseBusiness : UserRound;
   const selectedCategory = categories.find((category) => String(category.id) === categoryId);
@@ -73,7 +74,7 @@ export default function AuthPhone() {
     try {
       const data = await apiRequest('/auth/send-otp', {
         method: 'POST',
-        body: JSON.stringify({ phone: phone.trim(), role }),
+        body: JSON.stringify({ phone: phone.trim(), role, mode }),
       });
       if (data.otp) setDevOtp(data.otp);
       setOtpSent(true);
@@ -94,7 +95,7 @@ export default function AuthPhone() {
     try {
       const data = await apiRequest('/auth/verify-otp', {
         method: 'POST',
-        body: JSON.stringify({ phone: phone.trim(), code: otp, role }),
+        body: JSON.stringify({ phone: phone.trim(), code: otp, role, mode }),
       });
       if (data.needsRegistration) {
         setStep("name");
@@ -139,11 +140,12 @@ export default function AuthPhone() {
     try {
       const data = await apiRequest('/auth/verify-otp', {
         method: 'POST',
-        body: JSON.stringify({
-          phone: phone.trim(),
-          code: otp,
-          name: name.trim(),
-          role,
+          body: JSON.stringify({
+            phone: phone.trim(),
+            code: otp,
+            name: name.trim(),
+            role,
+            mode,
           city: city || undefined,
           country: customerLocation?.country || undefined,
           governorate: customerLocation?.governorate || undefined,

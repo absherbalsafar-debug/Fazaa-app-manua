@@ -89,7 +89,7 @@ export function registerPhoneAuthRoutes(app: Express) {
     const phone = normalizePhone(rawPhone);
     if (!/^\+\d{8,15}$/.test(phone)) return jsonError(res, 400, "أدخل رقم هاتف صحيحاً");
 
-    const code = "123456";
+    const code = String(Math.floor(100000 + Math.random() * 900000));
     const expiresAt = new Date(Date.now() + OTP_TTL_MS);
     const codeHash = hashCode(code);
     const db = await getAuthDb();
@@ -149,6 +149,10 @@ export function registerPhoneAuthRoutes(app: Express) {
     let user: PhoneUser | undefined;
     if (db) {
       const existing = (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, phone)).limit(1))[0];
+      const mode = body.mode === "login" ? "login" : "register";
+      if (existing && mode === "register") {
+        return jsonError(res, 409, "رقم الهاتف مسجل من قبل. اختر تسجيل الدخول بدلاً من إنشاء حساب جديد");
+      }
       if (!existing && typeof body.name !== "string") return res.json({ needsRegistration: true });
       const role: RegistrationRole = body.role === "provider" ? "provider" : "client";
       const nameParts = typeof body.name === "string" ? body.name.trim().split(/\s+/).filter(Boolean) : [];
@@ -181,6 +185,10 @@ export function registerPhoneAuthRoutes(app: Express) {
       }
     } else {
       const existing = localUsers.get(phone);
+      const mode = body.mode === "login" ? "login" : "register";
+      if (existing && mode === "register") {
+        return jsonError(res, 409, "رقم الهاتف مسجل من قبل. اختر تسجيل الدخول بدلاً من إنشاء حساب جديد");
+      }
       const role: RegistrationRole = body.role === "provider" ? "provider" : "client";
       const nameParts = typeof body.name === "string" ? body.name.trim().split(/\s+/).filter(Boolean) : [];
       const latitude = Number(body.latitude);

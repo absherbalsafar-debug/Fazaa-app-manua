@@ -106,7 +106,9 @@ export default function Welcome() {
   const [selectedRole, setSelectedRole] = useState<Role>('client');
 
   const getAuthPath = (type: 'phone' | 'email') => (
-    `${type === 'phone' ? '/auth/phone' : '/auth/email'}?role=${selectedRole}`
+    type === 'phone'
+      ? `/auth/phone?mode=register&role=${selectedRole}`
+      : `/auth/email?role=${selectedRole}`
   );
 
   return (
@@ -325,10 +327,10 @@ export default function Welcome() {
                   </motion.div>
                   <button
                     type="button"
-                    onClick={() => navigate('/auth/email')}
+                    onClick={() => navigate('/auth/phone?mode=login&role=client')}
                     className="mt-5 block w-full text-center text-xs text-[#8b897f] transition-colors hover:text-primary"
                   >
-                    لديك حساب بالفعل؟ <span className="font-extrabold text-[#a17b29]">تسجيل الدخول</span>
+                    لديك حساب بالفعل؟ <span className="font-extrabold text-[#a17b29]">تسجيل الدخول برقم الهاتف</span>
                   </button>
                   <p className="mt-4 text-center text-[10px] leading-5 text-[#aaa69b]">
                     بالمتابعة توافق على شروط الاستخدام وسياسة الخصوصية
