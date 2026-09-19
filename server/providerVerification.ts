@@ -106,8 +106,8 @@ export function registerProviderVerificationRoutes(app: Express) {
       .orderBy(desc(providerVerificationRequests.createdAt)).limit(1))[0];
     let requestId = pending?.id;
     if (!requestId) {
-      const inserted = await db.insert(providerVerificationRequests).values({ providerId: user.id });
-      requestId = Number(inserted[0].insertId);
+      const inserted = await db.insert(providerVerificationRequests).values({ providerId: user.id }).returning({ id: providerVerificationRequests.id });
+      requestId = inserted[0]?.id;
     }
     if (!requestId) return jsonError(res, 500, "تعذر إنشاء طلب التوثيق");
     await db.insert(providerVerificationDocuments).values({

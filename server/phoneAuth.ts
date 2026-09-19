@@ -21,6 +21,10 @@ type PhoneUser = {
   district: string | null;
   latitude: number | null;
   longitude: number | null;
+  categoryId: number | null;
+  specialty: string | null;
+  bio: string | null;
+  yearsExperience: number | null;
   createdAt: string;
 };
 type OtpRecord = { codeHash: string; expiresAt: number; attempts: number };
@@ -70,6 +74,10 @@ function toApiUser(user: typeof phoneUsers.$inferSelect): PhoneUser {
     district: user.district,
     latitude: user.latitude === null ? null : Number(user.latitude),
     longitude: user.longitude === null ? null : Number(user.longitude),
+    categoryId: user.categoryId,
+    specialty: user.specialty,
+    bio: user.bio,
+    yearsExperience: user.yearsExperience,
     createdAt: user.createdAt.toISOString(),
   };
 }
@@ -95,7 +103,8 @@ export function registerPhoneAuthRoutes(app: Express) {
     const db = await getAuthDb();
 
     if (db) {
-      await db.insert(phoneOtpCodes).values({ phone, codeHash, expiresAt, attempts: 0 }).onDuplicateKeyUpdate({
+      await db.insert(phoneOtpCodes).values({ phone, codeHash, expiresAt, attempts: 0 }).onConflictDoUpdate({
+        target: phoneOtpCodes.phone,
         set: { codeHash, expiresAt, attempts: 0 },
       });
     } else if (isTestFallback()) {
@@ -177,6 +186,10 @@ export function registerPhoneAuthRoutes(app: Express) {
           district: typeof body.district === "string" ? body.district : null,
           latitude: Number.isFinite(latitude) ? String(latitude) : null,
           longitude: Number.isFinite(longitude) ? String(longitude) : null,
+          categoryId: typeof body.categoryId === "number" ? body.categoryId : null,
+          specialty: typeof body.specialty === "string" ? body.specialty.trim() : null,
+          bio: typeof body.bio === "string" ? body.bio.trim() : null,
+          yearsExperience: typeof body.yearsExperience === "number" ? body.yearsExperience : null,
           phoneVerified: 1,
         });
         const created = (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, phone)).limit(1))[0];
@@ -214,6 +227,10 @@ export function registerPhoneAuthRoutes(app: Express) {
         district: typeof body.district === "string" ? body.district : null,
         latitude: Number.isFinite(Number(body.latitude)) ? Number(body.latitude) : null,
         longitude: Number.isFinite(Number(body.longitude)) ? Number(body.longitude) : null,
+        categoryId: typeof body.categoryId === "number" ? body.categoryId : null,
+        specialty: typeof body.specialty === "string" ? body.specialty.trim() : null,
+        bio: typeof body.bio === "string" ? body.bio.trim() : null,
+        yearsExperience: typeof body.yearsExperience === "number" ? body.yearsExperience : null,
         createdAt: new Date().toISOString(),
       };
       localUsers.set(phone, user);
