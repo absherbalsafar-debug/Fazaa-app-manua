@@ -11,9 +11,11 @@ export default function Providers() {
   const searchParams = new URLSearchParams(window.location.search);
   const initialCategory = searchParams.get("categoryId") ? parseInt(searchParams.get("categoryId")!) : null;
   const initialSearch = searchParams.get("search") || "";
+  const initialSpecialty = searchParams.get("specialty") || "";
 
   const [search, setSearch] = useState(initialSearch);
   const [activeCategory, setActiveCategory] = useState<number | null>(initialCategory);
+  const [filterSpecialty, setFilterSpecialty] = useState(initialSpecialty);
   const [showFilters, setShowFilters] = useState(false);
   const [filterCity, setFilterCity] = useState("");
   const [filterAvailable, setFilterAvailable] = useState(false);
@@ -23,15 +25,16 @@ export default function Providers() {
   const { data: providersPage, isLoading, isError, refetch } = useListProviders({
     categoryId: activeCategory ?? undefined,
     search: search || undefined,
+    specialty: filterSpecialty || undefined,
     city: filterCity || undefined,
-  }, { query: { queryKey: ['providers', activeCategory, search, filterCity, filterAvailable] } });
+  }, { query: { queryKey: ['providers', activeCategory, search, filterSpecialty, filterCity, filterAvailable] } });
 
   const providers = providersPage?.providers ?? [];
   const filtered = providers
     .filter(p => !filterVerified || p.isVerified)
     .filter(p => !filterAvailable || p.isAvailable);
 
-  const hasActiveFilters = filterCity || filterAvailable || filterVerified;
+  const hasActiveFilters = filterCity || filterSpecialty || filterAvailable || filterVerified;
 
   return (
     <div className="pb-28 min-h-[100dvh] bg-background" dir="rtl">
@@ -76,6 +79,12 @@ export default function Providers() {
           >
             <div className="max-w-md mx-auto px-4 py-4 space-y-3">
               <CitySelector value={filterCity} onChange={setFilterCity} placeholder="جميع المحافظات" />
+              <Input
+                value={filterSpecialty}
+                onChange={e => setFilterSpecialty(e.target.value)}
+                placeholder="التخصص الدقيق، مثل: تمديدات أو صيانة"
+                className="h-10 rounded-xl"
+              />
               <div className="flex gap-2">
                 <button
                   onClick={() => setFilterAvailable(!filterAvailable)}
@@ -98,7 +107,7 @@ export default function Providers() {
               </div>
               {hasActiveFilters && (
                 <button
-                  onClick={() => { setFilterCity(""); setFilterAvailable(false); setFilterVerified(false); }}
+                  onClick={() => { setFilterCity(""); setFilterSpecialty(""); setFilterAvailable(false); setFilterVerified(false); }}
                   className="w-full h-9 rounded-xl border border-destructive/30 text-destructive text-sm flex items-center justify-center gap-2"
                 >
                   <X className="w-4 h-4" />

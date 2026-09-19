@@ -409,10 +409,16 @@ export interface ProviderSummary {
   name: string;
   phone: string;
   /** @nullable */
+  categoryId?: number | null;
+  /** @nullable */
   whatsapp?: string | null;
   /** @nullable */
   avatarUrl?: string | null;
   categoryName: string;
+  /** @nullable */
+  specialty?: string | null;
+  /** @nullable */
+  bio?: string | null;
   /** @nullable */
   categoryIcon?: string | null;
   city: string;
@@ -845,6 +851,10 @@ categoryId?: number | null;
 /**
  * @nullable
  */
+specialty?: string | null;
+/**
+ * @nullable
+ */
 specializationId?: number | null;
 /**
  * @nullable
@@ -1005,4 +1015,3 @@ lat?: number | null;
  */
 lng?: number | null;
 };
-

@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getDb } from "./db";
 import { phoneUsers, providerVerificationRequests } from "../drizzle/schema";
 
@@ -18,6 +18,9 @@ type CatalogQuery = {
   city?: string;
   district?: string;
   search?: string;
+  specialty?: string;
+  categoryId?: number;
+  category?: string;
   minRating?: number;
   lat?: number;
   lng?: number;
@@ -25,6 +28,8 @@ type CatalogQuery = {
   page: number;
   limit: number;
 };
+
+type ProviderRow = typeof phoneUsers.$inferSelect;
 
 function positiveInteger(value: unknown, fallback: number, max?: number) {
   const parsed = Number(value);
@@ -42,10 +47,14 @@ function queryString(value: unknown) {
 }
 
 function parseQuery(query: Record<string, unknown>): CatalogQuery {
+  const categoryId = finiteNumber(query.categoryId);
   return {
     city: queryString(query.city),
     district: queryString(query.district),
     search: queryString(query.search),
+    specialty: queryString(query.specialty),
+    categoryId: categoryId === undefined ? undefined : Math.trunc(categoryId),
+    category: queryString(query.category),
     minRating: finiteNumber(query.minRating),
     lat: finiteNumber(query.lat),
     lng: finiteNumber(query.lng),
@@ -53,6 +62,10 @@ function parseQuery(query: Record<string, unknown>): CatalogQuery {
     page: positiveInteger(query.page, 1),
     limit: positiveInteger(query.limit, 20, 100),
   };
+}
+
+function normalize(value: string) {
+  return value.trim().toLocaleLowerCase("ar");
 }
 
 function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number) {
@@ -64,13 +77,18 @@ function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number) {
   return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function toSummary(provider: typeof phoneUsers.$inferSelect, query: CatalogQuery) {
+function categoryFor(provider: ProviderRow) {
+  return categories.find(category => category.id === provider.categoryId) ?? null;
+}
+
+function toSummary(provider: ProviderRow, query: CatalogQuery, approvedIds: Set<number>) {
   const lat = provider.latitude === null ? null : Number(provider.latitude);
   const lng = provider.longitude === null ? null : Number(provider.longitude);
   const hasCoordinates = lat !== null && lng !== null && Number.isFinite(lat) && Number.isFinite(lng);
   const distance = hasCoordinates && query.lat !== undefined && query.lng !== undefined
     ? Number(distanceKm(query.lat, query.lng, lat, lng).toFixed(2))
     : null;
+  const category = categoryFor(provider);
 
   return {
     id: provider.id,
@@ -78,48 +96,53 @@ function toSummary(provider: typeof phoneUsers.$inferSelect, query: CatalogQuery
     phone: provider.phone,
     whatsapp: null,
     avatarUrl: null,
-    categoryName: "مقدم خدمة",
-    categoryIcon: null,
+    categoryId: provider.categoryId,
+    categoryName: category?.name ?? "مقدم خدمة",
+    categoryIcon: category?.icon ?? null,
+    specialty: provider.specialty ?? "",
+    bio: provider.bio ?? "",
     city: provider.city ?? "",
     district: provider.district ?? "",
     rating: 0,
     reviewCount: 0,
     completedJobs: 0,
-    yearsExperience: 0,
+    yearsExperience: provider.yearsExperience ?? 0,
     hourlyRate: null,
-    isVerified: true,
-    isAvailable: true,
+    isVerified: approvedIds.has(provider.id),
+    isAvailable: provider.status === "active",
     distanceKm: distance,
     lat: hasCoordinates ? lat : null,
     lng: hasCoordinates ? lng : null,
   };
 }
 
-async function approvedProviders() {
+async function activeProviders() {
   const db = await getDb();
   if (!db) return null;
-  const approved = await db.select({ providerId: providerVerificationRequests.providerId })
-    .from(providerVerificationRequests)
-    .where(eq(providerVerificationRequests.status, "approved"));
-  const ids = Array.from(new Set(approved.map(row => row.providerId)));
-  if (ids.length === 0) return [];
-  return db.select().from(phoneUsers).where(and(
-    eq(phoneUsers.role, "provider"),
-    eq(phoneUsers.status, "active"),
-    inArray(phoneUsers.id, ids),
-  ));
+  const [providers, approved] = await Promise.all([
+    db.select().from(phoneUsers).where(and(eq(phoneUsers.role, "provider"), eq(phoneUsers.status, "active"))),
+    db.select({ providerId: providerVerificationRequests.providerId })
+      .from(providerVerificationRequests)
+      .where(eq(providerVerificationRequests.status, "approved")),
+  ]);
+  return { providers, approvedIds: new Set(approved.map(row => row.providerId)) };
 }
 
 async function listProviders(query: CatalogQuery, sort: "name" | "distance" = "name") {
-  const rows = await approvedProviders();
-  if (rows === null) return { providers: [], total: 0 };
-  const search = query.search?.toLocaleLowerCase("ar");
-  let providers = rows.map(row => toSummary(row, query)).filter(provider => {
+  const result = await activeProviders();
+  if (result === null) return { providers: [], total: 0 };
+  const search = query.search ? normalize(query.search) : "";
+  const specialty = query.specialty ? normalize(query.specialty) : "";
+  const category = query.category ? normalize(query.category) : "";
+  const providers = result.providers.map(row => toSummary(row, query, result.approvedIds)).filter(provider => {
+    if (query.categoryId !== undefined && provider.categoryId !== query.categoryId) return false;
+    if (category && normalize(provider.categoryName) !== category) return false;
+    if (specialty && normalize(provider.specialty) !== specialty) return false;
     if (query.city && provider.city !== query.city) return false;
     if (query.district && provider.district !== query.district) return false;
     if (query.minRating !== undefined && provider.rating < query.minRating) return false;
-    if (search && ![provider.name, provider.city, provider.district, provider.categoryName]
-      .some(value => value.toLocaleLowerCase("ar").includes(search))) return false;
+    if (search && ![provider.name, provider.city, provider.district, provider.categoryName, provider.specialty, provider.bio]
+      .some(value => normalize(value).includes(search))) return false;
     if (query.radiusKm !== undefined && (provider.distanceKm === null || provider.distanceKm > query.radiusKm)) return false;
     return true;
   });

@@ -94,6 +94,7 @@ export function ProviderCard({ provider, compact = false }: ProviderCardProps) {
               <div className="flex items-center gap-1 mb-1.5">
                 <span className="text-sm">{provider.categoryIcon}</span>
                 <span className="text-xs text-muted-foreground font-medium">{provider.categoryName || "خدمات مهنية"}</span>
+                {provider.specialty && <span className="text-xs text-primary/70">· {provider.specialty}</span>}
               </div>
 
               {/* Location + jobs */}

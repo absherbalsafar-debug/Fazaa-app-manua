@@ -37,6 +37,11 @@ CREATE TABLE IF NOT EXISTS "phone_users" (
   "updatedAt" timestamptz NOT NULL DEFAULT now()
 );
 
+ALTER TABLE "phone_users" ADD COLUMN IF NOT EXISTS "categoryId" integer;
+ALTER TABLE "phone_users" ADD COLUMN IF NOT EXISTS "specialty" varchar(160);
+ALTER TABLE "phone_users" ADD COLUMN IF NOT EXISTS "bio" text;
+ALTER TABLE "phone_users" ADD COLUMN IF NOT EXISTS "yearsExperience" integer;
+
 CREATE TABLE IF NOT EXISTS "phone_otp_codes" (
   "phone" varchar(20) PRIMARY KEY,
   "codeHash" varchar(128) NOT NULL,
