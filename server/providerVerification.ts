@@ -8,6 +8,7 @@ import {
   providerVerificationRequests,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
+import { sdk } from "./_core/sdk";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const allowedTypes = new Set(["selfie", "id_front", "id_back", "portfolio", "certificate"]);
@@ -34,6 +35,15 @@ async function currentUser(req: Request): Promise<AuthenticatedPhoneUser | null>
   return (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, session.phone)).limit(1))[0] ?? null;
 }
 
+async function currentAdmin(req: Request) {
+  try {
+    const user = await sdk.authenticateRequest(req);
+    return user?.role === "admin" ? user : null;
+  } catch {
+    return null;
+  }
+}
+
 function storageConfig() {
   if (!ENV.forgeApiUrl || !ENV.forgeApiKey) throw new Error("Storage is not configured");
   return { url: ENV.forgeApiUrl.replace(/\/+$/, ""), key: ENV.forgeApiKey };
@@ -53,6 +63,42 @@ async function createUploadUrl(name: string) {
 }
 
 export function registerProviderVerificationRoutes(app: Express) {
+  app.get("/api/admin/provider-verifications", async (req, res) => {
+    if (!(await currentAdmin(req))) return jsonError(res, 403, "صلاحية الإدارة مطلوبة");
+    const db = await getDb();
+    if (!db) return jsonError(res, 503, "قاعدة البيانات غير متاحة حالياً");
+    const rows = await db.select({ request: providerVerificationRequests, provider: phoneUsers })
+      .from(providerVerificationRequests)
+      .innerJoin(phoneUsers, eq(providerVerificationRequests.providerId, phoneUsers.id))
+      .orderBy(desc(providerVerificationRequests.createdAt));
+    const items = await Promise.all(rows.map(async ({ request, provider }) => {
+      const documents = await db.select({ type: providerVerificationDocuments.type, objectPath: providerVerificationDocuments.objectPath, originalName: providerVerificationDocuments.originalName })
+        .from(providerVerificationDocuments)
+        .where(eq(providerVerificationDocuments.requestId, request.id));
+      return {
+        id: request.id,
+        status: request.status,
+        submittedAt: request.submittedAt,
+        reviewedAt: request.reviewedAt,
+        provider: { id: provider.id, name: provider.name, phone: provider.phone, city: provider.city, categoryId: provider.categoryId, specialty: provider.specialty, bio: provider.bio, yearsExperience: provider.yearsExperience },
+        documents: documents.map(document => ({ ...document, url: `/manus-storage/${document.objectPath}` })),
+      };
+    }));
+    return res.json({ requests: items });
+  });
+
+  app.patch("/api/admin/provider-verifications/:id", async (req, res) => {
+    if (!(await currentAdmin(req))) return jsonError(res, 403, "صلاحية الإدارة مطلوبة");
+    const status = readBody(req).status;
+    if (status !== "approved" && status !== "rejected" && status !== "pending") return jsonError(res, 400, "حالة التوثيق غير صالحة");
+    const db = await getDb();
+    if (!db) return jsonError(res, 503, "قاعدة البيانات غير متاحة حالياً");
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return jsonError(res, 400, "رقم الطلب غير صالح");
+    await db.update(providerVerificationRequests).set({ status, reviewedAt: status === "pending" ? null : new Date(), updatedAt: new Date() }).where(eq(providerVerificationRequests.id, id));
+    return res.json({ success: true, status });
+  });
+
   app.get("/api/providers/me/verification-status", async (req, res) => {
     const user = await currentUser(req);
     if (!user) return jsonError(res, 401, "تحتاج إلى تسجيل الدخول");
