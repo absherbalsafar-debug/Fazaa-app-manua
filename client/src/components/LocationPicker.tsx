@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Crosshair, Loader2, MapPin, RefreshCw } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useToast } from "@/hooks/use-toast";
 
 export type CustomerLocation = {
   latitude: number;
@@ -42,6 +43,7 @@ function parseAddress(address: Record<string, string> | undefined, latitude: num
 }
 
 export function LocationPicker({ value, onChange, error }: LocationPickerProps) {
+  const { toast } = useToast();
   const mapElement = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
@@ -60,6 +62,7 @@ export function LocationPicker({ value, onChange, error }: LocationPickerProps) 
     } catch {
       onChange(parseAddress(undefined, latitude, longitude));
       setLocationError("تم تحديد الإحداثيات، لكن تعذر قراءة اسم المنطقة. يمكنك المتابعة.");
+      toast({ title: "تم تحديد موقعك", description: "حُفظت الإحداثيات، لكن تعذر جلب اسم المنطقة." });
     } finally {
       setResolving(false);
     }
@@ -93,10 +96,12 @@ export function LocationPicker({ value, onChange, error }: LocationPickerProps) 
       position => {
         setLocating(false);
         setMarker(position.coords.latitude, position.coords.longitude);
+        toast({ title: "تم تحديد موقعك الحالي", description: "تم حفظ موقعك بدقة ويمكنك تعديله من الخريطة." });
       },
       () => {
         setLocating(false);
         setLocationError("اسمح بالوصول إلى موقعك من إعدادات المتصفح ثم حاول مرة أخرى");
+        toast({ title: "نحتاج إذن الموقع", description: "اسمح للتطبيق بالوصول إلى موقعك الحالي ثم حاول مرة أخرى.", variant: "destructive" });
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 },
     );
