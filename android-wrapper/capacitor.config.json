@@ -1,0 +1,10 @@
+{
+  "appId": "com.fazaah.app",
+  "appName": "فزعة FAZAAH",
+  "webDir": "www",
+  "server": {
+    "url": "https://fazaa-webdev-hqzmahs3.manus.space",
+    "cleartext": false,
+    "androidScheme": "https"
+  }
+}
