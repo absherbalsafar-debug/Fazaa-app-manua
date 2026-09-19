@@ -10,6 +10,7 @@ import { LocationPicker, type CustomerLocation } from "@/components/LocationPick
 import { useAuth, apiRequest } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { getPostAuthPath, getRegistrationRole, type RegistrationRole } from "@/lib/registration";
+import { BrandLogo } from "@/components/brand-logo";
 
 type Step = "phone" | "otp" | "name";
 type Category = { id: number; name: string; icon?: string | null; specialties?: string[] };
@@ -182,15 +183,7 @@ export default function AuthPhone() {
           >
             <ArrowRight className="h-4 w-4" />
           </button>
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-primary shadow-sm">
-              <ShieldCheck className="h-4 w-4" />
-            </div>
-            <div className="text-right leading-none">
-              <p className="text-sm font-black">فزعة</p>
-              <p className="mt-1 text-[8px] font-bold uppercase tracking-[0.24em] text-[#a17b29]">FAZAAH</p>
-            </div>
-          </div>
+          <BrandLogo className="h-16 w-24 object-contain" />
           <span className="rounded-full border border-[#d9d5cd] bg-white px-3 py-1.5 text-[10px] font-bold text-[#8e8b82]">
             {stepNumber} <span className="mx-1 text-[#a17b29]">/</span> ٠٣
           </span>
@@ -212,7 +205,7 @@ export default function AuthPhone() {
                 {step === "otp" && "أدخل الرمز الذي وصل إلى هاتفك لإكمال الدخول."}
                 {step === "name" && (role === "provider"
                   ? "عرّف العملاء بخدمتك حتى تصل إليك الطلبات المناسبة."
-                  : "أدخل اسمك الحقيقي وحدد موقعك لنتمكن من عرض أفضل المهنيين والخدمات القريبة منك.")}
+                  : "أكمل بياناتك: أدخل اسمك الحقيقي وحدد موقعك لنتمكن من عرض أفضل المهنيين والخدمات القريبة منك.")}
               </p>
             </div>
 
@@ -339,6 +332,7 @@ export default function AuthPhone() {
                     className="h-14 rounded-2xl border-[#d4d9df] bg-white text-base shadow-sm focus-visible:ring-primary"
                     autoFocus
                   />
+                  <p className="text-[11px] leading-5 text-[#8b897f]">الاسم الأول، اسم الأب، اسم الجد، واسم العائلة</p>
                   {role === "client" && name.trim() && namePartsCount < 4 && <p className="text-xs font-bold text-red-600">يرجى إدخال الاسم الرباعي كاملاً</p>}
                 </div>
                 {role === "provider" && (

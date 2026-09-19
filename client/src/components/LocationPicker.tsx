@@ -142,9 +142,27 @@ export function LocationPicker({ value, onChange, error }: LocationPickerProps) 
       </button>
       <div ref={mapElement} className="h-64 w-full overflow-hidden rounded-2xl border border-[#d9d5cd] bg-[#eef1ed]" aria-label="خريطة تحديد موقع العميل" />
       <div className="flex items-center justify-between gap-2 text-[11px] text-[#77766f]">
-        <span>{value ? `${value.city || "موقع محدد"}${value.district ? `، ${value.district}` : ""}` : "اضغط على الخريطة أو حرّك المؤشر لاختيار موقع أدق"}</span>
+        <span>{value ? "تم حفظ موقعك ويمكنك تغييره من الخريطة أو الزر أعلاه" : "اضغط على الخريطة أو حرّك المؤشر لاختيار موقع أدق"}</span>
         {resolving && <span className="flex items-center gap-1 font-bold text-[#a17b29]"><RefreshCw className="h-3 w-3 animate-spin" /> قراءة العنوان</span>}
       </div>
+      {value && (
+        <div className="grid grid-cols-2 gap-2 rounded-2xl border border-[#ece8df] bg-[#fbfaf7] p-3 text-[11px]">
+          {[
+            ["الدولة", value.country],
+            ["المحافظة", value.governorate],
+            ["المدينة", value.city],
+            ["الحي", value.district],
+          ].map(([label, text]) => (
+            <div key={label} className="min-w-0 rounded-xl bg-white px-3 py-2 shadow-sm">
+              <span className="block text-[#9a978e]">{label}</span>
+              <span className="mt-1 block truncate font-bold text-primary">{text || "غير متوفر"}</span>
+            </div>
+          ))}
+          <div className="col-span-2 rounded-xl bg-primary/[0.04] px-3 py-2 font-mono text-[10px] text-primary" dir="ltr">
+            {value.latitude.toFixed(6)}, {value.longitude.toFixed(6)}
+          </div>
+        </div>
+      )}
       {(error || locationError) && <p className="text-xs font-bold leading-5 text-red-600" role="alert">{error || locationError}</p>}
     </section>
   );
