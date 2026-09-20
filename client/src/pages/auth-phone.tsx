@@ -56,7 +56,8 @@ export default function AuthPhone() {
   const [verificationSuccess, setVerificationSuccess] = useState<{ requestId: number; reviewTime: string } | null>(null);
   const [devOtp, setDevOtp] = useState<string | null>(null);
   const [otpSent, setOtpSent] = useState(false);
-  const { login, logout } = useAuth();
+  const [providerSessionReady, setProviderSessionReady] = useState(false);
+  const { login } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const mode = new URLSearchParams(window.location.search).get("mode") === "login" ? "login" : "register";
@@ -170,30 +171,33 @@ export default function AuthPhone() {
       setUploadStage("جاري تجهيز مستندات الاعتماد...");
     }
     try {
-      const data = await apiRequest('/auth/verify-otp', {
-        method: 'POST',
+      if (!providerSessionReady) {
+        const data = await apiRequest('/auth/verify-otp', {
+          method: 'POST',
           body: JSON.stringify({
             phone: phone.trim(),
             code: otp,
             name: name.trim(),
             role,
             mode,
-          city: customerLocation?.city || undefined,
-          country: customerLocation?.country || undefined,
-          governorate: customerLocation?.governorate || undefined,
-          district: customerLocation?.district || undefined,
-          latitude: customerLocation?.latitude,
-          longitude: customerLocation?.longitude,
-          categoryId: categoryId ? Number(categoryId) : undefined,
-          specialty: specialty.trim() || undefined,
-          bio: bio.trim() || undefined,
-          yearsExperience: yearsExperience ? Number(yearsExperience) : undefined,
-          nationalId: role === "provider" ? nationalId : undefined,
-          whatsapp: role === "provider" ? whatsapp : undefined,
-          termsAccepted: role === "provider" ? termsAccepted : undefined,
-        }),
-      });
-      login(data.token, role === "provider" ? { ...data.user, role: "provider" } : data.user);
+            city: customerLocation?.city || undefined,
+            country: customerLocation?.country || undefined,
+            governorate: customerLocation?.governorate || undefined,
+            district: customerLocation?.district || undefined,
+            latitude: customerLocation?.latitude,
+            longitude: customerLocation?.longitude,
+            categoryId: categoryId ? Number(categoryId) : undefined,
+            specialty: specialty.trim() || undefined,
+            bio: bio.trim() || undefined,
+            yearsExperience: yearsExperience ? Number(yearsExperience) : undefined,
+            nationalId: role === "provider" ? nationalId : undefined,
+            whatsapp: role === "provider" ? whatsapp : undefined,
+            termsAccepted: role === "provider" ? termsAccepted : undefined,
+          }),
+        });
+        login(data.token, role === "provider" ? { ...data.user, role: "provider" } : data.user);
+        if (role === "provider") setProviderSessionReady(true);
+      }
       try {
         if (role === "provider" && selfieFile && idFrontFile && idBackFile) {
           const documents = [
@@ -219,7 +223,6 @@ export default function AuthPhone() {
           }
         }
       } catch (uploadError) {
-        logout();
         throw new Error(uploadError instanceof Error ? `تعذر رفع مستندات الاعتماد: ${uploadError.message}` : "تعذر رفع مستندات الاعتماد");
       }
       navigate(getFirstLoginPath(role));

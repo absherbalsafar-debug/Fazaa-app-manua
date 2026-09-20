@@ -15,7 +15,33 @@ import { sendPushToUser } from "./pushNotifications";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const allowedTypes = new Set(["selfie", "id_front", "id_back", "portfolio", "certificate"]);
-const allowedContentTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"]);
+
+function inferContentType(originalName: string): string | null {
+  const extension = originalName.trim().toLowerCase().split(".").pop() ?? "";
+  const types: Record<string, string> = {
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    jfif: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+    gif: "image/gif",
+    heic: "image/heic",
+    heif: "image/heif",
+    pdf: "application/pdf",
+  };
+  return types[extension] ?? null;
+}
+
+function normalizeContentType(contentType: string, originalName: string): string | null {
+  const normalized = contentType.trim().toLowerCase();
+  if (normalized === "image/jpg") return "image/jpeg";
+  if (!normalized || normalized === "application/octet-stream") return inferContentType(originalName);
+  return normalized;
+}
+
+function isAllowedContentType(contentType: string | null): contentType is string {
+  return Boolean(contentType && (contentType === "application/pdf" || contentType.startsWith("image/")));
+}
 
 type AuthenticatedPhoneUser = typeof phoneUsers.$inferSelect;
 
@@ -140,9 +166,9 @@ export function registerProviderVerificationRoutes(app: Express) {
     const body = readBody(req);
     const name = typeof body.name === "string" ? body.name : "document";
     const size = Number(body.size);
-    const contentType = typeof body.contentType === "string" ? body.contentType : "";
+    const contentType = normalizeContentType(typeof body.contentType === "string" ? body.contentType : "", name);
     if (!Number.isFinite(size) || size <= 0 || size > MAX_FILE_SIZE) return jsonError(res, 400, "حجم الملف يجب ألا يتجاوز 10 ميجابايت");
-    if (!allowedContentTypes.has(contentType)) return jsonError(res, 400, "يسمح بالصور أو ملفات PDF فقط");
+    if (!isAllowedContentType(contentType)) return jsonError(res, 400, "يسمح بالصور أو ملفات PDF فقط");
     try {
       return res.json({ ...(await createUploadUrl(name)), contentType });
     } catch (cause) {
@@ -187,9 +213,9 @@ export function registerProviderVerificationRoutes(app: Express) {
     const body = readBody(req);
     const type = typeof body.type === "string" ? body.type : "";
     const originalName = typeof body.originalName === "string" ? body.originalName.trim().slice(0, 255) : "document.jpg";
-    const contentType = typeof body.contentType === "string" ? body.contentType : "image/jpeg";
+    const contentType = normalizeContentType(typeof body.contentType === "string" ? body.contentType : "", originalName) ?? "image/jpeg";
     const encoded = typeof body.dataBase64 === "string" ? body.dataBase64.replace(/^data:[^;]+;base64,/, "") : "";
-    if (!allowedTypes.has(type) || !allowedContentTypes.has(contentType) || !encoded) return jsonError(res, 400, "بيانات المستند غير صالحة");
+    if (!allowedTypes.has(type) || !isAllowedContentType(contentType) || !encoded) return jsonError(res, 400, "بيانات المستند غير صالحة");
     const buffer = Buffer.from(encoded, "base64");
     if (!buffer.length || buffer.length > MAX_FILE_SIZE) return jsonError(res, 400, "حجم الملف يجب ألا يتجاوز 10 ميجابايت");
     const db = await getDb();
