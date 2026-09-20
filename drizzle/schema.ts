@@ -1,4 +1,4 @@
-import { index, integer, pgEnum, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { boolean, index, integer, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/pg-core";
 
 export const userRole = pgEnum("user_role", ["user", "admin"]);
 export const phoneRole = pgEnum("phone_role", ["client", "provider"]);
@@ -8,6 +8,7 @@ export const documentType = pgEnum("document_type", ["selfie", "id_front", "id_b
 export const providerAccountStatus = pgEnum("provider_account_status", ["pending", "approved"]);
 export const subscriptionPlan = pgEnum("subscription_plan", ["monthly", "yearly"]);
 export const subscriptionPaymentStatus = pgEnum("subscription_payment_status", ["pending", "approved", "rejected"]);
+export const serviceRequestStatus = pgEnum("service_request_status", ["pending", "accepted", "rejected", "in_progress", "completed", "cancelled"]);
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -106,6 +107,52 @@ export const providerSubscriptionPayments = pgTable("provider_subscription_payme
   createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
 }, table => ({ providerIndex: index("provider_subscription_payment_provider_idx").on(table.providerId), statusIndex: index("provider_subscription_payment_status_idx").on(table.status) }));
 
+export const serviceRequests = pgTable("service_requests", {
+  id: serial("id").primaryKey(),
+  clientId: integer("clientId").notNull(),
+  providerId: integer("providerId").notNull(),
+  status: serviceRequestStatus("status").default("pending").notNull(),
+  serviceType: varchar("serviceType", { length: 160 }).notNull(),
+  description: text("description").notNull(),
+  city: varchar("city", { length: 120 }).notNull(),
+  district: varchar("district", { length: 120 }).notNull().default(""),
+  latitude: varchar("latitude", { length: 32 }),
+  longitude: varchar("longitude", { length: 32 }),
+  scheduledAt: timestamp("scheduledAt", { withTimezone: true }),
+  completedAt: timestamp("completedAt", { withTimezone: true }),
+  isImmediate: boolean("isImmediate").default(true).notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow().notNull(),
+}, table => ({
+  clientIndex: index("service_request_client_idx").on(table.clientId),
+  providerIndex: index("service_request_provider_idx").on(table.providerId),
+  statusIndex: index("service_request_status_idx").on(table.status),
+}));
+
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull(),
+  type: varchar("type", { length: 64 }).notNull(),
+  title: varchar("title", { length: 180 }).notNull(),
+  body: text("body").notNull(),
+  isRead: boolean("isRead").default(false).notNull(),
+  relatedId: integer("relatedId"),
+  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
+}, table => ({ userIndex: index("notification_user_idx").on(table.userId), readIndex: index("notification_read_idx").on(table.isRead) }));
+
+export const providerFavorites = pgTable("provider_favorites", {
+  id: serial("id").primaryKey(),
+  clientId: integer("clientId").notNull(),
+  providerId: integer("providerId").notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
+}, table => ({
+  clientIndex: index("provider_favorite_client_idx").on(table.clientId),
+  uniqueFavorite: uniqueIndex("provider_favorite_unique_idx").on(table.clientId, table.providerId),
+}));
+
 export type ProviderVerificationRequest = typeof providerVerificationRequests.$inferSelect;
 export type ProviderVerificationDocument = typeof providerVerificationDocuments.$inferSelect;
 export type ProviderSubscriptionPayment = typeof providerSubscriptionPayments.$inferSelect;
+export type ServiceRequest = typeof serviceRequests.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
+export type ProviderFavorite = typeof providerFavorites.$inferSelect;
