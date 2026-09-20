@@ -3,10 +3,12 @@ package com.fazaah.app
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.Dialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color as AndroidColor
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.GradientDrawable
 import android.location.Criteria
 import android.location.Location
 import android.location.LocationListener
@@ -20,6 +22,7 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import android.view.View
+import android.view.Gravity
 import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
 import android.webkit.JavascriptInterface
@@ -33,6 +36,8 @@ import android.webkit.WebStorage
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.TextView
+import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -342,21 +347,86 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun showLogoutDialog() {
-        val dialog = AlertDialog.Builder(this)
-            .setTitle("تسجيل الخروج")
-            .setMessage("هل تريد تسجيل الخروج من حسابك؟")
-            .setNegativeButton("إلغاء", null)
-            .setPositiveButton("تسجيل الخروج") { _, _ -> logoutFromWebView() }
-            .create()
+        val dialog = Dialog(this)
+        val density = resources.displayMetrics.density
+        fun dp(value: Int) = (value * density).toInt()
+        fun rounded(color: Int, radius: Int, strokeColor: Int? = null): GradientDrawable =
+            GradientDrawable().apply {
+                setColor(color)
+                cornerRadius = dp(radius).toFloat()
+                strokeColor?.let { setStroke(dp(1), it) }
+            }
 
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            setPadding(dp(24), dp(24), dp(24), dp(18))
+            background = rounded(AndroidColor.rgb(255, 253, 248), 24, AndroidColor.rgb(232, 224, 209))
+        }
+        val icon = TextView(this).apply {
+            text = "↪"
+            textSize = 28f
+            gravity = Gravity.CENTER
+            setTextColor(AndroidColor.rgb(24, 45, 83))
+            background = rounded(AndroidColor.rgb(242, 181, 68), 18)
+        }
+        content.addView(icon, LinearLayout.LayoutParams(dp(58), dp(58)))
+        val title = TextView(this).apply {
+            text = "تسجيل الخروج"
+            textSize = 22f
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+            setTextColor(AndroidColor.rgb(24, 45, 83))
+            setPadding(0, dp(14), 0, 0)
+        }
+        content.addView(title, LinearLayout.LayoutParams(-1, -2))
+        val message = TextView(this).apply {
+            text = "هل تريد تسجيل الخروج من حسابك؟\nستحتاج إلى تسجيل الدخول مرة أخرى عند استخدام التطبيق."
+            textSize = 15f
+            gravity = Gravity.CENTER
+            setTextColor(AndroidColor.rgb(76, 86, 101))
+            setLineSpacing(0f, 1.25f)
+            setPadding(0, dp(10), 0, dp(20))
+        }
+        content.addView(message, LinearLayout.LayoutParams(-1, -2))
+        val actions = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            gravity = Gravity.CENTER
+        }
+        val cancel = Button(this).apply {
+            text = "إلغاء"
+            textSize = 14f
+            isAllCaps = false
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setTextColor(AndroidColor.rgb(24, 45, 83))
+            background = rounded(AndroidColor.TRANSPARENT, 14, AndroidColor.rgb(194, 201, 211))
+            setOnClickListener { dialog.dismiss() }
+        }
+        val logout = Button(this).apply {
+            text = "تسجيل الخروج"
+            textSize = 14f
+            isAllCaps = false
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setTextColor(AndroidColor.WHITE)
+            background = rounded(AndroidColor.rgb(24, 45, 83), 14)
+            setOnClickListener {
+                dialog.dismiss()
+                logoutFromWebView()
+            }
+        }
+        actions.addView(cancel, LinearLayout.LayoutParams(0, dp(50), 1f).apply { marginEnd = dp(8) })
+        actions.addView(logout, LinearLayout.LayoutParams(0, dp(50), 1f))
+        content.addView(actions, LinearLayout.LayoutParams(-1, -2))
+
+        dialog.setContentView(content)
+        dialog.setCanceledOnTouchOutside(true)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(AndroidColor.TRANSPARENT))
+        dialog.window?.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        dialog.window?.setDimAmount(0.68f)
         dialog.setOnShowListener {
-            dialog.window?.setBackgroundDrawable(ColorDrawable(AndroidColor.rgb(21, 27, 41)))
-            dialog.window?.setDimAmount(0.72f)
-            val titleId = resources.getIdentifier("alertTitle", "id", "android")
-            dialog.findViewById<TextView>(titleId)?.setTextColor(AndroidColor.WHITE)
-            dialog.findViewById<TextView>(android.R.id.message)?.setTextColor(AndroidColor.rgb(220, 226, 236))
-            dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(AndroidColor.rgb(155, 170, 193))
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(AndroidColor.rgb(242, 181, 68))
+            dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.88f).toInt(), android.view.WindowManager.LayoutParams.WRAP_CONTENT)
         }
         dialog.show()
     }
