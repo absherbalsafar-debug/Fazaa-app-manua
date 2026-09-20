@@ -38,10 +38,9 @@ const wallets: Array<{ value: SubscriptionPaymentInput["wallet"]; label: string 
   { value: "jeeb", label: "جيب" },
   { value: "floosk", label: "فلوسك" },
   { value: "jawali", label: "جوالي" },
+  { value: "mobily_money_internet", label: "موبايلي موني إنترنت" },
+  { value: "my_wallet", label: "محفظتي" },
   { value: "cash", label: "كاش" },
-  { value: "one_cash", label: "ون كاش" },
-  { value: "hasib", label: "حاسب" },
-  { value: "easy", label: "إيزي" },
 ];
 
 const paymentStatus: Record<string, string> = {

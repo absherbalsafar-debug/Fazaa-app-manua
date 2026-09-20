@@ -60,8 +60,6 @@ function toAdvertisement(row: typeof providerAdvertisements.$inferSelect) {
 
 const paymentWallets = [
   ...getPaymentGatewayDescriptors().map((gateway, index) => ({ ...gateway, description: gateway.connectionNote, usage: "both", sortOrder: index + 1, merchantName: "فزعة", merchantAccount: "", instructions: "ستنتقل إلى الدفع المباشر بعد إضافة بيانات التاجر الرسمية، ويتوفر التحويل اليدوي مؤقتاً.", isActive: true })),
-  { wallet: "jawali", displayName: "جوالي", logoUrl: null, description: "تأكيد يدوي من الإدارة", usage: "both", sortOrder: 3, merchantName: "فزعة", merchantAccount: "", instructions: "أرسل رقم العملية للإدارة بعد التحويل.", isActive: true },
-  { wallet: "cash", displayName: "كاش", logoUrl: null, description: "تأكيد يدوي من الإدارة", usage: "both", sortOrder: 4, merchantName: "فزعة", merchantAccount: "", instructions: "تواصل مع الإدارة لتأكيد الدفع.", isActive: true },
 ];
 
 export function registerProviderSubscriptionRoutes(app: Express) {
