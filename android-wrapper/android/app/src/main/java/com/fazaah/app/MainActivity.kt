@@ -257,16 +257,20 @@ private fun RoleCard(title: String, description: String, selected: Boolean, onCl
 
 @Composable
 private fun OtpStep(state: AuthUiState, viewModel: AuthViewModel) {
-    Text("أدخل الرمز المكون من 6 أرقام")
-    Spacer(Modifier.height(12.dp))
-    OutlinedTextField(state.code, viewModel::setCode, label = { Text("رمز التحقق") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-    state.developmentOtp?.let { otp ->
-        Spacer(Modifier.height(12.dp))
-        Card(modifier = Modifier.fillMaxWidth()) { Text("رمز التطوير: $otp", modifier = Modifier.padding(16.dp), fontWeight = FontWeight.Bold) }
+    Surface(modifier = Modifier.height(80.dp).width(80.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(26.dp), color = MaterialTheme.colorScheme.secondary.copy(alpha = .20f)) {
+        Box(contentAlignment = Alignment.Center) { Text("✓", color = Color(0xFFB57920), fontSize = 34.sp, fontWeight = FontWeight.Bold) }
     }
     Spacer(Modifier.height(16.dp))
-    Button(enabled = !state.loading && state.code.length == 6, onClick = viewModel::verifyLogin, modifier = Modifier.fillMaxWidth()) { Text("تحقق ودخول") }
-    TextButton(onClick = viewModel::resetToPhone) { Text("تغيير رقم الهاتف") }
+    Text("أرسلنا الرمز إلى رقم هاتفك", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth())
+    Spacer(Modifier.height(12.dp))
+    OutlinedTextField(state.code, viewModel::setCode, label = { Text("رمز التحقق") }, placeholder = { Text("000000") }, singleLine = true, modifier = Modifier.fillMaxWidth(), textStyle = androidx.compose.ui.text.TextStyle(textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontSize = 24.sp, letterSpacing = 8.sp))
+    state.developmentOtp?.let { otp ->
+        Spacer(Modifier.height(12.dp))
+        Card(modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = .12f))) { Text("رمز التطوير: $otp", modifier = Modifier.padding(16.dp), color = Color(0xFF8A6925), fontWeight = FontWeight.Bold) }
+    }
+    Spacer(Modifier.height(16.dp))
+    Button(enabled = !state.loading && state.code.length == 6, onClick = viewModel::verifyLogin, modifier = Modifier.fillMaxWidth().height(54.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)) { Text("تأكيد الرمز", fontWeight = FontWeight.Bold); Spacer(Modifier.width(8.dp)); Text("✓") }
+    TextButton(onClick = viewModel::resetToPhone) { Text("تغيير رقم الهاتف", color = Color(0xFFB57920), fontWeight = FontWeight.Bold) }
 }
 
 @Composable
@@ -278,6 +282,14 @@ private fun ProfileStep(state: AuthUiState, viewModel: AuthViewModel) {
     val locationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { updateLastLocation(context, viewModel) }
 
     Text("أدخل بياناتك لإكمال إنشاء الحساب")
+    Spacer(Modifier.height(12.dp))
+    Surface(modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(26.dp), color = MaterialTheme.colorScheme.primary) {
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Surface(modifier = Modifier.height(46.dp).width(46.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.secondary) { Box(contentAlignment = Alignment.Center) { Text(if (state.role == UserRole.PROVIDER) "▣" else "♙", color = MaterialTheme.colorScheme.primary, fontSize = 22.sp) } }
+            Spacer(Modifier.width(12.dp))
+            Column { Text(if (state.role == UserRole.PROVIDER) "أقدم خدمة" else "أبحث عن خدمة", color = Color.White, fontWeight = FontWeight.Bold); Text(if (state.role == UserRole.PROVIDER) "ستستقبل طلبات العملاء وتدير عملك" else "ستظهر لك أفضل الخدمات والمهنيين", color = Color.White.copy(alpha = .72f), style = MaterialTheme.typography.bodySmall) }
+        }
+    }
     Spacer(Modifier.height(12.dp))
     OutlinedTextField(state.name, viewModel::setName, label = { Text("الاسم الرباعي") }, singleLine = true, modifier = Modifier.fillMaxWidth())
     if (state.role == UserRole.PROVIDER) {
@@ -295,9 +307,8 @@ private fun ProfileStep(state: AuthUiState, viewModel: AuthViewModel) {
         DocumentButton("صورة الهوية — الخلف", state.idBackBase64 != null) { backPicker.launch("image/*") }
     } else {
         Spacer(Modifier.height(10.dp))
-        OutlinedTextField(state.latitude, viewModel::setLatitude, label = { Text("خط العرض") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(10.dp))
-        OutlinedTextField(state.longitude, viewModel::setLongitude, label = { Text("خط الطول") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        Button(onClick = { locationPermission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)) }, modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)) { Text(if (state.latitude.isNotBlank()) "تم تحديد موقعك" else "حدد موقعك بدقة") }
+        Text(if (state.latitude.isNotBlank()) "${state.latitude}, ${state.longitude}" else "الموقع مطلوب لعرض الخدمات القريبة منك", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth())
     }
     Spacer(Modifier.height(16.dp))
     Button(enabled = !state.loading && state.name.trim().split(" ").filter(String::isNotBlank).size >= 4, onClick = viewModel::completeProfile, modifier = Modifier.fillMaxWidth()) { Text(if (state.role == UserRole.PROVIDER) "إرسال طلب اعتماد المهني" else "إكمال التسجيل") }
