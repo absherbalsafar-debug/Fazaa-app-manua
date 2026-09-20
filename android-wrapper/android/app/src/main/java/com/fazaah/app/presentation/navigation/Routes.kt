@@ -11,5 +11,6 @@ object Routes {
     const val RequestDetail = "requests/detail"
     const val NewRequest = "requests/new"
     const val Notifications = "notifications"
+    const val Favorites = "favorites"
     const val Profile = "profile"
 }

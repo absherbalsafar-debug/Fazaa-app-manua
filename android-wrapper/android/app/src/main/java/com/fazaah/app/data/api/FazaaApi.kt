@@ -16,6 +16,7 @@ import com.fazaah.app.domain.model.ServiceRequestUpdate
 import com.fazaah.app.domain.model.AppNotification
 import com.fazaah.app.domain.model.SuccessResult
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PATCH
@@ -56,6 +57,15 @@ interface FazaaApi {
 
     @GET("providers/{id}")
     suspend fun provider(@Path("id") id: Int): ProviderSummary
+
+    @GET("favorites")
+    suspend fun favorites(): List<ProviderSummary>
+
+    @POST("favorites/{providerId}")
+    suspend fun addFavorite(@Path("providerId") providerId: Int): SuccessResult
+
+    @DELETE("favorites/{providerId}")
+    suspend fun removeFavorite(@Path("providerId") providerId: Int): SuccessResult
 
     @GET("requests")
     suspend fun requests(@Query("role") role: String): List<ServiceRequest>

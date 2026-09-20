@@ -19,6 +19,9 @@ class CatalogRepository(private val api: FazaaApi) {
     ): ProvidersPage = api.providers(categoryId, search, specialty, city)
 
     suspend fun provider(id: Int) = api.provider(id)
+    suspend fun favorites() = api.favorites()
+    suspend fun addFavorite(providerId: Int) = api.addFavorite(providerId)
+    suspend fun removeFavorite(providerId: Int) = api.removeFavorite(providerId)
 
     suspend fun requests(role: String): List<ServiceRequest> = api.requests(role)
     suspend fun createRequest(request: ServiceRequestInput): ServiceRequest = api.createRequest(request)

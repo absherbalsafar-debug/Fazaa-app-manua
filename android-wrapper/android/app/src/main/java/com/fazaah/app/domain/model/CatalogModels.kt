@@ -24,6 +24,7 @@ data class ProviderSummary(
     val isVerified: Boolean = false,
     val isAvailable: Boolean = false,
     val distanceKm: Double? = null,
+    val isFavorited: Boolean = false,
 )
 
 data class ProvidersPage(
