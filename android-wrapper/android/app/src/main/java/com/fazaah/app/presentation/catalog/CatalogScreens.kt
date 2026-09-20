@@ -81,6 +81,7 @@ import com.fazaah.app.presentation.favorites.FavoritesScreen
 import com.fazaah.app.presentation.utility.SettingsScreen
 import com.fazaah.app.presentation.utility.PrivacyScreen
 import com.fazaah.app.presentation.utility.TermsScreen
+import com.fazaah.app.presentation.emergency.EmergencyScreen
 
 @Composable
 fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepository, onLogout: () -> Unit) {
@@ -89,9 +90,12 @@ fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepos
     val state by catalogViewModel.uiState.collectAsStateWithLifecycle()
     val requestViewModel: RequestViewModel = viewModel(factory = RequestViewModel.factory(catalogRepository))
     val notificationsViewModel: NotificationsViewModel = viewModel(factory = NotificationsViewModel.factory(catalogRepository))
+    val currentEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = currentEntry?.destination?.route
+    val bottomRoutes = setOf(Routes.Home, Routes.Discover, Routes.Providers, Routes.Requests, Routes.Profile)
 
     Scaffold(
-        bottomBar = { CatalogBottomBar(navController) },
+        bottomBar = { if (currentRoute in bottomRoutes) CatalogBottomBar(navController) },
     ) { padding ->
         NavHost(
             navController = navController,
@@ -116,6 +120,7 @@ fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepos
             composable(Routes.Settings) { SettingsScreen(navController) }
             composable(Routes.Privacy) { PrivacyScreen() }
             composable(Routes.Terms) { TermsScreen() }
+            composable(Routes.Emergency) { EmergencyScreen(catalogRepository, authRepository, navController) }
         }
     }
 }

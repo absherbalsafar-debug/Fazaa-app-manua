@@ -16,4 +16,5 @@ object Routes {
     const val Settings = "settings"
     const val Privacy = "privacy"
     const val Terms = "terms"
+    const val Emergency = "emergency"
 }
