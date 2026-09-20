@@ -12,6 +12,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -52,6 +53,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
@@ -145,17 +147,28 @@ private fun FazaahAuthScreen(container: AppContainer) {
             }
         }
 
-        Image(painterResource(com.fazaah.app.R.drawable.fazaah_logo), contentDescription = "شعار فزعة", modifier = Modifier.height(106.dp))
-        Spacer(Modifier.height(10.dp))
-        Text("أهلاً وسهلاً بك في فزعة", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Image(painterResource(com.fazaah.app.R.drawable.fazaah_logo), contentDescription = "شعار فزعة", modifier = Modifier.height(82.dp))
+        Spacer(Modifier.height(14.dp))
         Text(
             when (state.step) {
-                AuthStep.PHONE -> "خدماتك أقرب مما تتخيل"
+                AuthStep.PHONE -> "أدخل رقم هاتفك"
                 AuthStep.OTP -> "تحقق من هاتفك"
                 AuthStep.PROFILE -> "أكمل بياناتك"
                 AuthStep.HOME -> "مرحبًا بك في فزعة"
             },
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            when (state.step) {
+                AuthStep.PHONE -> "سنرسل رمزاً قصيراً إلى رقمك لتبدأ تجربتك بأمان."
+                AuthStep.OTP -> "أدخل الرمز الذي وصل إلى هاتفك لإكمال الدخول."
+                AuthStep.PROFILE -> if (state.role == UserRole.PROVIDER) "عرّف العملاء بخدمتك حتى تصل إليك الطلبات المناسبة." else "أكمل بياناتك وحدد موقعك لنتمكن من عرض أفضل الخدمات القريبة منك."
+                AuthStep.HOME -> "خدماتك أقرب مما تتخيل"
+            },
             style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(28.dp))
 
@@ -214,17 +227,31 @@ private fun WelcomeScreen(onStart: (UserRole) -> Unit, onSkip: () -> Unit) {
 
 @Composable
 private fun PhoneStep(state: AuthUiState, viewModel: AuthViewModel) {
-    Text("كيف ستستخدم فزعة؟", fontWeight = FontWeight.Bold)
-    Spacer(Modifier.height(10.dp))
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilterChip(selected = state.role == UserRole.CLIENT, onClick = { viewModel.setRole(UserRole.CLIENT) }, label = { Text("أبحث عن خدمة") })
-        FilterChip(selected = state.role == UserRole.PROVIDER, onClick = { viewModel.setRole(UserRole.PROVIDER) }, label = { Text("أقدم خدمة") })
+    Surface(modifier = Modifier.height(80.dp).width(80.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(26.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = .10f)) {
+        Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Phone, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.height(34.dp).width(34.dp)) }
     }
-    Spacer(Modifier.height(18.dp))
-    OutlinedTextField(state.phone, viewModel::setPhone, label = { Text("رقم الهاتف") }, placeholder = { Text("7XXXXXXXX") }, singleLine = true, modifier = Modifier.fillMaxWidth())
     Spacer(Modifier.height(16.dp))
-    Button(enabled = !state.loading && state.phone.length >= 9, onClick = viewModel::sendOtp, modifier = Modifier.fillMaxWidth()) {
-        if (state.loading) CircularProgressIndicator(modifier = Modifier.width(20.dp).height(20.dp)) else Text("إرسال رمز التحقق")
+    Text("كيف ستستخدم فزعة؟", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.fillMaxWidth())
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        RoleCard("أبحث عن خدمة", "ستظهر لك أفضل الخدمات والمهنيين", state.role == UserRole.CLIENT, { viewModel.setRole(UserRole.CLIENT) }, Modifier.weight(1f))
+        RoleCard("أقدم خدمة", "ستستقبل طلبات العملاء وتدير عملك", state.role == UserRole.PROVIDER, { viewModel.setRole(UserRole.PROVIDER) }, Modifier.weight(1f))
+    }
+    Spacer(Modifier.height(14.dp))
+    OutlinedTextField(state.phone, viewModel::setPhone, label = { Text("رقم الهاتف") }, placeholder = { Text("7XXXXXXXX") }, singleLine = true, modifier = Modifier.fillMaxWidth(), textStyle = androidx.compose.ui.text.TextStyle(textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontSize = 18.sp))
+    Spacer(Modifier.height(16.dp))
+    Button(enabled = !state.loading && state.phone.length >= 9, onClick = viewModel::sendOtp, modifier = Modifier.fillMaxWidth().height(54.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)) {
+        if (state.loading) CircularProgressIndicator(modifier = Modifier.width(20.dp).height(20.dp), color = MaterialTheme.colorScheme.onPrimary) else { Text("إرسال رمز التحقق", fontWeight = FontWeight.Bold); Spacer(Modifier.width(8.dp)); Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) }
+    }
+}
+
+@Composable
+private fun RoleCard(title: String, description: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier) {
+    Card(onClick = onClick, modifier = modifier, colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = if (selected) MaterialTheme.colorScheme.primary else Color.White), border = androidx.compose.foundation.BorderStroke(1.dp, if (selected) MaterialTheme.colorScheme.primary else Color(0xFFD4D9DF))) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(if (title.contains("أقدم")) "▣" else "♙", color = if (selected) MaterialTheme.colorScheme.secondary else Color(0xFFB57920), fontSize = 22.sp)
+            Text(title, fontWeight = FontWeight.Bold, color = if (selected) Color.White else MaterialTheme.colorScheme.primary)
+            Text(description, style = MaterialTheme.typography.bodySmall, color = if (selected) Color.White.copy(alpha = .75f) else MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
