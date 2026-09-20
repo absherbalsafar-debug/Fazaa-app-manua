@@ -264,7 +264,7 @@ export default function ProviderBusiness() {
                 </button>
               ))}
             </div>
-            {selectedWallet && <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm leading-6"><p className="font-black text-primary">تم اختيار {selectedWallet.displayName}</p><p className="mt-1 text-muted-foreground">شاشة الدفع الإلكتروني الخاصة بالمحفظة ستكون متاحة عند اكتمال الربط مع مزود الدفع. لا يُطلب منك حاليًا إدخال رقم عملية أو رفع إيصال.</p></div>}
+            {selectedWallet && <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm leading-6"><p className="font-black text-primary">تم اختيار {selectedWallet.displayName}</p><p className="mt-1 text-muted-foreground">المحفظة جاهزة للربط المباشر. بعد استلام رابط API وبيانات التاجر الرسمية سيتم فتح الدفع الإلكتروني تلقائياً، ويتوفر التحويل اليدوي مؤقتاً.</p></div>}
           </section>
         )}
 

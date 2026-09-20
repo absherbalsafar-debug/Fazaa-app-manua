@@ -3,6 +3,7 @@ import { desc, eq } from "drizzle-orm";
 import { getDb } from "./db";
 import { phoneAuthSessions, phoneUsers, providerAdvertisements, providerSubscriptionPayments, serviceRequests } from "../drizzle/schema";
 import { sdk } from "./_core/sdk";
+import { getPaymentGatewayDescriptors } from "./paymentGateways";
 
 const AD_DURATIONS = { standard: 7, featured: 14, homepage: 30, vip: 60 } as const;
 type Plan = "monthly" | "yearly";
@@ -58,8 +59,7 @@ function toAdvertisement(row: typeof providerAdvertisements.$inferSelect) {
 }
 
 const paymentWallets = [
-  { wallet: "jeeb", displayName: "جيب", logoUrl: "/manus-storage/jaib-wallet_4b6eaa95.jpg", description: "محفظة جيب · تأكيد الدفع من الإدارة", usage: "both", sortOrder: 1, merchantName: "فزعة", merchantAccount: "", instructions: "أرسل رقم العملية للإدارة بعد التحويل.", isActive: true },
-  { wallet: "floosk", displayName: "فلوسك", logoUrl: "/manus-storage/floosak-wallet_cf142dd8.png", description: "محفظة فلوسك · تأكيد الدفع من الإدارة", usage: "both", sortOrder: 2, merchantName: "فزعة", merchantAccount: "", instructions: "أرسل رقم العملية للإدارة بعد التحويل.", isActive: true },
+  ...getPaymentGatewayDescriptors().map((gateway, index) => ({ ...gateway, description: gateway.connectionNote, usage: "both", sortOrder: index + 1, merchantName: "فزعة", merchantAccount: "", instructions: "ستنتقل إلى الدفع المباشر بعد إضافة بيانات التاجر الرسمية، ويتوفر التحويل اليدوي مؤقتاً.", isActive: true })),
   { wallet: "jawali", displayName: "جوالي", logoUrl: null, description: "تأكيد يدوي من الإدارة", usage: "both", sortOrder: 3, merchantName: "فزعة", merchantAccount: "", instructions: "أرسل رقم العملية للإدارة بعد التحويل.", isActive: true },
   { wallet: "cash", displayName: "كاش", logoUrl: null, description: "تأكيد يدوي من الإدارة", usage: "both", sortOrder: 4, merchantName: "فزعة", merchantAccount: "", instructions: "تواصل مع الإدارة لتأكيد الدفع.", isActive: true },
 ];
