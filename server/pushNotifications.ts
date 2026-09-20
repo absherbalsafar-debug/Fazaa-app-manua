@@ -37,9 +37,15 @@ function getFirebaseApp() {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (!raw) return null;
   try {
-    const serviceAccount = JSON.parse(raw) as { project_id?: string; client_email?: string; private_key?: string };
-    if (!serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) return null;
-    return getApps()[0] ?? initializeApp({ credential: cert(serviceAccount) });
+    const rawJson = JSON.parse(raw) as { project_id?: string; client_email?: string; private_key?: string };
+    if (!rawJson.project_id || !rawJson.client_email || !rawJson.private_key) return null;
+    return getApps()[0] ?? initializeApp({
+      credential: cert({
+        projectId: rawJson.project_id,
+        clientEmail: rawJson.client_email,
+        privateKey: rawJson.private_key,
+      }),
+    });
   } catch (error) {
     console.error("[Push] Invalid FIREBASE_SERVICE_ACCOUNT_JSON", error);
     return null;
