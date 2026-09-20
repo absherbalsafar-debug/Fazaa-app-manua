@@ -18,6 +18,27 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      [class*="manus-badge"], [id*="manus-badge"], [class*="made-with-manus"], [id*="made-with-manus"], a[href*="manus.im"], a[href*="manus.space"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+      }
+    </style>
+    <script>
+      (function removeManusBranding() {
+        function purge() {
+          const selectors = ['[class*="manus-badge"]', '[id*="manus-badge"]', '[class*="made-with-manus"]', '[id*="made-with-manus"]', 'a[href*="manus.im"]', 'a[href*="manus.space"]'];
+          document.querySelectorAll(selectors.join(',')).forEach(el => el.remove());
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', purge);
+        } else {
+          purge();
+        }
+        new MutationObserver(purge).observe(document.documentElement, { childList: true, subtree: true });
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

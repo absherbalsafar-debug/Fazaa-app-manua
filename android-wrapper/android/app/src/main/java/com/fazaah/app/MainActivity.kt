@@ -82,6 +82,21 @@ class MainActivity : ComponentActivity() {
                 override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
                     if (request.isForMainFrame) view.loadUrl(BuildConfig.WEB_APP_URL)
                 }
+
+                override fun onPageFinished(view: WebView, url: String) {
+                    super.onPageFinished(view, url)
+                    val js = """
+                        (function() {
+                            const selectors = ['[class*="manus-badge"]', '[id*="manus-badge"]', '[class*="made-with-manus"]', '[id*="made-with-manus"]', 'a[href*="manus.im"]', 'a[href*="manus.space"]'];
+                            function clean() {
+                                document.querySelectorAll(selectors.join(',')).forEach(e => e.remove());
+                            }
+                            clean();
+                            new MutationObserver(clean).observe(document.documentElement, { childList: true, subtree: true });
+                        })();
+                    """.trimIndent()
+                    view.evaluateJavascript(js, null)
+                }
             }
             webChromeClient = object : WebChromeClient() {
                 override fun onShowFileChooser(webView: WebView, callback: ValueCallback<Array<Uri>>, params: FileChooserParams): Boolean {

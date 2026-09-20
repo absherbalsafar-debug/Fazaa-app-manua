@@ -336,5 +336,24 @@
 }
 
 .onboarding-wave::before { content: ""; position: absolute; top: -38px; left: -8%; width: 116%; height: 88px; border-radius: 50%; background: #f7f8fa; }
+
+/* إخفاء شارة Made with Manus أو أي علامة ترويجية محقونة تلقائياً */
+[class*="manus-badge"],
+[id*="manus-badge"],
+[class*="made-with-manus"],
+[id*="made-with-manus"],
+a[href*="manus.im"],
+a[href*="manus.space"],
+div[data-manus-badge],
+.manus-badge,
+#manus-badge {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  clip: rect(0, 0, 0, 0) !important;
+}
 .onboarding-wave-gold { position: absolute; top: -12px; left: -8%; width: 116%; height: 54px; border-top: 7px solid #f0b046; border-radius: 50%; opacity: .95; }
 @media (prefers-reduced-motion: reduce) { .onboarding-wave-gold { transition: none; } }
