@@ -1,9 +1,11 @@
-import { COOKIE_NAME, ONE_YEAR_MS, OAUTH_STATE_COOKIE, decodeOAuthState } from "@shared/const";
+import { COOKIE_NAME, ONE_YEAR_MS, OAUTH_STATE_COOKIE, decodeOAuthState, encodeOAuthState } from "@shared/const";
 import { parse as parseCookieHeader } from "cookie";
 import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
+import { ENV } from "./env";
+import { randomUUID } from "node:crypto";
 
 function getQueryParam(req: Request, key: string): string | undefined {
   const value = req.query[key];
@@ -11,6 +13,26 @@ function getQueryParam(req: Request, key: string): string | undefined {
 }
 
 export function registerOAuthRoutes(app: Express) {
+  app.get("/api/oauth/start", (req: Request, res: Response) => {
+    const returnTo = getQueryParam(req, "returnTo") || "/";
+    const allowed = (process.env.CONTROL_CENTER_ORIGIN ?? "").split(",").map(value => value.trim()).filter(Boolean);
+    let safeReturnTo = "/";
+    try {
+      const parsed = new URL(returnTo, `${req.protocol}://${req.get("host")}`);
+      if (parsed.origin === `${req.protocol}://${req.get("host")}` || allowed.includes(parsed.origin)) safeReturnTo = parsed.toString();
+    } catch { safeReturnTo = "/"; }
+    const nonce = randomUUID();
+    const redirectUri = `${req.protocol}://${req.get("host")}/api/oauth/callback`;
+    const state = encodeOAuthState({ redirectUri, nonce, returnTo: safeReturnTo });
+    res.cookie(OAUTH_STATE_COOKIE, nonce, { path: "/", maxAge: 10 * 60 * 1000, secure: true, sameSite: "none" });
+    const portal = new URL(`${ENV.oAuthServerUrl.replace(/\/$/, "")}/app-auth`);
+    portal.searchParams.set("appId", ENV.appId);
+    portal.searchParams.set("redirectUri", redirectUri);
+    portal.searchParams.set("state", state);
+    portal.searchParams.set("type", "signIn");
+    return res.redirect(302, portal.toString());
+  });
+
   app.get("/api/oauth/callback", async (req: Request, res: Response) => {
     const code = getQueryParam(req, "code");
     const state = getQueryParam(req, "state");
@@ -23,7 +45,7 @@ export function registerOAuthRoutes(app: Express) {
     // CSRF guard: the nonce in `state` must match the one-time cookie that
     // startLogin set in the browser that began this login. An attacker can
     // forge `state`, but cannot plant this cookie in the victim's browser.
-    const { nonce } = decodeOAuthState(state);
+    const { nonce, returnTo } = decodeOAuthState(state);
     const expectedNonce = parseCookieHeader(req.headers.cookie ?? "")[OAUTH_STATE_COOKIE];
     if (!nonce || nonce !== expectedNonce) {
       res.status(403).json({ error: "invalid oauth state" });
@@ -56,7 +78,7 @@ export function registerOAuthRoutes(app: Express) {
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-      res.redirect(302, "/");
+      res.redirect(302, returnTo || "/");
     } catch (error) {
       console.error("[OAuth] Callback failed", error);
       res.status(500).json({ error: "OAuth callback failed" });

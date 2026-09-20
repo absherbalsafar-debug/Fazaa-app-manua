@@ -94,6 +94,16 @@ export const providerVerificationDocuments = pgTable("provider_verification_docu
   createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
 }, table => ({ requestIndex: index("provider_verification_document_request_idx").on(table.requestId) }));
 
+export const providerVerificationReviewHistory = pgTable("provider_verification_review_history", {
+  id: serial("id").primaryKey(),
+  requestId: integer("requestId").notNull(),
+  status: verificationStatus("status").notNull(),
+  rejectionReason: text("rejectionReason"),
+  adminOpenId: varchar("adminOpenId", { length: 64 }).notNull(),
+  adminName: varchar("adminName", { length: 160 }),
+  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
+}, table => ({ requestIndex: index("provider_verification_history_request_idx").on(table.requestId) }));
+
 export const providerSubscriptionPayments = pgTable("provider_subscription_payments", {
   id: serial("id").primaryKey(),
   providerId: integer("providerId").notNull(),
@@ -108,4 +118,5 @@ export const providerSubscriptionPayments = pgTable("provider_subscription_payme
 
 export type ProviderVerificationRequest = typeof providerVerificationRequests.$inferSelect;
 export type ProviderVerificationDocument = typeof providerVerificationDocuments.$inferSelect;
+export type ProviderVerificationReviewHistory = typeof providerVerificationReviewHistory.$inferSelect;
 export type ProviderSubscriptionPayment = typeof providerSubscriptionPayments.$inferSelect;
