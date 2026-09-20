@@ -53,6 +53,7 @@ export default function AuthPhone() {
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStage, setUploadStage] = useState("");
+  const [verificationSuccess, setVerificationSuccess] = useState<{ requestId: number; reviewTime: string } | null>(null);
   const [devOtp, setDevOtp] = useState<string | null>(null);
   const [otpSent, setOtpSent] = useState(false);
   const { login, logout } = useAuth();
@@ -198,16 +199,22 @@ export default function AuthPhone() {
             ["id_front", "الهوية — الأمام", idFrontFile],
             ["id_back", "الهوية — الخلف", idBackFile],
           ] as const;
+          let requestId: number | null = null;
           for (let index = 0; index < documents.length; index += 1) {
             const [type, label, file] = documents[index];
             setUploadStage(`جاري رفع ${label} (${index + 1} من ${documents.length})`);
-            await apiRequest("/providers/me/verification-documents/base64", {
+            const uploadResult = await apiRequest("/providers/me/verification-documents/base64", {
               method: "POST",
               body: JSON.stringify({ type, originalName: file.name, contentType: file.type || "image/jpeg", dataBase64: await fileToDataUrl(file) }),
             });
+            if (typeof uploadResult.requestId === "number") requestId = uploadResult.requestId;
             setUploadProgress(Math.round(((index + 1) / documents.length) * 100));
           }
           setUploadStage("اكتمل رفع جميع المستندات");
+          if (requestId !== null) {
+            setVerificationSuccess({ requestId, reviewTime: "عادةً خلال 1 إلى 3 أيام عمل" });
+            return;
+          }
         }
       } catch (uploadError) {
         logout();
@@ -485,10 +492,10 @@ export default function AuthPhone() {
                 {role === "provider" && <div className="rounded-[26px] border border-[#e5dcc5] bg-gradient-to-br from-[#fffdf7] to-[#f8f4e9] p-4 shadow-[0_12px_28px_rgba(14,47,98,0.05)]"><div className="flex items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f0b046]/20 text-[#a8731d]"><ShieldCheck className="h-5 w-5" /></div><div className="min-w-0 flex-1"><p className="text-sm font-black text-primary">إقرار وتعهد المهني</p><p className="mt-1 text-[11px] leading-5 text-[#737066]">نحتاج موافقتك على صحة البيانات والمستندات قبل إرسال طلب الاعتماد.</p></div></div><label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border border-[#e6dfd0] bg-white/80 p-3 text-xs leading-6 text-[#596273]"><input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-[#182d53]" /><span>أقر بأن بياناتي ومستنداتي صحيحة، وأوافق على مراجعتها وفق شروط منصة فزعة. <button type="button" className="font-black text-[#a8731d] underline underline-offset-4" onClick={() => setTermsOpen(true)}>قراءة نص التعهد</button></span></label></div>}
                 {termsOpen && <div className="fixed inset-0 z-50 flex items-end justify-center bg-primary/40 p-4 backdrop-blur-sm sm:items-center"><div role="dialog" aria-modal="true" aria-labelledby="terms-title" className="w-full max-w-md rounded-[28px] bg-white p-5 shadow-2xl"><div className="flex items-center justify-between"><div className="flex items-center gap-2"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/20 text-[#a8731d]"><ShieldCheck className="h-5 w-5" /></div><h2 id="terms-title" className="text-base font-black text-primary">نص الإقرار والتعهد</h2></div><button type="button" onClick={() => setTermsOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f3ee] text-[#667085]" aria-label="إغلاق"><X className="h-4 w-4" /></button></div><p className="mt-4 rounded-2xl bg-[#fbfaf7] p-4 text-sm leading-7 text-[#596273]">أتعهد بأن جميع البيانات والمستندات التي أقدمها صحيحة ومملوكة لي، وأوافق على قيام منصة فزعة بمراجعتها والتحقق منها وفق شروط الاستخدام وسياسة الخصوصية. وأتحمل مسؤولية أي معلومات غير صحيحة.</p><Button type="button" onClick={() => { setTermsAccepted(true); setTermsOpen(false); }} className="mt-4 h-12 w-full rounded-2xl bg-primary font-extrabold">أوافق وأغلق</Button></div></div>}
                 {role === "provider" && loading && uploadStage && <div className="rounded-[24px] border border-primary/10 bg-[#182d53] p-4 text-white shadow-[0_14px_30px_rgba(14,47,98,0.16)]" role="status" aria-live="polite"><div className="flex items-center justify-between gap-3"><div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f0b046]/20 text-[#f0b046]"><Loader2 className="h-5 w-5 animate-spin" /></div><div className="min-w-0"><p className="text-sm font-black">رفع مستندات الاعتماد</p><p className="mt-1 truncate text-[11px] text-white/70">{uploadStage}</p></div></div><span className="shrink-0 text-lg font-black text-[#f0b046]">{uploadProgress}%</span></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-white/15"><div className="h-full rounded-full bg-gradient-to-l from-[#f0b046] to-[#ffd978] transition-all duration-500" style={{ width: `${Math.max(uploadProgress, 7)}%` }} /></div><div className="mt-3 flex justify-between text-[10px] text-white/55"><span className={uploadProgress >= 33 ? "text-[#f0b046]" : ""}>الصورة الشخصية</span><span className={uploadProgress >= 66 ? "text-[#f0b046]" : ""}>الهوية الأمامية</span><span className={uploadProgress >= 100 ? "text-[#f0b046]" : ""}>الهوية الخلفية</span></div></div>}
-                <Button onClick={completeRegistration} disabled={loading || !name.trim() || !clientProfileReady} className="h-14 w-full rounded-2xl bg-primary text-base font-extrabold text-primary-foreground shadow-[0_12px_26px_rgba(14,47,98,0.16)] hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">
+                {verificationSuccess ? <div className="space-y-4 rounded-[26px] border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 text-center shadow-[0_14px_30px_rgba(16,185,129,0.10)]" role="status" aria-live="polite"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600"><CheckCircle2 className="h-8 w-8" /></div><div><p className="text-lg font-black text-primary">تم إرسال طلب الاعتماد بنجاح</p><p className="mt-2 text-sm leading-6 text-[#596273]">تم استلام مستنداتك وستتم مراجعتها من فريق فزعة.</p></div><div className="grid grid-cols-2 gap-3 text-right"><div className="rounded-2xl bg-white p-3 ring-1 ring-emerald-100"><p className="text-[10px] font-bold text-[#8b897f]">رقم الطلب</p><p className="mt-1 text-lg font-black text-primary" dir="ltr">#{verificationSuccess.requestId}</p></div><div className="rounded-2xl bg-white p-3"><p className="text-[10px] font-bold text-[#8b897f]">المدة المتوقعة</p><p className="mt-1 text-xs font-black leading-5 text-primary">{verificationSuccess.reviewTime}</p></div></div><Button type="button" onClick={() => navigate(getFirstLoginPath("provider"))} className="h-13 w-full rounded-2xl bg-primary font-extrabold text-primary-foreground hover:bg-primary/90">الانتقال إلى حسابي <ArrowLeft className="mr-2 h-4 w-4" /></Button></div> : <Button onClick={completeRegistration} disabled={loading || !name.trim() || !clientProfileReady} className="h-14 w-full rounded-2xl bg-primary text-base font-extrabold text-primary-foreground shadow-[0_12px_26px_rgba(14,47,98,0.16)] hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">
                   {loading ? "جاري إنشاء الحساب..." : "المتابعة"}
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                </Button>
+                </Button>}
               </>
             )}
           </motion.div>
