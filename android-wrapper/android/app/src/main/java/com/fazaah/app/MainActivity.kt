@@ -66,7 +66,7 @@ private fun FazaahAuthScreen(container: AppContainer) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     if (state.step == AuthStep.HOME) {
-        CatalogShell(container.catalogRepository, onLogout = viewModel::logout)
+        CatalogShell(container.catalogRepository, container.authRepository, onLogout = viewModel::logout)
         return
     }
 

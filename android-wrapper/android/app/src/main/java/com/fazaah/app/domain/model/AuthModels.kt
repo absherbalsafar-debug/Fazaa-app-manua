@@ -27,6 +27,18 @@ data class AuthUser(
     val phone: String? = null,
     val role: String? = null,
     val status: String? = null,
+    val city: String? = null,
+    val governorate: String? = null,
+    val district: String? = null,
+    val whatsapp: String? = null,
+)
+
+data class UpdateProfileRequest(
+    val name: String? = null,
+    val city: String? = null,
+    val governorate: String? = null,
+    val district: String? = null,
+    val whatsapp: String? = null,
 )
 
 data class VerifyOtpResponse(

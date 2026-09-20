@@ -8,9 +8,11 @@ import com.fazaah.app.domain.model.SendOtpRequest
 import com.fazaah.app.domain.model.SendOtpResponse
 import com.fazaah.app.domain.model.VerifyOtpRequest
 import com.fazaah.app.domain.model.VerifyOtpResponse
+import com.fazaah.app.domain.model.UpdateProfileRequest
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PATCH
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -23,6 +25,9 @@ interface FazaaApi {
 
     @GET("auth/me")
     suspend fun currentUser(): AuthUser
+
+    @PATCH("auth/me")
+    suspend fun updateProfile(@Body request: UpdateProfileRequest): AuthUser
 
     @POST("auth/logout-all")
     suspend fun logoutAll()

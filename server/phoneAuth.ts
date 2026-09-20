@@ -321,6 +321,42 @@ export function registerPhoneAuthRoutes(app: Express) {
     return res.json(session.user);
   });
 
+  app.patch("/api/auth/me", async (req, res) => {
+    const header = req.headers.authorization ?? "";
+    const token = header.startsWith("Bearer ") ? header.slice(7) : "";
+    const body = readBody(req);
+    const nextName = typeof body.name === "string" ? body.name.trim() : "";
+    if (nextName && nextName.length < 3) return jsonError(res, 400, "الاسم قصير جدًا");
+    const db = await getAuthDb();
+    if (db) {
+      const session = (await db.select().from(phoneAuthSessions).where(eq(phoneAuthSessions.token, token)).limit(1))[0];
+      if (!session || session.expiresAt.getTime() <= Date.now()) return jsonError(res, 401, "تحتاج إلى تسجيل الدخول");
+      const current = (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, session.phone)).limit(1))[0];
+      if (!current) return jsonError(res, 404, "المستخدم غير موجود");
+      const updated = (await db.update(phoneUsers).set({
+        ...(nextName ? { name: nextName } : {}),
+        ...(typeof body.city === "string" ? { city: body.city.trim() || null } : {}),
+        ...(typeof body.governorate === "string" ? { governorate: body.governorate.trim() || null } : {}),
+        ...(typeof body.district === "string" ? { district: body.district.trim() || null } : {}),
+        ...(typeof body.whatsapp === "string" ? { whatsapp: body.whatsapp.trim() || null } : {}),
+        updatedAt: new Date(),
+      }).where(eq(phoneUsers.phone, session.phone)).returning())[0];
+      return res.json(toApiUser(updated ?? current));
+    }
+    const session = localSessions.get(token);
+    if (!session || session.expiresAt <= Date.now()) return jsonError(res, 401, "تحتاج إلى تسجيل الدخول");
+    const updated = { ...session.user,
+      ...(nextName ? { name: nextName } : {}),
+      ...(typeof body.city === "string" ? { city: body.city.trim() || null } : {}),
+      ...(typeof body.governorate === "string" ? { governorate: body.governorate.trim() || null } : {}),
+      ...(typeof body.district === "string" ? { district: body.district.trim() || null } : {}),
+      ...(typeof body.whatsapp === "string" ? { whatsapp: body.whatsapp.trim() || null } : {}),
+    };
+    session.user = updated;
+    localUsers.set(updated.phone, updated);
+    return res.json(updated);
+  });
+
   app.post("/api/auth/logout-all", async (req, res) => {
     const header = req.headers.authorization ?? "";
     const token = header.startsWith("Bearer ") ? header.slice(7) : "";

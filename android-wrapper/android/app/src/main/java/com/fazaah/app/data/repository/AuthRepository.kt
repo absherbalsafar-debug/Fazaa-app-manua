@@ -6,6 +6,8 @@ import com.fazaah.app.domain.model.SendOtpRequest
 import com.fazaah.app.domain.model.SendOtpResponse
 import com.fazaah.app.domain.model.VerifyOtpRequest
 import com.fazaah.app.domain.model.VerifyOtpResponse
+import com.fazaah.app.domain.model.AuthUser
+import com.fazaah.app.domain.model.UpdateProfileRequest
 
 class AuthRepository(
     private val api: FazaaApi,
@@ -23,4 +25,8 @@ class AuthRepository(
         runCatching { api.logoutAll() }
         sessionStore.clear()
     }
+
+    suspend fun currentUser(): AuthUser = api.currentUser()
+
+    suspend fun updateProfile(request: UpdateProfileRequest): AuthUser = api.updateProfile(request)
 }

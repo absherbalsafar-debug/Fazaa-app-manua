@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -20,6 +22,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
@@ -55,11 +58,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.fazaah.app.data.repository.CatalogRepository
+import com.fazaah.app.data.repository.AuthRepository
 import com.fazaah.app.presentation.auth.AuthViewModel
 import com.fazaah.app.presentation.navigation.Routes
+import com.fazaah.app.presentation.profile.ProfileViewModel
 
 @Composable
-fun CatalogShell(catalogRepository: CatalogRepository, onLogout: () -> Unit) {
+fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepository, onLogout: () -> Unit) {
     val navController = rememberNavController()
     val catalogViewModel: CatalogViewModel = viewModel(factory = CatalogViewModel.factory(catalogRepository))
     val state by catalogViewModel.uiState.collectAsStateWithLifecycle()
@@ -81,7 +86,7 @@ fun CatalogShell(catalogRepository: CatalogRepository, onLogout: () -> Unit) {
             ) { entry ->
                 ProviderDetailsScreen(catalogRepository, entry.arguments?.getInt("providerId") ?: 0, navController)
             }
-            composable(Routes.Profile) { ProfilePlaceholder(onLogout) }
+            composable(Routes.Profile) { ProfileScreen(authRepository, onLogout) }
         }
     }
 }
@@ -108,6 +113,12 @@ private fun CatalogBottomBar(navController: NavHostController) {
             onClick = { navController.navigateSingleTop(Routes.Providers) },
             icon = { Icon(Icons.Default.Search, contentDescription = null) },
             label = { Text("المهنيون") },
+        )
+        NavigationBarItem(
+            selected = currentRoute == Routes.Profile,
+            onClick = { navController.navigateSingleTop(Routes.Profile) },
+            icon = { Icon(Icons.Default.Person, contentDescription = null) },
+            label = { Text("حسابي") },
         )
     }
 }
@@ -256,11 +267,39 @@ private fun LoadingRow() { Row(modifier = Modifier.fillMaxWidth(), horizontalArr
 private fun EmptyState(text: String) { Text(text, modifier = Modifier.fillMaxWidth().padding(32.dp), color = MaterialTheme.colorScheme.onSurfaceVariant) }
 
 @Composable
-private fun ProfilePlaceholder(onLogout: () -> Unit) {
-    Column(modifier = Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+private fun ProfileScreen(authRepository: AuthRepository, onLogout: () -> Unit) {
+    val viewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.factory(authRepository))
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         Text("الملف الشخصي", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text("سيتم استكمال هذه الشاشة في المرحلة التالية.")
-        Spacer(Modifier.height(16.dp))
-        TextButton(onClick = onLogout) { Text("تسجيل الخروج") }
+        Text("إدارة بيانات حسابك ومعلومات التواصل", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        when {
+            state.loading -> LoadingRow()
+            state.user != null -> {
+                val user = state.user!!
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(user.name ?: "مستخدم فزعة", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text(user.phone ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(if (user.role == "provider") "مقدم خدمة" else "عميل", color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+                OutlinedTextField(state.name, viewModel::setName, modifier = Modifier.fillMaxWidth(), label = { Text("الاسم") }, singleLine = true)
+                OutlinedTextField(state.city, viewModel::setCity, modifier = Modifier.fillMaxWidth(), label = { Text("المدينة") }, singleLine = true)
+                OutlinedTextField(state.governorate, viewModel::setGovernorate, modifier = Modifier.fillMaxWidth(), label = { Text("المحافظة") }, singleLine = true)
+                OutlinedTextField(state.district, viewModel::setDistrict, modifier = Modifier.fillMaxWidth(), label = { Text("المديرية / المنطقة") }, singleLine = true)
+                OutlinedTextField(state.whatsapp, viewModel::setWhatsapp, modifier = Modifier.fillMaxWidth(), label = { Text("رقم الواتساب") }, singleLine = true)
+                Button(onClick = viewModel::save, enabled = !state.saving, modifier = Modifier.fillMaxWidth()) {
+                    Text(if (state.saving) "جارٍ الحفظ..." else "حفظ بيانات الحساب")
+                }
+                TextButton(onClick = onLogout, modifier = Modifier.fillMaxWidth()) { Text("تسجيل الخروج") }
+            }
+        }
+        state.message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
+        state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
     }
 }
