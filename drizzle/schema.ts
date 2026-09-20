@@ -141,6 +141,15 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
 }, table => ({ userIndex: index("notification_user_idx").on(table.userId), readIndex: index("notification_read_idx").on(table.isRead) }));
 
+export const pushTokens = pgTable("push_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull(),
+  token: varchar("token", { length: 2048 }).notNull().unique(),
+  platform: varchar("platform", { length: 16 }).default("android").notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow().notNull(),
+}, table => ({ userIndex: index("push_token_user_idx").on(table.userId) }));
+
 export const providerFavorites = pgTable("provider_favorites", {
   id: serial("id").primaryKey(),
   clientId: integer("clientId").notNull(),
@@ -156,4 +165,5 @@ export type ProviderVerificationDocument = typeof providerVerificationDocuments.
 export type ProviderSubscriptionPayment = typeof providerSubscriptionPayments.$inferSelect;
 export type ServiceRequest = typeof serviceRequests.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
+export type PushToken = typeof pushTokens.$inferSelect;
 export type ProviderFavorite = typeof providerFavorites.$inferSelect;

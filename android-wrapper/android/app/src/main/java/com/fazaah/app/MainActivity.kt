@@ -39,6 +39,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import com.google.firebase.messaging.FirebaseMessaging
 
 class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
@@ -47,6 +48,7 @@ class MainActivity : ComponentActivity() {
     private var pendingGeolocationOrigin: String? = null
     private var pendingNativeLocation = false
     private var nativeLocationListener: LocationListener? = null
+    private var fcmToken: String? = null
     private var backPressedOnce = false
     private val backHandler = Handler(Looper.getMainLooper())
     private val fileChooserRequestCode = 4101
@@ -61,6 +63,7 @@ class MainActivity : ComponentActivity() {
             pendingGeolocationOrigin = null
         }
     }
+    private val notificationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,6 +72,8 @@ class MainActivity : ComponentActivity() {
         clearWebSessionOnFirstInstall()
         setupWebView()
         setContentView(webView)
+        requestNotificationPermission()
+        initializePushNotifications()
         checkForAppUpdate()
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -87,6 +92,32 @@ class MainActivity : ComponentActivity() {
                 }
             }
         })
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    private fun initializePushNotifications() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) return@addOnCompleteListener
+            fcmToken = task.result
+            getSharedPreferences(FazaaFirebaseMessagingService.PREFS, MODE_PRIVATE)
+                .edit()
+                .putString(FazaaFirebaseMessagingService.FCM_TOKEN_KEY, task.result)
+                .apply()
+            registerPushTokenInWebView()
+        }
+    }
+
+    private fun registerPushTokenInWebView() {
+        val token = fcmToken ?: return
+        val quotedToken = JSONObject.quote(token)
+        webView.post { webView.evaluateJavascript("window.FazaaNativePushToken=$quotedToken; window.FazaaRegisterPushToken?.($quotedToken)", null) }
     }
 
     private fun checkForAppUpdate() {
@@ -247,11 +278,26 @@ class MainActivity : ComponentActivity() {
 
                 override fun onPageFinished(view: WebView, url: String) {
                     super.onPageFinished(view, url)
+                    val storedPushToken = fcmToken
+                        ?: getSharedPreferences(FazaaFirebaseMessagingService.PREFS, MODE_PRIVATE).getString(FazaaFirebaseMessagingService.FCM_TOKEN_KEY, null)
+                    val pushTokenScript = storedPushToken?.let { "window.FazaaNativePushToken=${JSONObject.quote(it)};" } ?: ""
                     view.evaluateJavascript("""
                         (function() {
+                          $pushTokenScript
                           const selectors = ['[class*="manus-badge"]','[id*="manus-badge"]','[class*="made-with-manus"]','[id*="made-with-manus"]','a[href*="manus.im"]','a[href*="manus.space"]'];
                           function clean(){ document.querySelectorAll(selectors.join(',')).forEach(e => e.remove()); }
                           clean(); new MutationObserver(clean).observe(document.documentElement,{childList:true,subtree:true});
+                          window.FazaaRegisterPushToken = function(pushToken) {
+                            const authToken = localStorage.getItem('fazaah_token');
+                            if (!authToken || !pushToken) return;
+                            fetch('/api/push-tokens', {method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+authToken}, body:JSON.stringify({token:pushToken,platform:'android'})}).catch(()=>{});
+                          };
+                          const originalSetItem = localStorage.setItem.bind(localStorage);
+                          localStorage.setItem = function(key, value) {
+                            originalSetItem(key, value);
+                            if (key === 'fazaah_token' && window.FazaaNativePushToken) window.FazaaRegisterPushToken(window.FazaaNativePushToken);
+                          };
+                          if (localStorage.getItem('fazaah_token') && window.FazaaNativePushToken) window.FazaaRegisterPushToken(window.FazaaNativePushToken);
                         })();
                     """.trimIndent(), null)
                 }
