@@ -38,6 +38,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
@@ -314,11 +315,11 @@ private fun ProfileScreen(authRepository: AuthRepository, onLogout: () -> Unit) 
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
+        modifier = Modifier.fillMaxSize().background(Color(0xFFF7F8FA)).verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("الملف الشخصي", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text("إدارة بيانات حسابك ومعلومات التواصل", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Surface(modifier = Modifier.fillMaxWidth().height(142.dp), color = MaterialTheme.colorScheme.primary) { Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 28.dp)) { Text("حسابي", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold); Text("إدارة حسابك ومعلوماتك الشخصية", color = Color.White.copy(alpha = .68f)) } }
+        Column(modifier = Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         when {
             state.loading -> LoadingRow()
             state.user != null -> {
@@ -339,9 +340,18 @@ private fun ProfileScreen(authRepository: AuthRepository, onLogout: () -> Unit) 
                     Text(if (state.saving) "جارٍ الحفظ..." else "حفظ بيانات الحساب")
                 }
                 TextButton(onClick = onLogout, modifier = Modifier.fillMaxWidth()) { Text("تسجيل الخروج") }
+                Card(modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color.White)) {
+                    Column {
+                        listOf("طلباتي", "المفضلة", "الإشعارات", "الإعدادات").forEachIndexed { index, label ->
+                            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) { Text(label, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium); Text("‹", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            if (index < 3) androidx.compose.material3.HorizontalDivider(color = Color(0xFFE5E9EE))
+                        }
+                    }
+                }
             }
         }
         state.message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        }
     }
 }
