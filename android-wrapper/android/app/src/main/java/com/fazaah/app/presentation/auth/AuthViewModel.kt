@@ -22,7 +22,10 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     fun setName(value: String) = _uiState.update { it.copy(name = value, message = null) }
     fun setLatitude(value: String) = _uiState.update { it.copy(latitude = value, message = null) }
     fun setLongitude(value: String) = _uiState.update { it.copy(longitude = value, message = null) }
-    fun setWhatsapp(value: String) = _uiState.update { it.copy(whatsapp = value.filter { char -> char.isDigit() || char == '+' }, message = null) }
+    fun setWhatsapp(value: String) = _uiState.update { it.copy(whatsapp = value.filter { char -> char.isDigit() }, message = null) }
+    fun setNationalId(value: String) = _uiState.update { it.copy(nationalId = value.filter(Char::isDigit).take(11), message = null) }
+    fun setYearsExperience(value: String) = _uiState.update { it.copy(yearsExperience = value.filter(Char::isDigit).take(2), message = null) }
+    fun setTermsAccepted(value: Boolean) = _uiState.update { it.copy(termsAccepted = value, message = null) }
     fun setCategoryId(value: Int?) = _uiState.update { it.copy(categoryId = value, message = null) }
     fun setSpecialty(value: String) = _uiState.update { it.copy(specialty = value, message = null) }
     fun setBio(value: String) = _uiState.update { it.copy(bio = value, message = null) }
@@ -67,10 +70,12 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
                 latitude = state.latitude.toDoubleOrNull(),
                 longitude = state.longitude.toDoubleOrNull(),
                 whatsapp = state.whatsapp.trim(),
+                nationalId = state.nationalId.trim(),
                 categoryId = state.categoryId,
                 specialty = state.specialty.trim(),
                 bio = state.bio.trim(),
-                termsAccepted = state.role == UserRole.PROVIDER,
+                yearsExperience = state.yearsExperience.toIntOrNull(),
+                termsAccepted = state.termsAccepted,
             ))
         }, onSuccess = { response ->
             viewModelScope.launch {

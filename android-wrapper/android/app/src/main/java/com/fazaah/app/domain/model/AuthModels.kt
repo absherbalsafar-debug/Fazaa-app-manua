@@ -23,6 +23,7 @@ data class VerifyOtpRequest(
     val governorate: String? = null,
     val district: String? = null,
     val whatsapp: String? = null,
+    val nationalId: String? = null,
     val categoryId: Int? = null,
     val specialty: String? = null,
     val bio: String? = null,

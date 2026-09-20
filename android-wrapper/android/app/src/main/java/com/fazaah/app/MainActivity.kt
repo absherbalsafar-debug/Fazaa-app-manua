@@ -325,27 +325,43 @@ private fun ProfileStep(state: AuthUiState, viewModel: AuthViewModel) {
         }
     }
     Spacer(Modifier.height(12.dp))
-    OutlinedTextField(state.name, viewModel::setName, label = { Text("الاسم الرباعي") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+    OutlinedTextField(state.name, viewModel::setName, placeholder = { Text("أدخل اسمك الرباعي") }, label = { Text("الاسم الرباعي *") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp))
     if (state.role == UserRole.PROVIDER) {
-        Spacer(Modifier.height(10.dp))
-        OutlinedTextField(state.whatsapp, viewModel::setWhatsapp, label = { Text("رقم واتساب") }, placeholder = { Text("أدخل رقم الواتساب") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(10.dp))
-        OutlinedTextField(state.specialty, viewModel::setSpecialty, label = { Text("التخصص الدقيق") }, placeholder = { Text("مثال: صيانة تمديدات المياه") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(10.dp))
-        OutlinedTextField(state.bio, viewModel::setBio, label = { Text("وصف الخبرة والخدمة") }, minLines = 3, modifier = Modifier.fillMaxWidth())
+        Surface(modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface, tonalElevation = 2.dp) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("التحقق من الهوية والتواصل", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                OutlinedTextField(state.nationalId, viewModel::setNationalId, placeholder = { Text("الرقم الوطني — 11 رقمًا") }, label = { Text("الرقم الوطني") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                OutlinedTextField(state.whatsapp, viewModel::setWhatsapp, placeholder = { Text("أدخل رقم الواتس اب") }, label = { Text("رقم واتساب") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        Surface(modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface, tonalElevation = 2.dp) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("اختر تخصصك أو مجالك", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                OutlinedTextField(state.specialty, viewModel::setSpecialty, placeholder = { Text("اكتب تخصصك الدقيق") }, label = { Text("التخصص الدقيق") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                OutlinedTextField(state.bio, viewModel::setBio, placeholder = { Text("اكتب وصف تخصصك أو مجالك، مثل: أقدم خدمات السباكة المنزلية وإصلاح التسربات...") }, label = { Text("وصف الخبرة والخدمة") }, minLines = 4, modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                OutlinedTextField(state.yearsExperience, viewModel::setYearsExperience, placeholder = { Text("سنوات الخبرة (اختياري)") }, label = { Text("سنوات الخبرة") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+            }
+        }
         Spacer(Modifier.height(10.dp))
         Button(onClick = { locationPermission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)) }, modifier = Modifier.fillMaxWidth()) { Text(if (state.latitude.isNotBlank()) "تم تحديد الموقع بدقة" else "السماح بتحديد موقع العمل") }
         Text(if (state.latitude.isNotBlank()) "${state.latitude}, ${state.longitude}" else "الموقع الدقيق مطلوب لاعتماد المهني", color = MaterialTheme.colorScheme.onSurfaceVariant)
         DocumentButton("الصورة الشخصية", state.selfieBase64 != null) { selfiePicker.launch("image/*") }
         DocumentButton("صورة الهوية — الأمام", state.idFrontBase64 != null) { frontPicker.launch("image/*") }
         DocumentButton("صورة الهوية — الخلف", state.idBackBase64 != null) { backPicker.launch("image/*") }
+        Surface(modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface, tonalElevation = 2.dp) {
+            Row(Modifier.padding(14.dp), verticalAlignment = Alignment.Top) {
+                androidx.compose.material3.Checkbox(checked = state.termsAccepted, onCheckedChange = viewModel::setTermsAccepted)
+                Text("أقر بأن بياناتي ومستنداتي صحيحة، وأوافق على مراجعتها وفق شروط منصة فزعة.", modifier = Modifier.padding(top = 10.dp), style = MaterialTheme.typography.bodySmall)
+            }
+        }
     } else {
         Spacer(Modifier.height(10.dp))
         Button(onClick = { locationPermission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)) }, modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)) { Text(if (state.latitude.isNotBlank()) "تم تحديد موقعك" else "حدد موقعك بدقة") }
         Text(if (state.latitude.isNotBlank()) "${state.latitude}, ${state.longitude}" else "الموقع مطلوب لعرض الخدمات القريبة منك", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth())
     }
     Spacer(Modifier.height(16.dp))
-    Button(enabled = !state.loading && state.name.trim().split(" ").filter(String::isNotBlank).size >= 4, onClick = viewModel::completeProfile, modifier = Modifier.fillMaxWidth()) { Text(if (state.role == UserRole.PROVIDER) "إرسال طلب اعتماد المهني" else "إكمال التسجيل") }
+    Button(enabled = !state.loading && state.name.trim().split(" ").filter(String::isNotBlank).size >= 4 && (state.role != UserRole.PROVIDER || state.termsAccepted), onClick = viewModel::completeProfile, modifier = Modifier.fillMaxWidth().height(58.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)) { Text(if (state.role == UserRole.PROVIDER) "إرسال طلب اعتماد المهني" else "إكمال التسجيل") }
 }
 
 @Composable
