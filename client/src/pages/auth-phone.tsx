@@ -53,7 +53,7 @@ export default function AuthPhone() {
   const [loading, setLoading] = useState(false);
   const [devOtp, setDevOtp] = useState<string | null>(null);
   const [otpSent, setOtpSent] = useState(false);
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const mode = new URLSearchParams(window.location.search).get("mode") === "login" ? "login" : "register";
@@ -185,13 +185,18 @@ export default function AuthPhone() {
         }),
       });
       login(data.token, role === "provider" ? { ...data.user, role: "provider" } : data.user);
-      if (role === "provider" && selfieFile && idFrontFile && idBackFile) {
-        for (const [type, file] of [["selfie", selfieFile], ["id_front", idFrontFile], ["id_back", idBackFile]] as const) {
-          await apiRequest("/providers/me/verification-documents/base64", {
-            method: "POST",
-            body: JSON.stringify({ type, originalName: file.name, contentType: file.type || "image/jpeg", dataBase64: await fileToDataUrl(file) }),
-          });
+      try {
+        if (role === "provider" && selfieFile && idFrontFile && idBackFile) {
+          for (const [type, file] of [["selfie", selfieFile], ["id_front", idFrontFile], ["id_back", idBackFile]] as const) {
+            await apiRequest("/providers/me/verification-documents/base64", {
+              method: "POST",
+              body: JSON.stringify({ type, originalName: file.name, contentType: file.type || "image/jpeg", dataBase64: await fileToDataUrl(file) }),
+            });
+          }
         }
+      } catch (uploadError) {
+        logout();
+        throw new Error(uploadError instanceof Error ? `تعذر رفع مستندات الاعتماد: ${uploadError.message}` : "تعذر رفع مستندات الاعتماد");
       }
       navigate(getFirstLoginPath(role));
     } catch (err: any) {

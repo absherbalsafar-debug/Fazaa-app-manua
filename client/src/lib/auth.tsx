@@ -39,8 +39,12 @@ export async function apiRequest(path: string, options: RequestInit = {}) {
     },
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || 'حدث خطأ ما');
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || 'حدث خطأ ما');
+    }
+    throw new Error(`تعذر الوصول إلى خدمة التسجيل (${res.status || 'غير معروف'})`);
   }
   return res.json();
 }

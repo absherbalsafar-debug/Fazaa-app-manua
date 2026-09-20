@@ -185,6 +185,22 @@ async function portfolioForProvider(providerId: number) {
 export function registerProviderCatalogRoutes(app: Express) {
   app.get("/api/categories", (_req, res) => res.json(categories));
 
+  app.get("/api/home-feed", async (req, res) => {
+    const query = parseQuery(req.query as Record<string, unknown>);
+    const [nearbyResult, topRatedResult, mostRequestedResult] = await Promise.all([
+      listProviders(query, query.lat !== undefined && query.lng !== undefined ? "distance" : "name"),
+      listProviders(query, "name"),
+      listProviders(query, "name"),
+    ]);
+    return res.json({
+      categories,
+      nearbyProviders: nearbyResult.providers.slice(0, 8),
+      topRatedProviders: topRatedResult.providers.slice(0, 8),
+      mostRequestedProviders: mostRequestedResult.providers.slice(0, 8),
+      recentRequests: [],
+    });
+  });
+
   app.get("/api/providers/me", async (req, res) => {
     const token = (req.headers.authorization ?? "").replace(/^Bearer\s+/, "");
     const db = await getDb();
