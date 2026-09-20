@@ -205,39 +205,95 @@ private fun FazaahAuthScreen(container: AppContainer, darkMode: Boolean, onToggl
 @Composable
 private fun WelcomeScreen(onStart: (UserRole) -> Unit, onSkip: () -> Unit, darkMode: Boolean, onToggleTheme: () -> Unit) {
     var page by rememberSaveable { mutableStateOf(0) }
-    val title = when (page) {
-        0 -> "أهلاً وسهلاً بك في فزعة"
-        1 -> "تواصل مباشرة مع المهني المناسب"
-        else -> "اختر كيف ستستخدم فزعة؟"
-    }
-    val description = when (page) {
-        0 -> "منصة توصلك بأفضل المهنيين والفنيين لإنجاز احتياجاتك بسهولة وسرعة."
-        1 -> "اختر نوع الخدمة، وتواصل مع أفضل المهنيين المعتمدين لإنجاز احتياجك بسهولة وأمان."
-        else -> "اختر دورك للبدء والاستفادة من خدمات منصة فزعة."
-    }
-    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            androidx.compose.material3.TextButton(onClick = onToggleTheme) { Text(if (darkMode) "نهاري" else "ليلي", color = MaterialTheme.colorScheme.secondary) }
-            Image(painterResource(com.fazaah.app.R.drawable.fazaah_logo), contentDescription = "شعار فزعة", modifier = Modifier.height(64.dp))
-            Text("●  ●", color = MaterialTheme.colorScheme.secondary)
-        }
-        Spacer(Modifier.height(24.dp))
-        Image(painterResource(com.fazaah.app.R.drawable.fazaah_logo), contentDescription = null, modifier = Modifier.height(170.dp))
-        Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-        Spacer(Modifier.height(10.dp))
-        Text(description, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-        Spacer(Modifier.height(28.dp))
+    var selectedRole by rememberSaveable { mutableStateOf(UserRole.CLIENT) }
+    Box(modifier = Modifier.fillMaxSize()) {
         if (page < 2) {
-            Button(onClick = { page += 1 }, modifier = Modifier.fillMaxWidth().height(54.dp)) { Text(if (page == 0) "لنبدأ" else "التالي", fontWeight = FontWeight.Bold) }
-        } else {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Button(onClick = { onStart(UserRole.CLIENT) }, modifier = Modifier.weight(1f).height(54.dp)) { Text("أبحث عن خدمة") }
-                androidx.compose.material3.OutlinedButton(onClick = { onStart(UserRole.PROVIDER) }, modifier = Modifier.weight(1f).height(54.dp)) { Text("أقدم خدمة") }
+            Column(modifier = Modifier.fillMaxSize()) {
+                Spacer(Modifier.weight(0.76f))
+                Surface(modifier = Modifier.fillMaxWidth().weight(0.24f), color = Color(0xFF182D53)) {}
             }
         }
-        Spacer(Modifier.height(16.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { repeat(3) { index -> androidx.compose.material3.Surface(modifier = Modifier.height(8.dp).width(if (index == page) 32.dp else 8.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(50), color = if (index == page) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant) {} } }
-        TextButton(onClick = onSkip) { Text("تخطي") }
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                if (page > 0) IconButton(onClick = { page -= 1 }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "العودة", tint = MaterialTheme.colorScheme.primary) } else Text("9:41", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Image(painterResource(com.fazaah.app.R.drawable.fazaah_logo), contentDescription = "شعار فزعة", modifier = Modifier.height(76.dp).width(100.dp))
+                TextButton(onClick = onToggleTheme) { Text(if (darkMode) "نهاري" else "ليلي", color = MaterialTheme.colorScheme.secondary, fontSize = 11.sp) }
+            }
+            if (page == 0) {
+                Surface(shape = androidx.compose.foundation.shape.RoundedCornerShape(50), color = MaterialTheme.colorScheme.secondary.copy(alpha = .18f)) { Text("✦  خدمة تستحق الثقة", modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp), color = Color(0xFFB57920), fontSize = 11.sp, fontWeight = FontWeight.Bold) }
+                Text("أهلاً وسهلاً بك في", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(top = 14.dp))
+                Text("فزعة", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Black, color = Color(0xFFB57920))
+                Text("منصة توصلك بأفضل المهنيين والفنيين لإنجاز احتياجاتك بسهولة وسرعة.", color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center, lineHeight = 26.sp, modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp))
+                NativePhonePreview(detailed = false)
+                BenefitsRow()
+            } else if (page == 1) {
+                Text("تواصل مباشرة مع", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(top = 8.dp))
+                Text("المهني المناسب", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black, color = Color(0xFFB57920))
+                Text("اختر نوع الخدمة، وتواصل مع أفضل المهنيين المعتمدين لإنجاز احتياجك بسهولة وأمان.", color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center, lineHeight = 26.sp, modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp))
+                NativePhonePreview(detailed = true)
+                BenefitsRow()
+            } else {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text("الخطوة الأخيرة", color = Color(0xFFB57920), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                    Text("اختر كيف ستستخدم فزعة؟", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 10.dp))
+                    Text("يمكنك اختيار الطريقة الأنسب لك الآن.", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp, bottom = 18.dp))
+                    WelcomeRoleCard(UserRole.CLIENT, selectedRole, "أبحث عن خدمة", "أصل إلى الشخص المناسب بثقة", "اطلب، تابع، وقيّم تجربتك من مكان واحد") { selectedRole = UserRole.CLIENT }
+                    Spacer(Modifier.height(12.dp))
+                    WelcomeRoleCard(UserRole.PROVIDER, selectedRole, "أقدّم خدمة", "أحوّل خبرتي إلى فرص حقيقية", "اعرض مهارتك واستقبل طلبات من حولك") { selectedRole = UserRole.PROVIDER }
+                    Text("ابدأ بطريقتك المفضلة", modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                    Button(onClick = { onStart(selectedRole) }, modifier = Modifier.fillMaxWidth().height(56.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp)) { Icon(Icons.Default.Phone, contentDescription = null, tint = MaterialTheme.colorScheme.secondary); Spacer(Modifier.width(8.dp)); Text("التسجيل برقم الهاتف", fontWeight = FontWeight.Bold) }
+                    androidx.compose.material3.OutlinedButton(onClick = {}, modifier = Modifier.fillMaxWidth().height(50.dp).padding(top = 4.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp)) { Text("المتابعة باستخدام جوجل") }
+                    androidx.compose.material3.OutlinedButton(onClick = {}, modifier = Modifier.fillMaxWidth().height(50.dp).padding(top = 4.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp)) { Text("التسجيل بالبريد الإلكتروني") }
+                    TextButton(onClick = { onStart(selectedRole) }, modifier = Modifier.fillMaxWidth()) { Text("لديك حساب بالفعل؟ تسجيل الدخول برقم الهاتف", color = Color(0xFFB57920), fontSize = 12.sp) }
+                }
+            }
+            Spacer(Modifier.weight(1f))
+            if (page < 2) Button(onClick = { page += 1 }, modifier = Modifier.fillMaxWidth().height(56.dp), colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary, contentColor = Color(0xFF182D53)), shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp)) { Text(if (page == 0) "لنبدأ" else "التالي", fontWeight = FontWeight.Black) }
+            Spacer(Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { repeat(3) { index -> Surface(modifier = Modifier.height(8.dp).width(if (index == page) 32.dp else 8.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(50), color = if (index == page) MaterialTheme.colorScheme.secondary else Color(0xFFC8D3E1)) {} } }
+            if (page < 2) TextButton(onClick = onSkip) { Text("تخطي", color = if (darkMode) Color.White.copy(alpha=.75f) else Color(0xFF637087)) }
+        }
+    }
+}
+
+@Composable
+private fun NativePhonePreview(detailed: Boolean) {
+    Surface(modifier = Modifier.padding(vertical = 10.dp).width(250.dp).height(260.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(34.dp), color = Color(0xFF182D53), shadowElevation = 14.dp) {
+        Surface(modifier = Modifier.padding(8.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(27.dp), color = Color(0xFFF7F8FA)) {
+            Column(Modifier.padding(14.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) { Image(painterResource(com.fazaah.app.R.drawable.fazaah_logo), contentDescription = null, modifier = Modifier.height(38.dp)); Surface(shape = androidx.compose.foundation.shape.RoundedCornerShape(50), color = Color.White) { Text("♙", modifier = Modifier.padding(8.dp), color = Color(0xFF182D53)) } }
+                if (detailed) {
+                    Text("مرحباً بك في فزعة", fontSize = 10.sp, color = Color(0xFF637087), modifier = Modifier.padding(top = 12.dp))
+                    Surface(color = Color.White, shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("⌕  ابحث عن خدمة أو مهني", modifier = Modifier.padding(10.dp), color = Color(0xFF8C897F), fontSize = 9.sp) }
+                    Text("ما الخدمة التي تحتاجها؟", fontWeight = FontWeight.Black, fontSize = 12.sp, color = Color(0xFF182D53), modifier = Modifier.padding(top = 12.dp))
+                    Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) { listOf("سباكة","كهرباء","تكييف","برمجة").forEach { item -> Surface(modifier = Modifier.weight(1f), color = Color.White, shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp)) { Text(item, modifier = Modifier.padding(vertical = 12.dp, horizontal = 2.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = Color(0xFF60728A), fontSize = 7.sp) } } }
+                } else {
+                    Surface(color = Color(0xFF182D53), shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth().padding(top = 20.dp)) { Column(Modifier.padding(14.dp)) { Text("خدماتك أقرب", color = Color(0xFFF0B046), fontSize = 10.sp); Text("الشخص المناسب\nفي الوقت المناسب", color = Color.White, fontWeight = FontWeight.Black, fontSize = 19.sp, lineHeight = 25.sp, modifier = Modifier.padding(top = 7.dp)); Text("●  فزعة توصلك بثقة", color = Color.White.copy(alpha=.68f), fontSize = 8.sp, modifier = Modifier.padding(top = 18.dp)) } }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BenefitsRow() {
+    Surface(modifier = Modifier.fillMaxWidth(), color = Color.White.copy(alpha=.92f), shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp), shadowElevation = 3.dp) {
+        Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalArrangement = Arrangement.SpaceEvenly) { listOf("♙\nمهنيون محترفون", "◷\nتواصل سريع", "✓\nموثوقون").forEach { Text(it, color = Color(0xFF182D53), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 9.sp) } }
+    }
+}
+
+@Composable
+private fun WelcomeRoleCard(role: UserRole, selected: UserRole, title: String, description: String, detail: String, onClick: () -> Unit) {
+    val active = role == selected
+    Card(onClick = onClick, modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = if (active) Color(0xFF182D53) else MaterialTheme.colorScheme.surface), border = androidx.compose.foundation.BorderStroke(1.dp, if (active) Color(0xFF182D53) else MaterialTheme.colorScheme.outlineVariant)) {
+        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Surface(modifier = Modifier.width(56.dp).height(56.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(17.dp), color = if (active) Color(0xFFF0B046) else Color(0xFFFFF4D2)) { Box(contentAlignment = Alignment.Center) { Text(if (role == UserRole.PROVIDER) "▣" else "♙", fontSize = 24.sp, color = Color(0xFF182D53)) } }
+            Column(Modifier.weight(1f).padding(horizontal = 14.dp)) { Text(title, fontWeight = FontWeight.Bold, color = if (active) Color.White else MaterialTheme.colorScheme.primary); Text(description, fontSize = 12.sp, color = if (active) Color.White.copy(alpha=.7f) else MaterialTheme.colorScheme.onSurfaceVariant); Text(detail, fontSize = 10.sp, color = Color(0xFFF0B046), modifier = Modifier.padding(top = 4.dp)) }
+            Text(if (active) "✓" else "○", color = if (active) Color(0xFFF0B046) else MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
