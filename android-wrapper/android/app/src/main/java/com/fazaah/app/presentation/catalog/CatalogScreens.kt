@@ -202,25 +202,24 @@ private fun ServicesScreen(state: CatalogUiState, viewModel: CatalogViewModel, n
 
 @Composable
 private fun ProvidersScreen(state: CatalogUiState, viewModel: CatalogViewModel, navController: NavHostController) {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("قائمة المهنيين", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(10.dp))
-        OutlinedTextField(value = state.search, onValueChange = viewModel::setSearch, modifier = Modifier.fillMaxWidth(), singleLine = true, leadingIcon = { Icon(Icons.Default.Search, null) }, label = { Text("ابحث عن مهني أو خدمة") })
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(selected = state.selectedCategoryId == null, onClick = { viewModel.selectCategory(null) }, label = { Text("الكل") })
-            state.categories.take(3).forEach { category -> FilterChip(selected = state.selectedCategoryId == category.id, onClick = { viewModel.selectCategory(category.id) }, label = { Text(category.name) }) }
+    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF7F8FA))) {
+        Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primary).padding(horizontal = 16.dp, vertical = 18.dp)) {
+            Text("استعرض المهنيين", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(10.dp))
+            OutlinedTextField(value = state.search, onValueChange = viewModel::setSearch, modifier = Modifier.fillMaxWidth(), singleLine = true, leadingIcon = { Icon(Icons.Default.Search, null) }, placeholder = { Text("ابحث عن مهني أو خدمة...") }, shape = RoundedCornerShape(14.dp), colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(unfocusedContainerColor = MaterialTheme.colorScheme.background, focusedContainerColor = MaterialTheme.colorScheme.background))
         }
-        Spacer(Modifier.height(8.dp))
-        Button(onClick = viewModel::search, enabled = !state.isLoading, modifier = Modifier.fillMaxWidth()) {
-            Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(6.dp)); Text("تحديث النتائج")
-        }
-        Spacer(Modifier.height(10.dp))
-        if (state.isLoading) LoadingRow()
-        state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        LazyColumn(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 14.dp)) {
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = state.selectedCategoryId == null, onClick = { viewModel.selectCategory(null) }, label = { Text("الكل") })
+                    state.categories.take(3).forEach { category -> FilterChip(selected = state.selectedCategoryId == category.id, onClick = { viewModel.selectCategory(category.id) }, label = { Text(category.name) }) }
+                }
+            }
+            item { Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(if (state.isLoading) "جاري البحث..." else "${state.providers.size} مهني", color = MaterialTheme.colorScheme.onSurfaceVariant); if (state.selectedCategoryId != null) Text("فلتر مفعّل", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) } }
+            if (state.isLoading) item { LoadingRow() }
+            state.error?.let { error -> item { Text(error, color = MaterialTheme.colorScheme.error) } }
             items(state.providers) { provider -> ProviderCard(provider) { navController.navigate("${Routes.Providers}/${provider.id}") } }
-            if (state.providers.isEmpty() && !state.isLoading) item { EmptyState("لا توجد نتائج مطابقة") }
+            if (state.providers.isEmpty() && !state.isLoading) item { EmptyState("لا توجد نتائج مطابقة\nجرّب تغيير معايير البحث") }
         }
     }
 }
