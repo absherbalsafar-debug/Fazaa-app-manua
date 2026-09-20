@@ -440,14 +440,25 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun logoutFromWebView() {
-        webView.evaluateJavascript("localStorage.clear(); sessionStorage.clear();", null)
-        WebStorage.getInstance().deleteAllData()
+        // امسح بيانات الجلسة والحساب فقط، واحتفظ بتفضيل الوضع النهاري/الليلي.
+        // مسح WebStorage بالكامل هنا كان يعيد التطبيق إلى الوضع الافتراضي عند الخروج.
+        webView.evaluateJavascript("""
+            (function() {
+              const theme = localStorage.getItem('fazaah-theme');
+              Object.keys(localStorage).forEach((key) => localStorage.removeItem(key));
+              if (theme) localStorage.setItem('fazaah-theme', theme);
+              sessionStorage.clear();
+            })();
+        """.trimIndent(), null)
         CookieManager.getInstance().removeAllCookies(null)
         CookieManager.getInstance().flush()
         webView.clearCache(true)
         webView.clearHistory()
-        webView.loadUrl(BuildConfig.WEB_APP_URL)
-        Toast.makeText(this, "تم تسجيل الخروج", Toast.LENGTH_SHORT).show()
+        webView.evaluateJavascript("localStorage.getItem('fazaah-theme');") {
+            // لا نعيد تحميل WebView إلا بعد انتهاء عملية حفظ تفضيل الثيم.
+            webView.loadUrl(BuildConfig.WEB_APP_URL)
+            Toast.makeText(this, "تم تسجيل الخروج", Toast.LENGTH_SHORT).show()
+        }
     }
 
     @Deprecated("Use Activity Result API")
