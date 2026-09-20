@@ -261,21 +261,12 @@ private fun WelcomeScreen(onStart: (UserRole) -> Unit, onSkip: () -> Unit, darkM
 
 @Composable
 private fun NativePhonePreview(detailed: Boolean) {
-    Surface(modifier = Modifier.padding(vertical = 10.dp).width(250.dp).height(260.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(34.dp), color = Color(0xFF182D53), shadowElevation = 14.dp) {
-        Surface(modifier = Modifier.padding(8.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(27.dp), color = Color(0xFFF7F8FA)) {
-            Column(Modifier.padding(14.dp)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) { Image(painterResource(com.fazaah.app.R.drawable.fazaah_logo), contentDescription = null, modifier = Modifier.height(38.dp)); Surface(shape = androidx.compose.foundation.shape.RoundedCornerShape(50), color = Color.White) { Text("♙", modifier = Modifier.padding(8.dp), color = Color(0xFF182D53)) } }
-                if (detailed) {
-                    Text("مرحباً بك في فزعة", fontSize = 10.sp, color = Color(0xFF637087), modifier = Modifier.padding(top = 12.dp))
-                    Surface(color = Color.White, shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("⌕  ابحث عن خدمة أو مهني", modifier = Modifier.padding(10.dp), color = Color(0xFF8C897F), fontSize = 9.sp) }
-                    Text("ما الخدمة التي تحتاجها؟", fontWeight = FontWeight.Black, fontSize = 12.sp, color = Color(0xFF182D53), modifier = Modifier.padding(top = 12.dp))
-                    Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) { listOf("سباكة","كهرباء","تكييف","برمجة").forEach { item -> Surface(modifier = Modifier.weight(1f), color = Color.White, shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp)) { Text(item, modifier = Modifier.padding(vertical = 12.dp, horizontal = 2.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = Color(0xFF60728A), fontSize = 7.sp) } } }
-                } else {
-                    Surface(color = Color(0xFF182D53), shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth().padding(top = 20.dp)) { Column(Modifier.padding(14.dp)) { Text("خدماتك أقرب", color = Color(0xFFF0B046), fontSize = 10.sp); Text("الشخص المناسب\nفي الوقت المناسب", color = Color.White, fontWeight = FontWeight.Black, fontSize = 19.sp, lineHeight = 25.sp, modifier = Modifier.padding(top = 7.dp)); Text("●  فزعة توصلك بثقة", color = Color.White.copy(alpha=.68f), fontSize = 8.sp, modifier = Modifier.padding(top = 18.dp)) } }
-                }
-            }
-        }
-    }
+    Image(
+        painter = painterResource(com.fazaah.app.R.drawable.fazaah_hero),
+        contentDescription = if (detailed) "معاينة خدمات فزعة" else "معاينة تطبيق فزعة",
+        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+        modifier = Modifier.padding(top = 6.dp, bottom = 2.dp).width(286.dp).height(330.dp),
+    )
 }
 
 @Composable
