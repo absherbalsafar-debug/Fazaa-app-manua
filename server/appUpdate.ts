@@ -1,13 +1,16 @@
 import type { Express } from "express";
 
 const DEFAULT_UPDATE = {
-  versionCode: 9,
-  versionName: "1.4.0",
-  downloadUrl: "https://github.com/absherbalsafar-debug/Fazaa-app-manua/releases/download/v1.4.0/FAZAAH-Android.apk",
+  versionCode: 10,
+  versionName: "1.5.0",
+  downloadUrl: "https://github.com/absherbalsafar-debug/Fazaa-app-manua/releases/download/v1.5.0/FAZAAH-v1.5.0-provider-ux-fix.apk",
   forceUpdate: false,
-  title: "تحديث جديد يدعم الإشعارات الفورية",
-  message: "تحديث 1.4.0 يتضمن تفعيل إشعارات القبول والرفض للمهنيين وربط Firebase Cloud Messaging.",
+  title: "تحديث جديد في تطبيق فزعة",
+  message: "تحديث 1.5.0 يحسن تسجيل المهني والوضع الليلي ويصلح شاشة الاشتراك والإعلانات.",
   releaseNotes: [
+    "إخفاء نموذج البيانات بعد إرسال طلب اعتماد المهني بنجاح",
+    "تحسين ترتيب وتباين شاشة الترحيب واللوحة في الوضع الليلي",
+    "إصلاح تحميل شاشة الاشتراك والإعلانات ومساراتها الخلفية",
     "تفعيل الإشعارات الفورية الحقيقية عبر Firebase Cloud Messaging",
     "إشعار فوري وتنبيه للمهني عند قبول أو رفض طلب الاعتماد",
     "تحسين تجربة تسجيل المهني ورفع المستندات",
