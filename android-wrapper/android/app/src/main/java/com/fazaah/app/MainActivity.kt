@@ -128,7 +128,7 @@ private fun FazaahAuthScreen(preferences: android.content.SharedPreferences) {
         if (step != AuthStep.PHONE) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
                 IconButton(onClick = { step = if (step == AuthStep.PROFILE) AuthStep.OTP else AuthStep.PHONE }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "رجوع")
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "رجوع")
                 }
             }
         }
