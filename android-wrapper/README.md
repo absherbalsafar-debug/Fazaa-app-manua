@@ -1,25 +1,57 @@
-# فزعة Android الأصلي
+# تطبيق فزعة Android الأصلي
 
-يحتوي هذا المجلد على أول مرحلة من إعادة كتابة تطبيق Android باستخدام **Kotlin وJetpack Compose** بدل Capacitor/WebView.
+هذا المجلد يحتوي على تطبيق Android أصلي مكتوب بـ **Kotlin وJetpack Compose**، مع الإبقاء على الخادم وقاعدة البيانات وواجهات API الحالية المشتركة مع منصة الويب.
+
+## البنية الحالية
+
+```text
+android/app/src/main/java/com/fazaah/app/
+├── data/
+│   ├── api/          # Retrofit وOkHttp وعقود API
+│   ├── local/        # DataStore والجلسة المحلية
+│   └── repository/   # عزل مصادر البيانات عن الواجهة
+├── domain/model/     # نماذج المجال وطلبات المصادقة
+├── presentation/
+│   └── navigation/   # مسارات التطبيق الأصلية
+├── ui/
+│   ├── components/   # مكونات Compose المشتركة
+│   └── theme/        # مساحة هوية وتصميم التطبيق
+├── AppContainer.kt   # حاوية الاعتماديات
+└── MainActivity.kt   # نقطة التشغيل الحالية وشاشات المصادقة الأولية
+```
+
+## المكتبات الأساسية
+
+- Kotlin وJetpack Compose وMaterial 3.
+- Retrofit وGson للاتصال بواجهات API.
+- OkHttp مع Interceptor لإرسال جلسة Bearer.
+- Kotlin Coroutines.
+- Navigation Compose للمرحلة التالية من نقل الشاشات.
+- DataStore Preferences للجلسة المحلية.
+- ViewModel وLifecycle Compose.
 
 ## الحالة الحالية
 
-تتضمن النسخة الأصلية شاشة رقم الهاتف، اختيار نوع الحساب، إرسال والتحقق من OTP عبر API الخادم الحالي، إكمالًا أوليًا لملف العميل، حفظ الجلسة محليًا، وشاشة نجاح وتسجيل خروج. سيتم ترحيل بقية شاشات ووظائف التطبيق تدريجيًا مع إبقاء الخادم وقاعدة البيانات الحاليين.
+تتضمن النسخة الحالية تسجيل الدخول برقم الهاتف، إرسال والتحقق من OTP، إنشاء الملف الأساسي، حفظ الجلسة، وتسجيل الخروج. تم فصل اتصال الشبكة إلى `FazaaApi` و`AuthRepository`، وأصبح المشروع جاهزًا لإضافة شاشات العميل والمهني تدريجيًا دون وضع طلبات HTTP داخل Composable.
 
 ## المتطلبات
 
-- Android Studio حديث.
 - Android SDK 35 مع `platforms;android-35` و`build-tools;35.0.0`.
 - JDK 17 أو أحدث.
+- Android Studio حديث.
 
 ## البناء
 
 من مجلد `android-wrapper/android`:
 
 ```bash
-./gradlew assembleDebug
+./gradlew clean assembleDebug
 ```
 
-ينتج APK في `android/app/build/outputs/apk/debug/app-debug.apk`.
+ينتج APK في:
 
-لا تضف `local.properties` إلى Git لأنه يحتوي على مسار Android SDK المحلي. عنوان API مضبوط في `app/build.gradle` عبر `BuildConfig.API_BASE_URL`، ويجب نقله إلى إعدادات build variants قبل الإنتاج.
+```text
+android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+لا تضف `local.properties` إلى Git لأنه يحتوي على مسار Android SDK المحلي. عنوان API مضبوط في `app/build.gradle` عبر `BuildConfig.API_BASE_URL`، ويجب نقله إلى إعدادات build variants قبل إصدار Production.

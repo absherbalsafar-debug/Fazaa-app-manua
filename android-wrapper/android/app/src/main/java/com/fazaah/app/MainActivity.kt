@@ -41,48 +41,24 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.fazaah.app.data.repository.AuthRepository
+import com.fazaah.app.domain.model.VerifyOtpRequest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
 
 private enum class AuthStep { PHONE, OTP, PROFILE, HOME }
 private enum class Role { CLIENT, PROVIDER }
 
-private data class ApiResult(val json: JSONObject)
-
-private class AuthApi {
-    private val baseUrl = BuildConfig.API_BASE_URL
-
-    fun post(path: String, body: JSONObject): ApiResult {
-        val connection = (URL("$baseUrl$path").openConnection() as HttpURLConnection).apply {
-            requestMethod = "POST"
-            connectTimeout = 15_000
-            readTimeout = 15_000
-            doOutput = true
-            setRequestProperty("Content-Type", "application/json")
-        }
-        connection.outputStream.use { it.write(body.toString().toByteArray()) }
-        val stream = if (connection.responseCode in 200..299) connection.inputStream else connection.errorStream
-        val response = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
-        val json = if (response.isBlank()) JSONObject() else JSONObject(response)
-        if (connection.responseCode !in 200..299) {
-            throw IllegalStateException(json.optString("error", "حدث خطأ في الاتصال بالخادم"))
-        }
-        return ApiResult(json)
-    }
-}
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val container = AppContainer(applicationContext)
         setContent {
             androidx.compose.runtime.CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MaterialTheme {
                     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                        FazaahAuthScreen(getSharedPreferences("auth", Context.MODE_PRIVATE))
+                        FazaahAuthScreen(getSharedPreferences("auth", Context.MODE_PRIVATE), container.authRepository)
                     }
                 }
             }
@@ -91,9 +67,8 @@ class MainActivity : ComponentActivity() {
 }
 
 @androidx.compose.runtime.Composable
-private fun FazaahAuthScreen(preferences: android.content.SharedPreferences) {
+private fun FazaahAuthScreen(preferences: android.content.SharedPreferences, authRepository: AuthRepository) {
     val scope = rememberCoroutineScope()
-    val api = remember { AuthApi() }
     var step by remember { mutableStateOf(AuthStep.PHONE) }
     var role by remember { mutableStateOf(Role.CLIENT) }
     var phone by remember { mutableStateOf("") }
@@ -105,13 +80,13 @@ private fun FazaahAuthScreen(preferences: android.content.SharedPreferences) {
     var message by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
 
-    fun runRequest(request: () -> ApiResult, onSuccess: (JSONObject) -> Unit) {
+    fun <T> runRequest(request: suspend () -> T, onSuccess: (T) -> Unit) {
         loading = true
         message = null
         scope.launch {
             try {
                 val result = withContext(Dispatchers.IO) { request() }
-                onSuccess(result.json)
+                onSuccess(result)
             } catch (error: Exception) {
                 message = error.message ?: "تعذر تنفيذ الطلب"
             } finally {
@@ -159,8 +134,8 @@ private fun FazaahAuthScreen(preferences: android.content.SharedPreferences) {
                 OutlinedTextField(phone, { phone = it.filter(Char::isDigit) }, label = { Text("رقم الهاتف") }, placeholder = { Text("7XXXXXXXX") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(16.dp))
                 Button(enabled = !loading && phone.length >= 9, onClick = {
-                    runRequest({ api.post("/auth/send-otp", JSONObject().put("phone", phone).put("role", role.name.lowercase()).put("mode", "login")) }) { result ->
-                        developmentOtp = result.optString("otp").takeIf { it.isNotBlank() }
+                    runRequest({ authRepository.sendOtp(phone, role.name.lowercase(), "login") }) { result ->
+                        developmentOtp = result.otp
                         step = AuthStep.OTP
                     }
                 }, modifier = Modifier.fillMaxWidth()) {
@@ -177,9 +152,9 @@ private fun FazaahAuthScreen(preferences: android.content.SharedPreferences) {
                 }
                 Spacer(Modifier.height(16.dp))
                 Button(enabled = !loading && code.length == 6, onClick = {
-                    runRequest({ api.post("/auth/verify-otp", JSONObject().put("phone", phone).put("code", code).put("role", role.name.lowercase()).put("mode", "login")) }) { result ->
-                        if (result.optBoolean("needsRegistration")) step = AuthStep.PROFILE else {
-                            preferences.edit().putString("token", result.optString("token")).apply()
+                    runRequest({ authRepository.verifyOtp(VerifyOtpRequest(phone = phone, code = code, role = role.name.lowercase(), mode = "login")) }) { result ->
+                        if (result.needsRegistration) step = AuthStep.PROFILE else {
+                            result.token?.let { preferences.edit().putString("token", it).apply() }
                             step = AuthStep.HOME
                         }
                     }
@@ -198,8 +173,8 @@ private fun FazaahAuthScreen(preferences: android.content.SharedPreferences) {
                 }
                 Spacer(Modifier.height(16.dp))
                 Button(enabled = !loading && name.trim().split(" ").filter(String::isNotBlank).size >= 4, onClick = {
-                    runRequest({ api.post("/auth/verify-otp", JSONObject().put("phone", phone).put("code", code).put("name", name).put("role", role.name.lowercase()).put("mode", "register").put("latitude", latitude.toDoubleOrNull()).put("longitude", longitude.toDoubleOrNull())) }) { result ->
-                        preferences.edit().putString("token", result.optString("token")).apply()
+                    runRequest({ authRepository.verifyOtp(VerifyOtpRequest(phone = phone, code = code, name = name.trim(), role = role.name.lowercase(), mode = "register", latitude = latitude.toDoubleOrNull(), longitude = longitude.toDoubleOrNull())) }) { result ->
+                        result.token?.let { preferences.edit().putString("token", it).apply() }
                         step = AuthStep.HOME
                     }
                 }, modifier = Modifier.fillMaxWidth()) { Text("إكمال التسجيل") }
@@ -209,7 +184,7 @@ private fun FazaahAuthScreen(preferences: android.content.SharedPreferences) {
                 Spacer(Modifier.height(12.dp))
                 Text("هذه أول شاشة أصلية بـ Kotlin. سيتم ترحيل بقية وظائف التطبيق إليها تدريجيًا.")
                 Spacer(Modifier.height(20.dp))
-                Button(onClick = { preferences.edit().remove("token").apply(); step = AuthStep.PHONE }, modifier = Modifier.fillMaxWidth()) { Text("تسجيل الخروج") }
+                Button(onClick = { scope.launch { authRepository.logout(); preferences.edit().remove("token").apply(); step = AuthStep.PHONE } }, modifier = Modifier.fillMaxWidth()) { Text("تسجيل الخروج") }
             }
         }
 
