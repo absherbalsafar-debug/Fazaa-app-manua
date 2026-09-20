@@ -7,6 +7,10 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color as AndroidColor
 import android.graphics.drawable.ColorDrawable
+import android.location.Criteria
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -14,6 +18,7 @@ import android.os.Looper
 import android.view.View
 import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
+import android.webkit.JavascriptInterface
 import android.webkit.PermissionRequest
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -36,14 +41,21 @@ class MainActivity : ComponentActivity() {
     private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
     private var pendingGeolocation: GeolocationPermissions.Callback? = null
     private var pendingGeolocationOrigin: String? = null
+    private var pendingNativeLocation = false
+    private var nativeLocationListener: LocationListener? = null
     private var backPressedOnce = false
     private val backHandler = Handler(Looper.getMainLooper())
     private val fileChooserRequestCode = 4101
     private val locationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
         val granted = result.values.any { it }
-        pendingGeolocation?.invoke(pendingGeolocationOrigin, granted, false)
-        pendingGeolocation = null
-        pendingGeolocationOrigin = null
+        if (pendingNativeLocation) {
+            pendingNativeLocation = false
+            if (granted) requestNativeLocation() else sendNativeLocationError("تم رفض إذن الموقع")
+        } else {
+            pendingGeolocation?.invoke(pendingGeolocationOrigin, granted, false)
+            pendingGeolocation = null
+            pendingGeolocationOrigin = null
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,6 +94,69 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun hasLocationPermission(): Boolean =
+        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
+    private inner class NativeLocationBridge {
+        @JavascriptInterface
+        fun requestLocation() {
+            runOnUiThread { requestNativeLocation() }
+        }
+    }
+
+    private fun requestNativeLocation() {
+        if (!hasLocationPermission()) {
+            pendingNativeLocation = true
+            locationPermissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+            return
+        }
+        val manager = getSystemService(LOCATION_SERVICE) as LocationManager
+        val criteria = Criteria().apply {
+            accuracy = Criteria.ACCURACY_FINE
+            powerRequirement = Criteria.POWER_HIGH
+        }
+        val provider = manager.getBestProvider(criteria, true)
+            ?: listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER).firstOrNull { manager.isProviderEnabled(it) }
+        if (provider == null) {
+            sendNativeLocationError("فعّل خدمة الموقع في إعدادات الهاتف ثم حاول مرة أخرى")
+            return
+        }
+        val last = runCatching { manager.getLastKnownLocation(provider) }.getOrNull()
+        if (last != null && System.currentTimeMillis() - last.time < 5 * 60 * 1000L) {
+            sendNativeLocation(last)
+            return
+        }
+        nativeLocationListener?.let { runCatching { manager.removeUpdates(it) } }
+        val listener = object : LocationListener {
+            override fun onLocationChanged(location: Location) {
+                nativeLocationListener = null
+                runCatching { manager.removeUpdates(this) }
+                sendNativeLocation(location)
+            }
+        }
+        nativeLocationListener = listener
+        runCatching {
+            manager.requestLocationUpdates(provider, 0L, 0f, listener, Looper.getMainLooper())
+            backHandler.postDelayed({
+                if (nativeLocationListener === listener) {
+                    nativeLocationListener = null
+                    runCatching { manager.removeUpdates(listener) }
+                    sendNativeLocationError("تعذر الحصول على موقعك الحالي، حاول مرة أخرى")
+                }
+            }, 15000L)
+        }.onFailure { sendNativeLocationError("تعذر تشغيل خدمة الموقع") }
+    }
+
+    private fun sendNativeLocation(location: Location) {
+        webView.post { webView.evaluateJavascript("window.FazaaNativeLocationCallback?.(${location.latitude},${location.longitude},null)", null) }
+    }
+
+    private fun sendNativeLocationError(message: String) {
+        val safe = message.replace("\\", "\\\\").replace("'", "\\'")
+        webView.post { webView.evaluateJavascript("window.FazaaNativeLocationCallback?.(null,null,'$safe')", null) }
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
         webView = WebView(this).apply {
@@ -103,6 +178,7 @@ class MainActivity : ComponentActivity() {
             }
             CookieManager.getInstance().setAcceptCookie(true)
             CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+            addJavascriptInterface(NativeLocationBridge(), "FazaaNativeLocation")
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean = shouldOpenExternal(request.url)
 
@@ -136,7 +212,7 @@ class MainActivity : ComponentActivity() {
                 }
 
                 override fun onGeolocationPermissionsShowPrompt(origin: String, callback: GeolocationPermissions.Callback) {
-                    if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    if (hasLocationPermission()) {
                         callback.invoke(origin, true, false)
                     } else {
                         pendingGeolocationOrigin = origin
@@ -206,6 +282,11 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         fileChooserCallback?.onReceiveValue(null)
         fileChooserCallback = null
+        nativeLocationListener?.let { listener ->
+            val manager = getSystemService(LOCATION_SERVICE) as LocationManager
+            runCatching { manager.removeUpdates(listener) }
+        }
+        nativeLocationListener = null
         webView.stopLoading()
         webView.webChromeClient = null
         webView.destroy()

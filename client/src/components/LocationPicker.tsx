@@ -88,6 +88,26 @@ export function LocationPicker({ value, onChange, error, title = "حدد موق�
   }
 
   function locateMe() {
+    const nativeBridge = window as unknown as {
+      FazaaNativeLocation?: { requestLocation: () => void };
+      FazaaNativeLocationCallback?: (latitude: number | null, longitude: number | null, error: string | null) => void;
+    };
+    if (nativeBridge.FazaaNativeLocation) {
+      setLocating(true);
+      setLocationError(null);
+      nativeBridge.FazaaNativeLocationCallback = (latitude, longitude, error) => {
+        setLocating(false);
+        if (error || latitude === null || longitude === null) {
+          setLocationError(error || "تعذر الحصول على موقعك الحالي");
+          toast({ title: "نحتاج إذن الموقع", description: error || "اسمح للتطبيق بالوصول إلى موقعك الحالي ثم حاول مرة أخرى.", variant: "destructive" });
+          return;
+        }
+        setMarker(latitude, longitude);
+        toast({ title: "تم تحديد موقعك الحالي", description: "تم حفظ موقعك بدقة ويمكنك تعديله من الخريطة." });
+      };
+      nativeBridge.FazaaNativeLocation.requestLocation();
+      return;
+    }
     if (!navigator.geolocation) {
       setLocationError("المتصفح لا يدعم تحديد الموقع الجغرافي");
       return;
