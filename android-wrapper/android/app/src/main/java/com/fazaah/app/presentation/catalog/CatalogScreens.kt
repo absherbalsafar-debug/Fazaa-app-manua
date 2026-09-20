@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -38,6 +40,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -46,6 +49,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -129,17 +135,39 @@ private fun NavHostController.navigateSingleTop(route: String) {
 
 @Composable
 private fun HomeScreen(state: CatalogUiState, viewModel: CatalogViewModel, navController: NavHostController) {
-    LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp).background(Color(0xFFF7F8FA)), verticalArrangement = Arrangement.spacedBy(14.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 10.dp, bottom = 24.dp)) {
         item {
-            Text("اكتشف خدمات فزعة", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text("أفضل المهنيين والخدمات في منطقتك", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(modifier = Modifier.fillMaxWidth().height(70.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically) { Text("صنعاء", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary); Spacer(Modifier.width(4.dp)); Text("⌄", color = MaterialTheme.colorScheme.primary) }
+                Image(painterResource(com.fazaah.app.R.drawable.fazaah_logo), contentDescription = "فزعة", modifier = Modifier.height(62.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) { Text("◉", color = MaterialTheme.colorScheme.primary); Text("♙", color = MaterialTheme.colorScheme.primary) }
+            }
         }
-        item { SectionTitle("الخدمات المتاحة") }
+        item { Text("أهلًا بك", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }
         item {
-            LazyVerticalGrid(columns = GridCells.Fixed(2), modifier = Modifier.height(220.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(state.categories.take(6)) { category ->
-                    CategoryCard(category.name, category.icon) { viewModel.selectCategory(category.id); navController.navigateSingleTop(Routes.Providers) }
+            Card(shape = RoundedCornerShape(25.dp), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary), modifier = Modifier.fillMaxWidth().height(178.dp)) {
+                Column(modifier = Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.Center) {
+                    Text("احتياجك .. نوصلك بالشخص المناسب", color = Color.White.copy(alpha = .75f), style = MaterialTheme.typography.bodySmall)
+                    Text("تحتاج شيء؟\nفزعت لك!", color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                    Text("ابحث عن المهني المناسب لإنجاز احتياجك بسهولة.", color = Color.White.copy(alpha = .72f), style = MaterialTheme.typography.bodySmall)
                 }
+            }
+        }
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(value = state.search, onValueChange = viewModel::setSearch, placeholder = { Text("ما الذي تحتاجه؟ ابحث عن الخدمة أو المهني...") }, singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(28.dp))
+                Spacer(Modifier.width(8.dp)); Button(onClick = { viewModel.search(); navController.navigateSingleTop(Routes.Providers) }, modifier = Modifier.size(54.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp), shape = RoundedCornerShape(28.dp)) { Icon(Icons.Default.Search, contentDescription = "بحث") }
+            }
+        }
+        item { SectionTitle("اختر نوع الخدمة") }
+        item {
+            LazyVerticalGrid(columns = GridCells.Fixed(4), modifier = Modifier.height(210.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(state.categories.take(8)) { category -> CategoryCard(category.name, category.icon) { viewModel.selectCategory(category.id); navController.navigateSingleTop(Routes.Providers) } }
+            }
+        }
+        item {
+            Card(shape = RoundedCornerShape(20.dp), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFFFFF5DB)), modifier = Modifier.fillMaxWidth().height(104.dp)) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.Center) { Text("محتاج مساعدة أكثر؟", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold); Text("تصفح جميع المهنيين والخدمات المتاحة.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall); TextButton(onClick = { navController.navigateSingleTop(Routes.Providers) }) { Text("تصفح الكل", color = Color(0xFF8C6B00), fontWeight = FontWeight.Bold) } }
             }
         }
         item { SectionTitle("مهنيون متاحون") }
