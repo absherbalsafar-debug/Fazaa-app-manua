@@ -41,6 +41,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -69,7 +70,7 @@ import com.fazaah.app.presentation.auth.AuthViewModel
 import com.fazaah.app.presentation.auth.UserRole
 import com.fazaah.app.presentation.catalog.CatalogShell
 
-private val FazaahColors = darkColorScheme(
+private val FazaahDarkColors = darkColorScheme(
     primary = Color(0xFF2B78C7),
     onPrimary = Color.White,
     secondary = Color(0xFFF0B046),
@@ -81,6 +82,14 @@ private val FazaahColors = darkColorScheme(
     surfaceVariant = Color(0xFF1B2433),
     onSurfaceVariant = Color(0xFF8B9AAF),
 )
+private val FazaahLightColors = lightColorScheme(
+    primary = Color(0xFF182D53), onPrimary = Color.White,
+    secondary = Color(0xFFF0B046), onSecondary = Color(0xFF182D53),
+    background = Color(0xFFF7F8FA), onBackground = Color(0xFF182D53),
+    surface = Color.White, onSurface = Color(0xFF182D53),
+    surfaceVariant = Color(0xFFEFECE5), onSurfaceVariant = Color(0xFF637087),
+)
+
 private val FazaahFont = FontFamily(
     Font(com.fazaah.app.R.font.noto_sans_arabic_regular, FontWeight.Normal),
     Font(com.fazaah.app.R.font.noto_sans_arabic_bold, FontWeight.Bold),
@@ -112,10 +121,11 @@ class MainActivity : ComponentActivity() {
         window.navigationBarColor = Color(0xFF080B12).toArgb()
         val container = AppContainer(applicationContext)
         setContent {
+            var darkMode by rememberSaveable { mutableStateOf(false) }
             androidx.compose.runtime.CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                MaterialTheme(colorScheme = FazaahColors, typography = FazaahTypography) {
+                MaterialTheme(colorScheme = if (darkMode) FazaahDarkColors else FazaahLightColors, typography = FazaahTypography) {
                     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                        FazaahAuthScreen(container)
+                        FazaahAuthScreen(container, darkMode, { darkMode = !darkMode })
                     }
                 }
             }
@@ -124,13 +134,13 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun FazaahAuthScreen(container: AppContainer) {
+private fun FazaahAuthScreen(container: AppContainer, darkMode: Boolean, onToggleTheme: () -> Unit) {
     val viewModel: AuthViewModel = viewModel(factory = AuthViewModel.factory(container.authRepository))
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showWelcome by rememberSaveable { mutableStateOf(true) }
 
     if (showWelcome) {
-        WelcomeScreen(onStart = { role -> viewModel.setRole(role); showWelcome = false }, onSkip = { viewModel.setRole(UserRole.CLIENT); showWelcome = false })
+        WelcomeScreen(onStart = { role -> viewModel.setRole(role); showWelcome = false }, onSkip = { viewModel.setRole(UserRole.CLIENT); showWelcome = false }, darkMode = darkMode, onToggleTheme = onToggleTheme)
         return
     }
 
@@ -144,12 +154,13 @@ private fun FazaahAuthScreen(container: AppContainer) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,
     ) {
-        if (state.step != AuthStep.PHONE && state.step != AuthStep.HOME) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            androidx.compose.material3.TextButton(onClick = onToggleTheme) { Text(if (darkMode) "نهاري" else "ليلي", color = MaterialTheme.colorScheme.secondary) }
+            if (state.step != AuthStep.PHONE && state.step != AuthStep.HOME) {
                 IconButton(onClick = viewModel::goBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "رجوع")
                 }
-            }
+            } else { Spacer(Modifier.width(1.dp)) }
         }
 
         Image(painterResource(com.fazaah.app.R.drawable.fazaah_logo), contentDescription = "شعار فزعة", modifier = Modifier.height(82.dp))
@@ -192,7 +203,7 @@ private fun FazaahAuthScreen(container: AppContainer) {
 }
 
 @Composable
-private fun WelcomeScreen(onStart: (UserRole) -> Unit, onSkip: () -> Unit) {
+private fun WelcomeScreen(onStart: (UserRole) -> Unit, onSkip: () -> Unit, darkMode: Boolean, onToggleTheme: () -> Unit) {
     var page by rememberSaveable { mutableStateOf(0) }
     val title = when (page) {
         0 -> "أهلاً وسهلاً بك في فزعة"
@@ -206,7 +217,7 @@ private fun WelcomeScreen(onStart: (UserRole) -> Unit, onSkip: () -> Unit) {
     }
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("فزعة", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+            androidx.compose.material3.TextButton(onClick = onToggleTheme) { Text(if (darkMode) "نهاري" else "ليلي", color = MaterialTheme.colorScheme.secondary) }
             Image(painterResource(com.fazaah.app.R.drawable.fazaah_logo), contentDescription = "شعار فزعة", modifier = Modifier.height(64.dp))
             Text("●  ●", color = MaterialTheme.colorScheme.secondary)
         }
