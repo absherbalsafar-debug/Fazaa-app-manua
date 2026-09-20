@@ -32,6 +32,7 @@ export default function AuthPhone() {
   const [nationalId, setNationalId] = useState("");
   const [idFrontFile, setIdFrontFile] = useState<File | null>(null);
   const [idBackFile, setIdBackFile] = useState<File | null>(null);
+  const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [whatsapp, setWhatsapp] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
@@ -143,7 +144,7 @@ export default function AuthPhone() {
     }
     if (role === "provider" && namePartsCount < 4) { toast({ title: "الاسم الرباعي مطلوب", description: "أدخل أربعة أسماء كاملة على الأقل", variant: "destructive" }); return; }
     if (role === "provider" && !/^\d{11}$/.test(nationalId)) { toast({ title: "الرقم الوطني غير صحيح", description: "يجب إدخال 11 رقماً بالضبط", variant: "destructive" }); return; }
-    if (role === "provider" && (!idFrontFile || !idBackFile)) { toast({ title: "صور الهوية مطلوبة", description: "أرفق صورة واضحة للهوية الوطنية من الأمام والخلف", variant: "destructive" }); return; }
+    if (role === "provider" && (!selfieFile || !idFrontFile || !idBackFile)) { toast({ title: "الصور المطلوبة ناقصة", description: "أرفق صورتك الشخصية وصورة الهوية الوطنية من الأمام والخلف", variant: "destructive" }); return; }
     if (role === "provider" && !/^7\d{8}$/.test(whatsapp)) { toast({ title: "رقم واتساب غير صحيح", description: "أدخل رقمًا يمنيًا من 9 أرقام يبدأ بالرقم 7", variant: "destructive" }); return; }
     if (role === "provider" && (bio.trim().length < 50 || bio.trim().length > 1000)) { toast({ title: "وصف التخصص غير مكتمل", description: "يجب أن يكون الوصف بين 50 و1000 حرف", variant: "destructive" }); return; }
     if (role === "provider" && !termsAccepted) { toast({ title: "الموافقة مطلوبة", description: "وافق على التعهد والشروط والأحكام للمتابعة", variant: "destructive" }); return; }
@@ -173,8 +174,8 @@ export default function AuthPhone() {
         }),
       });
       login(data.token, role === "provider" ? { ...data.user, role: "provider" } : data.user);
-      if (role === "provider" && idFrontFile && idBackFile) {
-        for (const [type, file] of [["id_front", idFrontFile], ["id_back", idBackFile]] as const) {
+      if (role === "provider" && selfieFile && idFrontFile && idBackFile) {
+        for (const [type, file] of [["selfie", selfieFile], ["id_front", idFrontFile], ["id_back", idBackFile]] as const) {
           const upload = await apiRequest("/storage/uploads/request-url", { method: "POST", body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }) });
           const uploadResponse = await fetch(upload.uploadURL, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
           if (!uploadResponse.ok) throw new Error("تعذر رفع صورة الهوية");
@@ -383,13 +384,13 @@ export default function AuthPhone() {
                   <div className="space-y-3 rounded-[26px] border border-primary/10 bg-white p-4 shadow-[0_12px_28px_rgba(14,47,98,0.06)]">
                     <p className="text-sm font-extrabold text-primary">التحقق من الهوية والتواصل</p>
                     <div className="flex gap-2"><Input inputMode="numeric" maxLength={11} placeholder="الرقم الوطني — 11 رقمًا" value={nationalId} onChange={e => setNationalId(e.target.value.replace(/\D/g, ""))} className="h-12 rounded-xl" dir="ltr" /><div className="flex h-12 shrink-0 items-center gap-1 rounded-xl bg-primary px-3 text-xs font-bold text-white"><Camera className="h-4 w-4 text-accent" /> الرقم الوطني</div></div>
-                    <div className="grid grid-cols-2 gap-3">
-                      {([['front', 'صورة الهوية — الأمام', idFrontFile, setIdFrontFile], ['back', 'صورة الهوية — الخلف', idBackFile, setIdBackFile]] as const).map(([side, label, file, setter]) => (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      {([['selfie', 'الصورة الشخصية', selfieFile, setSelfieFile], ['front', 'صورة الهوية — الأمام', idFrontFile, setIdFrontFile], ['back', 'صورة الهوية — الخلف', idBackFile, setIdBackFile]] as const).map(([side, label, file, setter]) => (
                         <label key={side} className="group flex min-h-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-[#cfd5dd] bg-[#fbfaf7] px-3 py-3 text-center transition hover:border-primary/50 hover:bg-primary/[0.03]">
                           {file ? <CheckCircle2 className="h-7 w-7 text-emerald-600" /> : <ImagePlus className="h-7 w-7 text-[#b57920]" />}
                           <span className="text-[11px] font-black text-primary">{file ? file.name : label}</span>
                           <span className="flex items-center gap-1 text-[10px] text-[#8b897f]"><Upload className="h-3 w-3" /> {file ? "تغيير الصورة" : "إرفاق صورة واضحة"}</span>
-                          <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" capture="environment" className="sr-only" onChange={event => { const selected = event.target.files?.[0]; if (!selected) return; if (selected.size > 10 * 1024 * 1024) { toast({ title: "الملف كبير", description: "يجب ألا يتجاوز حجم الصورة 10 ميجابايت", variant: "destructive" }); return; } setter(selected); }} aria-label={label} />
+                          <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" capture={side === "selfie" ? "user" : "environment"} className="sr-only" onChange={event => { const selected = event.target.files?.[0]; if (!selected) return; if (selected.size > 10 * 1024 * 1024) { toast({ title: "الملف كبير", description: "يجب ألا يتجاوز حجم الصورة 10 ميجابايت", variant: "destructive" }); return; } setter(selected); }} aria-label={label} />
                         </label>
                       ))}
                     </div>
