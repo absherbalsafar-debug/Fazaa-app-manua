@@ -1,18 +1,10 @@
 {
-  "name": "fazaa-android-wrapper",
+  "name": "fazaa-android-native",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.1.0",
   "scripts": {
-    "cap:add": "cap add android",
-    "cap:sync": "cap sync android",
-    "build:debug": "cd android && ./gradlew assembleDebug"
-  },
-  "dependencies": {
-    "@capacitor/android": "^7.4.3",
-    "@capacitor/core": "^7.4.3"
-  },
-  "devDependencies": {
-    "@capacitor/cli": "^7.4.3",
-    "typescript": "^7.0.2"
+    "build:debug": "cd android && ./gradlew assembleDebug",
+    "build:release": "cd android && ./gradlew assembleRelease",
+    "clean": "cd android && ./gradlew clean"
   }
 }

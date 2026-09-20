@@ -1,25 +1,25 @@
-# فزعة Android APK
+# فزعة Android الأصلي
 
-هذا المجلد يحتوي غلاف Capacitor لتطبيق فزعة. التطبيق يفتح النسخة الدائمة من الموقع عبر الرابط الموجود في `capacitor.config.json`، لذلك أي تحديث للواجهة أو الخادم وقاعدة Neon يظهر للمستخدم بعد النشر دون إعادة بناء الغلاف.
+يحتوي هذا المجلد على أول مرحلة من إعادة كتابة تطبيق Android باستخدام **Kotlin وJetpack Compose** بدل Capacitor/WebView.
+
+## الحالة الحالية
+
+تتضمن النسخة الأصلية شاشة رقم الهاتف، اختيار نوع الحساب، إرسال والتحقق من OTP عبر API الخادم الحالي، إكمالًا أوليًا لملف العميل، حفظ الجلسة محليًا، وشاشة نجاح وتسجيل خروج. سيتم ترحيل بقية شاشات ووظائف التطبيق تدريجيًا مع إبقاء الخادم وقاعدة البيانات الحاليين.
 
 ## المتطلبات
 
-- Node.js و pnpm
-- Java 21
-- Android SDK مع `platforms;android-35` و `build-tools;35.0.0`
+- Android Studio حديث.
+- Android SDK 35 مع `platforms;android-35` و`build-tools;35.0.0`.
+- JDK 17 أو أحدث.
 
 ## البناء
 
+من مجلد `android-wrapper/android`:
+
 ```bash
-pnpm install
-pnpm exec cap sync android
-cd android
-export ANDROID_HOME=/path/to/android-sdk
-export ANDROID_SDK_ROOT=$ANDROID_HOME
-export JAVA_HOME=/path/to/jdk-21
 ./gradlew assembleDebug
 ```
 
-ينتج الملف في `android/app/build/outputs/apk/debug/app-debug.apk`.
+ينتج APK في `android/app/build/outputs/apk/debug/app-debug.apk`.
 
-لا تضع رابط Neon أو أي سر في هذا المجلد. رابط قاعدة البيانات يُدار في بيئة WebDev عبر المتغير السري `NEON_DATABASE_URL`.
+لا تضف `local.properties` إلى Git لأنه يحتوي على مسار Android SDK المحلي. عنوان API مضبوط في `app/build.gradle` عبر `BuildConfig.API_BASE_URL`، ويجب نقله إلى إعدادات build variants قبل الإنتاج.
