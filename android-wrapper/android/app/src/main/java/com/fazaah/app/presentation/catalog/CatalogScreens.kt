@@ -78,6 +78,9 @@ import com.fazaah.app.presentation.requests.NewRequestScreen
 import com.fazaah.app.presentation.notifications.NotificationsViewModel
 import com.fazaah.app.presentation.notifications.NotificationsScreen
 import com.fazaah.app.presentation.favorites.FavoritesScreen
+import com.fazaah.app.presentation.utility.SettingsScreen
+import com.fazaah.app.presentation.utility.PrivacyScreen
+import com.fazaah.app.presentation.utility.TermsScreen
 
 @Composable
 fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepository, onLogout: () -> Unit) {
@@ -110,6 +113,9 @@ fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepos
             composable("${Routes.NewRequest}/{providerId}", arguments = listOf(navArgument("providerId") { type = NavType.IntType })) { entry -> NewRequestScreen(requestViewModel, entry.arguments?.getInt("providerId") ?: 0) }
             composable(Routes.Notifications) { NotificationsScreen(notificationsViewModel) }
             composable(Routes.Favorites) { FavoritesScreen(catalogRepository) }
+            composable(Routes.Settings) { SettingsScreen(navController) }
+            composable(Routes.Privacy) { PrivacyScreen() }
+            composable(Routes.Terms) { TermsScreen() }
         }
     }
 }

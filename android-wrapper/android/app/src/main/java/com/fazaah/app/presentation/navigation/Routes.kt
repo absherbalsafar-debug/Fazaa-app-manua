@@ -13,4 +13,7 @@ object Routes {
     const val Notifications = "notifications"
     const val Favorites = "favorites"
     const val Profile = "profile"
+    const val Settings = "settings"
+    const val Privacy = "privacy"
+    const val Terms = "terms"
 }
