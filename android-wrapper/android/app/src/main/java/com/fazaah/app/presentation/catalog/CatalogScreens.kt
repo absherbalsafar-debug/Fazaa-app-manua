@@ -65,7 +65,7 @@ fun CatalogShell(catalogRepository: CatalogRepository, onLogout: () -> Unit) {
             startDestination = Routes.Home,
             modifier = Modifier.padding(padding),
         ) {
-            composable(Routes.Home) { DiscoveryScreen(state, catalogViewModel, navController) }
+            composable(Routes.Home) { HomeScreen(state, catalogViewModel, navController) }
             composable(Routes.Discover) { ServicesScreen(state, catalogViewModel, navController) }
             composable(Routes.Providers) { ProvidersScreen(state, catalogViewModel) }
             composable(Routes.Profile) { ProfilePlaceholder(onLogout) }
@@ -103,7 +103,7 @@ private fun NavHostController.navigateSingleTop(route: String) {
 }
 
 @Composable
-private fun DiscoveryScreen(state: CatalogUiState, viewModel: CatalogViewModel, navController: NavHostController) {
+private fun HomeScreen(state: CatalogUiState, viewModel: CatalogViewModel, navController: NavHostController) {
     LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item {
             Text("اكتشف خدمات فزعة", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)

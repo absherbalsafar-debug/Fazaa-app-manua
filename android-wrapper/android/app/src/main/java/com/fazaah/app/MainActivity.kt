@@ -65,6 +65,11 @@ private fun FazaahAuthScreen(container: AppContainer) {
     val viewModel: AuthViewModel = viewModel(factory = AuthViewModel.factory(container.authRepository))
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
+    if (state.step == AuthStep.HOME) {
+        CatalogShell(container.catalogRepository, onLogout = viewModel::logout)
+        return
+    }
+
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -96,7 +101,7 @@ private fun FazaahAuthScreen(container: AppContainer) {
             AuthStep.PHONE -> PhoneStep(state, viewModel)
             AuthStep.OTP -> OtpStep(state, viewModel)
             AuthStep.PROFILE -> ProfileStep(state, viewModel)
-            AuthStep.HOME -> HomeStep(container, viewModel)
+            AuthStep.HOME -> Unit
         }
 
         state.message?.let {
@@ -149,9 +154,4 @@ private fun ProfileStep(state: AuthUiState, viewModel: AuthViewModel) {
     }
     Spacer(Modifier.height(16.dp))
     Button(enabled = !state.loading && state.name.trim().split(" ").filter(String::isNotBlank).size >= 4, onClick = viewModel::completeProfile, modifier = Modifier.fillMaxWidth()) { Text("إكمال التسجيل") }
-}
-
-@Composable
-private fun HomeStep(container: AppContainer, viewModel: AuthViewModel) {
-    CatalogShell(container.catalogRepository, onLogout = viewModel::logout)
 }
