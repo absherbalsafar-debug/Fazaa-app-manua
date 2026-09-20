@@ -19,13 +19,47 @@ const roleLabels: Record<RegistrationRole, { title: string; description: string 
   provider: { title: "أقدّم خدمة", description: "ستستقبل طلبات العملاء وتدير عملك" },
 };
 
-function fileToDataUrl(file: File): Promise<string> {
+function fileToDataUrl(file: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
     reader.onerror = () => reject(new Error("تعذر قراءة الملف"));
     reader.readAsDataURL(file);
   });
+}
+
+async function prepareDocument(file: File): Promise<{ dataBase64: string; contentType: string; originalName: string }> {
+  const isImage = file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(file.name);
+  if (!isImage) {
+    return { dataBase64: await fileToDataUrl(file), contentType: file.type || "application/pdf", originalName: file.name };
+  }
+
+  try {
+    const sourceUrl = URL.createObjectURL(file);
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const element = new Image();
+      element.onload = () => resolve(element);
+      element.onerror = () => reject(new Error("تعذر تجهيز صورة الهاتف"));
+      element.src = sourceUrl;
+    });
+    const maxDimension = 1800;
+    const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale));
+    canvas.height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale));
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("تعذر تجهيز صورة الهاتف");
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(sourceUrl);
+    const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.86));
+    if (!blob) throw new Error("تعذر ضغط صورة الهاتف");
+    const baseName = file.name.replace(/\.[^.]+$/, "") || "document";
+    return { dataBase64: await fileToDataUrl(blob), contentType: "image/jpeg", originalName: `${baseName}.jpg` };
+  } catch {
+    return { dataBase64: await fileToDataUrl(file), contentType: file.type || "image/jpeg", originalName: file.name };
+  }
 }
 
 export default function AuthPhone() {
@@ -209,9 +243,10 @@ export default function AuthPhone() {
           for (let index = 0; index < documents.length; index += 1) {
             const [type, label, file] = documents[index];
             setUploadStage(`جاري رفع ${label} (${index + 1} من ${documents.length})`);
+            const prepared = await prepareDocument(file);
             const uploadResult = await apiRequest("/providers/me/verification-documents/base64", {
               method: "POST",
-              body: JSON.stringify({ type, originalName: file.name, contentType: file.type || "image/jpeg", dataBase64: await fileToDataUrl(file) }),
+              body: JSON.stringify({ type, originalName: prepared.originalName, contentType: prepared.contentType, dataBase64: prepared.dataBase64 }),
             });
             if (typeof uploadResult.requestId === "number") requestId = uploadResult.requestId;
             setUploadProgress(Math.round(((index + 1) / documents.length) * 100));

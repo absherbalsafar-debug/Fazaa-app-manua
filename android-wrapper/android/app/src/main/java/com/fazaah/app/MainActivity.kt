@@ -344,6 +344,11 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+            val cachePrefs = getSharedPreferences("fazaa_webview_cache", MODE_PRIVATE)
+            if (cachePrefs.getInt("app_version_code", -1) != BuildConfig.VERSION_CODE) {
+                clearCache(true)
+                cachePrefs.edit().putInt("app_version_code", BuildConfig.VERSION_CODE).apply()
+            }
             loadUrl(BuildConfig.WEB_APP_URL)
         }
     }

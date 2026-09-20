@@ -43,6 +43,19 @@ function isAllowedContentType(contentType: string | null): contentType is string
   return Boolean(contentType && (contentType === "application/pdf" || contentType.startsWith("image/")));
 }
 
+async function storagePutWithRetry(key: string, buffer: Buffer, contentType: string) {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      return await storagePut(key, buffer, contentType);
+    } catch (error) {
+      lastError = error;
+      if (attempt === 0) await new Promise(resolve => setTimeout(resolve, 350));
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("storage upload failed");
+}
+
 type AuthenticatedPhoneUser = typeof phoneUsers.$inferSelect;
 
 function jsonError(res: Response, status: number, message: string) {
@@ -221,7 +234,8 @@ export function registerProviderVerificationRoutes(app: Express) {
     const db = await getDb();
     if (!db) return jsonError(res, 503, "قاعدة البيانات غير متاحة حالياً");
     try {
-      const uploaded = await storagePut(`provider-verification/${type}-${originalName}`, buffer, contentType);
+      const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-120) || `${type}.jpg`;
+      const uploaded = await storagePutWithRetry(`provider-verification/${type}-${safeName}`, buffer, contentType);
       const pending = (await db.select().from(providerVerificationRequests)
         .where(and(eq(providerVerificationRequests.providerId, user.id), eq(providerVerificationRequests.status, "pending")))
         .orderBy(desc(providerVerificationRequests.createdAt)).limit(1))[0];
@@ -231,7 +245,13 @@ export function registerProviderVerificationRoutes(app: Express) {
       await db.insert(providerVerificationDocuments).values({ requestId, type: type as "selfie" | "id_front" | "id_back" | "portfolio" | "certificate", objectPath: uploaded.key, originalName });
       return res.status(201).json({ success: true, requestId, objectPath: uploaded.key });
     } catch (cause) {
-      console.error("[ProviderVerification] base64 upload failed", cause);
+      console.error("[ProviderVerification] base64 upload failed", {
+        type,
+        contentType,
+        originalName,
+        bytes: buffer.length,
+        error: cause instanceof Error ? cause.message : cause,
+      });
       return jsonError(res, 503, "تعذر رفع المستند حالياً");
     }
   });
