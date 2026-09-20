@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.fazaah.app.data.repository.AuthRepository
 import com.fazaah.app.domain.model.VerifyOtpRequest
+import com.fazaah.app.domain.model.VerificationDocumentRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +22,13 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     fun setName(value: String) = _uiState.update { it.copy(name = value, message = null) }
     fun setLatitude(value: String) = _uiState.update { it.copy(latitude = value, message = null) }
     fun setLongitude(value: String) = _uiState.update { it.copy(longitude = value, message = null) }
+    fun setWhatsapp(value: String) = _uiState.update { it.copy(whatsapp = value.filter { char -> char.isDigit() || char == '+' }, message = null) }
+    fun setCategoryId(value: Int?) = _uiState.update { it.copy(categoryId = value, message = null) }
+    fun setSpecialty(value: String) = _uiState.update { it.copy(specialty = value, message = null) }
+    fun setBio(value: String) = _uiState.update { it.copy(bio = value, message = null) }
+    fun setSelfie(value: String?) = _uiState.update { it.copy(selfieBase64 = value, message = null) }
+    fun setIdFront(value: String?) = _uiState.update { it.copy(idFrontBase64 = value, message = null) }
+    fun setIdBack(value: String?) = _uiState.update { it.copy(idBackBase64 = value, message = null) }
 
     fun sendOtp() {
         val state = _uiState.value
@@ -45,6 +53,10 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     fun completeProfile() {
         val state = _uiState.value
         if (state.name.trim().split(" ").filter(String::isNotBlank).size < 4) return
+        if (state.role == UserRole.PROVIDER && (state.latitude.toDoubleOrNull() == null || state.longitude.toDoubleOrNull() == null || state.selfieBase64 == null || state.idFrontBase64 == null || state.idBackBase64 == null)) {
+            _uiState.update { it.copy(message = "الموقع والصورة الشخصية وصور الهوية مطلوبة للمهني") }
+            return
+        }
         execute(request = {
             repository.verifyOtp(VerifyOtpRequest(
                 phone = state.phone,
@@ -54,8 +66,26 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
                 mode = "register",
                 latitude = state.latitude.toDoubleOrNull(),
                 longitude = state.longitude.toDoubleOrNull(),
+                whatsapp = state.whatsapp.trim(),
+                categoryId = state.categoryId,
+                specialty = state.specialty.trim(),
+                bio = state.bio.trim(),
+                termsAccepted = state.role == UserRole.PROVIDER,
             ))
-        }, onSuccess = { _uiState.update { it.copy(step = AuthStep.HOME) } })
+        }, onSuccess = { response ->
+            viewModelScope.launch {
+                if (state.role == UserRole.PROVIDER) {
+                    listOf(
+                        "selfie" to state.selfieBase64,
+                        "id_front" to state.idFrontBase64,
+                        "id_back" to state.idBackBase64,
+                    ).forEach { (type, data) ->
+                        if (data != null) repository.uploadVerificationDocument(VerificationDocumentRequest(type, "$type.jpg", dataBase64 = data))
+                    }
+                }
+                _uiState.update { it.copy(step = AuthStep.HOME, message = if (state.role == UserRole.PROVIDER) "تم إرسال طلب اعتمادك للمراجعة" else null) }
+            }
+        })
     }
 
     fun goBack() = _uiState.update { state ->

@@ -1,8 +1,16 @@
 package com.fazaah.app
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.os.Bundle
+import android.net.Uri
+import android.util.Base64
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,11 +41,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.core.content.ContextCompat
 import com.fazaah.app.presentation.auth.AuthStep
 import com.fazaah.app.presentation.auth.AuthUiState
 import com.fazaah.app.presentation.auth.AuthViewModel
@@ -143,15 +153,51 @@ private fun OtpStep(state: AuthUiState, viewModel: AuthViewModel) {
 
 @Composable
 private fun ProfileStep(state: AuthUiState, viewModel: AuthViewModel) {
+    val context = LocalContext.current
+    val selfiePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> uri?.let { viewModel.setSelfie(readImageBase64(context, it)) } }
+    val frontPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> uri?.let { viewModel.setIdFront(readImageBase64(context, it)) } }
+    val backPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> uri?.let { viewModel.setIdBack(readImageBase64(context, it)) } }
+    val locationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { updateLastLocation(context, viewModel) }
+
     Text("أدخل بياناتك لإكمال إنشاء الحساب")
     Spacer(Modifier.height(12.dp))
     OutlinedTextField(state.name, viewModel::setName, label = { Text("الاسم الرباعي") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-    if (state.role == UserRole.CLIENT) {
+    if (state.role == UserRole.PROVIDER) {
+        Spacer(Modifier.height(10.dp))
+        OutlinedTextField(state.whatsapp, viewModel::setWhatsapp, label = { Text("رقم واتساب") }, placeholder = { Text("أدخل رقم الواتساب") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(10.dp))
+        OutlinedTextField(state.specialty, viewModel::setSpecialty, label = { Text("التخصص الدقيق") }, placeholder = { Text("مثال: صيانة تمديدات المياه") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(10.dp))
+        OutlinedTextField(state.bio, viewModel::setBio, label = { Text("وصف الخبرة والخدمة") }, minLines = 3, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(10.dp))
+        Button(onClick = { locationPermission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)) }, modifier = Modifier.fillMaxWidth()) { Text(if (state.latitude.isNotBlank()) "تم تحديد الموقع بدقة" else "السماح بتحديد موقع العمل") }
+        Text(if (state.latitude.isNotBlank()) "${state.latitude}, ${state.longitude}" else "الموقع الدقيق مطلوب لاعتماد المهني", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        DocumentButton("الصورة الشخصية", state.selfieBase64 != null) { selfiePicker.launch("image/*") }
+        DocumentButton("صورة الهوية — الأمام", state.idFrontBase64 != null) { frontPicker.launch("image/*") }
+        DocumentButton("صورة الهوية — الخلف", state.idBackBase64 != null) { backPicker.launch("image/*") }
+    } else {
         Spacer(Modifier.height(10.dp))
         OutlinedTextField(state.latitude, viewModel::setLatitude, label = { Text("خط العرض") }, singleLine = true, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(10.dp))
         OutlinedTextField(state.longitude, viewModel::setLongitude, label = { Text("خط الطول") }, singleLine = true, modifier = Modifier.fillMaxWidth())
     }
     Spacer(Modifier.height(16.dp))
-    Button(enabled = !state.loading && state.name.trim().split(" ").filter(String::isNotBlank).size >= 4, onClick = viewModel::completeProfile, modifier = Modifier.fillMaxWidth()) { Text("إكمال التسجيل") }
+    Button(enabled = !state.loading && state.name.trim().split(" ").filter(String::isNotBlank).size >= 4, onClick = viewModel::completeProfile, modifier = Modifier.fillMaxWidth()) { Text(if (state.role == UserRole.PROVIDER) "إرسال طلب اعتماد المهني" else "إكمال التسجيل") }
+}
+
+@Composable
+private fun DocumentButton(label: String, selected: Boolean, onClick: () -> Unit) {
+    Button(onClick = onClick, modifier = Modifier.fillMaxWidth()) { Text(if (selected) "✓ $label — تم الإرفاق" else "إرفاق $label") }
+}
+
+private fun readImageBase64(context: Context, uri: Uri): String? = runCatching {
+    context.contentResolver.openInputStream(uri)?.use { Base64.encodeToString(it.readBytes(), Base64.NO_WRAP) }
+}.getOrNull()
+
+private fun updateLastLocation(context: Context, viewModel: AuthViewModel) {
+    val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    if (!granted) return
+    val manager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+    val location = runCatching { manager.getLastKnownLocation(LocationManager.GPS_PROVIDER) ?: manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER) }.getOrNull()
+    location?.let { viewModel.setLatitude(it.latitude.toString()); viewModel.setLongitude(it.longitude.toString()) }
 }

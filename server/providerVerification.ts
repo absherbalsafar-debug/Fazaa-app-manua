@@ -9,6 +9,7 @@ import {
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { sdk } from "./_core/sdk";
+import { storagePut } from "./storage";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const allowedTypes = new Set(["selfie", "id_front", "id_back", "portfolio", "certificate"]);
@@ -166,5 +167,35 @@ export function registerProviderVerificationRoutes(app: Express) {
       originalName,
     });
     return res.status(201).json({ success: true, requestId });
+  });
+
+  app.post("/api/providers/me/verification-documents/base64", async (req, res) => {
+    const user = await currentUser(req);
+    if (!user) return jsonError(res, 401, "تحتاج إلى تسجيل الدخول");
+    if (user.role !== "provider") return jsonError(res, 403, "هذه الصفحة مخصصة للمهنيين");
+    const body = readBody(req);
+    const type = typeof body.type === "string" ? body.type : "";
+    const originalName = typeof body.originalName === "string" ? body.originalName.trim().slice(0, 255) : "document.jpg";
+    const contentType = typeof body.contentType === "string" ? body.contentType : "image/jpeg";
+    const encoded = typeof body.dataBase64 === "string" ? body.dataBase64.replace(/^data:[^;]+;base64,/, "") : "";
+    if (!allowedTypes.has(type) || !allowedContentTypes.has(contentType) || !encoded) return jsonError(res, 400, "بيانات المستند غير صالحة");
+    const buffer = Buffer.from(encoded, "base64");
+    if (!buffer.length || buffer.length > MAX_FILE_SIZE) return jsonError(res, 400, "حجم الملف يجب ألا يتجاوز 10 ميجابايت");
+    const db = await getDb();
+    if (!db) return jsonError(res, 503, "قاعدة البيانات غير متاحة حالياً");
+    try {
+      const uploaded = await storagePut(`provider-verification/${type}-${originalName}`, buffer, contentType);
+      const pending = (await db.select().from(providerVerificationRequests)
+        .where(and(eq(providerVerificationRequests.providerId, user.id), eq(providerVerificationRequests.status, "pending")))
+        .orderBy(desc(providerVerificationRequests.createdAt)).limit(1))[0];
+      let requestId = pending?.id;
+      if (!requestId) requestId = (await db.insert(providerVerificationRequests).values({ providerId: user.id }).returning({ id: providerVerificationRequests.id }))[0]?.id;
+      if (!requestId) return jsonError(res, 500, "تعذر إنشاء طلب التوثيق");
+      await db.insert(providerVerificationDocuments).values({ requestId, type: type as "selfie" | "id_front" | "id_back" | "portfolio" | "certificate", objectPath: uploaded.key, originalName });
+      return res.status(201).json({ success: true, requestId, objectPath: uploaded.key });
+    } catch (cause) {
+      console.error("[ProviderVerification] base64 upload failed", cause);
+      return jsonError(res, 503, "تعذر رفع المستند حالياً");
+    }
   });
 }

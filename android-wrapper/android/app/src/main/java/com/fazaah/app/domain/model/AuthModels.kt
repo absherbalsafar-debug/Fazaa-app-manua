@@ -19,6 +19,15 @@ data class VerifyOtpRequest(
     val mode: String,
     val latitude: Double? = null,
     val longitude: Double? = null,
+    val city: String? = null,
+    val governorate: String? = null,
+    val district: String? = null,
+    val whatsapp: String? = null,
+    val categoryId: Int? = null,
+    val specialty: String? = null,
+    val bio: String? = null,
+    val yearsExperience: Int? = null,
+    val termsAccepted: Boolean = false,
 )
 
 data class AuthUser(
@@ -39,6 +48,13 @@ data class UpdateProfileRequest(
     val governorate: String? = null,
     val district: String? = null,
     val whatsapp: String? = null,
+)
+
+data class VerificationDocumentRequest(
+    val type: String,
+    val originalName: String,
+    val contentType: String = "image/jpeg",
+    val dataBase64: String,
 )
 
 data class VerifyOtpResponse(

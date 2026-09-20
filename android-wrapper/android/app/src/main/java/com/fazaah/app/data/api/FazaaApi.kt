@@ -9,6 +9,7 @@ import com.fazaah.app.domain.model.SendOtpResponse
 import com.fazaah.app.domain.model.VerifyOtpRequest
 import com.fazaah.app.domain.model.VerifyOtpResponse
 import com.fazaah.app.domain.model.UpdateProfileRequest
+import com.fazaah.app.domain.model.VerificationDocumentRequest
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -28,6 +29,9 @@ interface FazaaApi {
 
     @PATCH("auth/me")
     suspend fun updateProfile(@Body request: UpdateProfileRequest): AuthUser
+
+    @POST("providers/me/verification-documents/base64")
+    suspend fun uploadVerificationDocument(@Body request: VerificationDocumentRequest)
 
     @POST("auth/logout-all")
     suspend fun logoutAll()

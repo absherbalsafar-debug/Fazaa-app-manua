@@ -8,6 +8,7 @@ import com.fazaah.app.domain.model.VerifyOtpRequest
 import com.fazaah.app.domain.model.VerifyOtpResponse
 import com.fazaah.app.domain.model.AuthUser
 import com.fazaah.app.domain.model.UpdateProfileRequest
+import com.fazaah.app.domain.model.VerificationDocumentRequest
 
 class AuthRepository(
     private val api: FazaaApi,
@@ -29,4 +30,6 @@ class AuthRepository(
     suspend fun currentUser(): AuthUser = api.currentUser()
 
     suspend fun updateProfile(request: UpdateProfileRequest): AuthUser = api.updateProfile(request)
+
+    suspend fun uploadVerificationDocument(request: VerificationDocumentRequest) = api.uploadVerificationDocument(request)
 }
