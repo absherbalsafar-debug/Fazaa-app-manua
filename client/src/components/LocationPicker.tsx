@@ -53,11 +53,13 @@ export function LocationPicker({ value, onChange, error, title = "حدد موق�
   const [resolving, setResolving] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
 
-  async function resolveLocation(latitude: number, longitude: number) {
-    setResolving(true);
-    setLocationError(null);
-    try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&accept-language=ar`);
+async function resolveLocation(latitude: number, longitude: number) {
+  setResolving(true);
+  setLocationError(null);
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 8000);
+  try {
+      const response = await fetch(`/api/geocode/reverse?lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}`, { signal: controller.signal });
       if (!response.ok) throw new Error("تعذر قراءة عنوان الموقع");
       const data = await response.json() as { address?: Record<string, string> };
       onChange(parseAddress(data.address, latitude, longitude));
@@ -65,7 +67,8 @@ export function LocationPicker({ value, onChange, error, title = "حدد موق�
       onChange(parseAddress(undefined, latitude, longitude));
       setLocationError("تم تحديد الإحداثيات، لكن تعذر قراءة اسم المنطقة. يمكنك المتابعة.");
       toast({ title: "تم تحديد موقعك", description: "حُفظت الإحداثيات، لكن تعذر جلب اسم المنطقة." });
-    } finally {
+  } finally {
+      window.clearTimeout(timeout);
       setResolving(false);
     }
   }
@@ -74,6 +77,8 @@ export function LocationPicker({ value, onChange, error, title = "حدد موق�
     const map = mapRef.current;
     if (!map) return;
     const point: L.LatLngExpression = [latitude, longitude];
+    // احفظ الإحداثيات فورًا؛ قراءة اسم الدولة والمنطقة خدمة إضافية لا تمنع التسجيل.
+    onChange(parseAddress(undefined, latitude, longitude));
     if (!markerRef.current) {
       markerRef.current = L.marker(point, { draggable: true, icon: pinIcon() }).addTo(map);
       markerRef.current.on("dragend", () => {
@@ -84,6 +89,7 @@ export function LocationPicker({ value, onChange, error, title = "حدد موق�
       markerRef.current.setLatLng(point);
     }
     map.setView(point, Math.max(map.getZoom(), 15), { animate: true });
+    window.setTimeout(() => map.invalidateSize({ pan: false }), 80);
     if (shouldResolve) void resolveLocation(latitude, longitude);
   }
 
@@ -170,7 +176,7 @@ export function LocationPicker({ value, onChange, error, title = "حدد موق�
       <div ref={mapElement} className="h-64 w-full overflow-hidden rounded-2xl border border-[#d9d5cd] bg-[#eef1ed]" aria-label="خريطة تحديد الموقع بدقة" />
       <div className="flex items-center justify-between gap-2 text-[11px] text-[#77766f]">
         <span>{value ? "تم حفظ موقعك ويمكنك تغييره من الخريطة أو الزر أعلاه" : "اضغط على الخريطة أو حرّك المؤشر لاختيار موقع أدق"}</span>
-        {resolving && <span className="flex items-center gap-1 font-bold text-[#b57920]"><RefreshCw className="h-3 w-3 animate-spin" /> قراءة العنوان</span>}
+        {resolving && <span className="flex items-center gap-1 font-bold text-[#b57920]"><RefreshCw className="h-3 w-3 animate-spin" /> قراءة اسم المنطقة فقط</span>}
       </div>
       {value && (
         <div className="grid grid-cols-2 gap-2 rounded-2xl border border-[#ece8df] bg-[#fbfaf7] p-3 text-[11px]">
