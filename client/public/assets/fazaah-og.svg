@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#182d53"/><stop offset="1" stop-color="#163f78"/></linearGradient></defs>
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <circle cx="970" cy="90" r="180" fill="#f0b046" opacity=".16"/>
+  <circle cx="160" cy="570" r="220" fill="#f0b046" opacity=".1"/>
+  <g transform="translate(110 120)"><rect width="170" height="170" rx="42" fill="#f0b046"/><path d="M48 126c7-33 20-50 37-50s30 17 37 50" fill="#182d53"/><circle cx="85" cy="66" r="42" fill="#fff"/><path d="M38 60c14-27 31-39 47-39 17 0 34 12 48 39-14-6-30-9-48-9-17 0-33 3-47 9Z" fill="#182d53"/></g>
+  <text x="110" y="375" fill="#fff" font-size="110" font-weight="800" font-family="Arial, sans-serif">فزعة</text>
+  <text x="115" y="450" fill="#f0b046" font-size="38" font-weight="700" font-family="Arial, sans-serif">منصة الخدمات والمهنيين في اليمن</text>
+  <text x="115" y="510" fill="#dbe7f5" font-size="26" font-family="Arial, sans-serif">احتياجك .. نوصلك بالشخص المناسب</text>
+</svg>

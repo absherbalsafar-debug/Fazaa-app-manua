@@ -11,6 +11,7 @@ import { PageTransition } from "@/components/layout/page-transition";
 
 // Auth Pages
 const Welcome = lazy(() => import("@/pages/welcome"));
+const WelcomeBack = lazy(() => import("@/pages/welcome-back"));
 const AuthPhone = lazy(() => import("@/pages/auth-phone"));
 const AuthEmail = lazy(() => import("@/pages/auth-email"));
 const ForgotPassword = lazy(() => import("@/pages/forgot-password"));
@@ -29,6 +30,7 @@ const Profile = lazy(() => import("@/pages/profile"));
 const Settings = lazy(() => import("@/pages/settings"));
 const Emergency = lazy(() => import("@/pages/emergency"));
 const ProviderVerify = lazy(() => import("@/pages/provider-verify"));
+const ProviderSubscription = lazy(() => import("@/pages/provider-subscription"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 // Admin Pages
@@ -62,12 +64,12 @@ class RuntimeErrorBoundary extends Component<{ children: ReactNode }, { hasError
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-[#f5f3ee] px-6 text-center" dir="rtl">
         <div className="w-full max-w-sm rounded-[28px] bg-white p-7 shadow-[0_18px_50px_rgba(14,47,98,0.12)]">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0e2f62] text-2xl font-black text-[#f5b916]">ف</div>
-          <h1 className="mt-5 text-xl font-black text-[#0e2f62]">تعذر تحميل الصفحة</h1>
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#182d53] text-2xl font-black text-[#f0b046]">ف</div>
+          <h1 className="mt-5 text-xl font-black text-[#182d53]">تعذر تحميل الصفحة</h1>
           <p className="mt-2 text-sm leading-6 text-[#66758a]">حدث خلل مؤقت. أعد المحاولة أو ارجع إلى الصفحة الرئيسية.</p>
           <div className="mt-6 flex gap-2">
-            <button type="button" onClick={() => window.location.reload()} className="flex-1 rounded-2xl bg-[#0e2f62] px-4 py-3 text-sm font-bold text-white">إعادة المحاولة</button>
-            <a href="/welcome" className="flex-1 rounded-2xl border border-[#d9dfe7] px-4 py-3 text-sm font-bold text-[#0e2f62]">البدء من جديد</a>
+            <button type="button" onClick={() => window.location.reload()} className="flex-1 rounded-2xl bg-[#182d53] px-4 py-3 text-sm font-bold text-white">إعادة المحاولة</button>
+            <a href="/welcome" className="flex-1 rounded-2xl border border-[#d9dfe7] px-4 py-3 text-sm font-bold text-[#182d53]">البدء من جديد</a>
           </div>
         </div>
       </div>
@@ -145,6 +147,7 @@ function Router() {
     <Switch>
       {/* ── Auth Routes (public) ── */}
       <Route path="/welcome"><PageTransition><Welcome /></PageTransition></Route>
+      <Route path="/welcome-back"><PageTransition><WelcomeBack /></PageTransition></Route>
       <Route path="/auth/phone"><PageTransition><AuthPhone /></PageTransition></Route>
       <Route path="/auth/email"><PageTransition><AuthEmail /></PageTransition></Route>
       <Route path="/auth/forgot-password"><PageTransition><ForgotPassword /></PageTransition></Route>
@@ -279,6 +282,11 @@ function Router() {
       <Route path="/verify">
         <ProtectedRoute allowedRoles={['provider']}>
           <AppShell showNav={false}><ProviderVerify /></AppShell>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/provider-subscription">
+        <ProtectedRoute allowedRoles={['provider']}>
+          <AppShell showNav={false}><ProviderSubscription /></AppShell>
         </ProtectedRoute>
       </Route>
 

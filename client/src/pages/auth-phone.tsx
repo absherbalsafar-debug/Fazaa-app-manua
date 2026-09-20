@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, BriefcaseBusiness, Check, ChevronDown, FileText, Loader2, MapPin, Phone, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, BriefcaseBusiness, Camera, Check, ChevronDown, FileText, Loader2, MapPin, Phone, ShieldCheck, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,7 +9,7 @@ import { CitySelector } from "@/components/city-selector";
 import { LocationPicker, type CustomerLocation } from "@/components/LocationPicker";
 import { useAuth, apiRequest } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
-import { getPostAuthPath, getRegistrationRole, type RegistrationRole } from "@/lib/registration";
+import { getFirstLoginPath, getRegistrationRole, type RegistrationRole } from "@/lib/registration";
 import { BrandLogo } from "@/components/brand-logo";
 
 type Step = "phone" | "otp" | "name";
@@ -31,7 +31,12 @@ export default function AuthPhone() {
   const [specialty, setSpecialty] = useState("");
   const [bio, setBio] = useState("");
   const [yearsExperience, setYearsExperience] = useState("");
+  const [nationalId, setNationalId] = useState("");
+  const [barcodeRead, setBarcodeRead] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [role, setRole] = useState<RegistrationRole>(() => getRegistrationRole(window.location.search));
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [devOtp, setDevOtp] = useState<string | null>(null);
@@ -39,7 +44,6 @@ export default function AuthPhone() {
   const { login } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
-  const role = getRegistrationRole(window.location.search);
   const mode = new URLSearchParams(window.location.search).get("mode") === "login" ? "login" : "register";
   const selectedRole = roleLabels[role];
   const RoleIcon = role === "provider" ? BriefcaseBusiness : UserRound;
@@ -103,7 +107,7 @@ export default function AuthPhone() {
       } else {
         const authenticatedUser = role === "provider" ? { ...data.user, role: "provider" } : data.user;
         login(data.token, authenticatedUser);
-        navigate(getPostAuthPath(role));
+        navigate(getFirstLoginPath(role));
       }
     } catch (err: any) {
       toast({ title: "رمز خاطئ", description: err.message, variant: "destructive" });
@@ -133,10 +137,11 @@ export default function AuthPhone() {
       toast({ title: "حدد تخصصك الفرعي", description: "اختر التخصص الأدق داخل مجال خدمتك", variant: "destructive" });
       return;
     }
-    if (role === "provider" && bio.trim().length < 10) {
-      toast({ title: "اكتب نبذة عن خدمتك", description: "أضف وصفاً مختصراً لا يقل عن 10 أحرف", variant: "destructive" });
-      return;
-    }
+    if (role === "provider" && namePartsCount < 4) { toast({ title: "الاسم الرباعي مطلوب", description: "أدخل أربعة أسماء كاملة على الأقل", variant: "destructive" }); return; }
+    if (role === "provider" && !/^\d{11}$/.test(nationalId)) { toast({ title: "الرقم الوطني غير صحيح", description: "يجب إدخال 11 رقماً بالضبط", variant: "destructive" }); return; }
+    if (role === "provider" && !/^7\d{8}$/.test(whatsapp)) { toast({ title: "رقم واتساب غير صحيح", description: "أدخل رقمًا يمنيًا من 9 أرقام يبدأ بالرقم 7", variant: "destructive" }); return; }
+    if (role === "provider" && (bio.trim().length < 50 || bio.trim().length > 1000)) { toast({ title: "وصف التخصص غير مكتمل", description: "يجب أن يكون الوصف بين 50 و1000 حرف", variant: "destructive" }); return; }
+    if (role === "provider" && !termsAccepted) { toast({ title: "الموافقة مطلوبة", description: "وافق على التعهد والشروط والأحكام للمتابعة", variant: "destructive" }); return; }
     setLoading(true);
     try {
       const data = await apiRequest('/auth/verify-otp', {
@@ -157,10 +162,13 @@ export default function AuthPhone() {
           specialty: specialty.trim() || undefined,
           bio: bio.trim() || undefined,
           yearsExperience: yearsExperience ? Number(yearsExperience) : undefined,
+          nationalId: role === "provider" ? nationalId : undefined,
+          whatsapp: role === "provider" ? whatsapp : undefined,
+          termsAccepted: role === "provider" ? termsAccepted : undefined,
         }),
       });
       login(data.token, role === "provider" ? { ...data.user, role: "provider" } : data.user);
-      navigate(getPostAuthPath(role));
+      navigate(getFirstLoginPath(role));
     } catch (err: any) {
       toast({ title: "خطأ", description: err.message, variant: "destructive" });
     } finally {
@@ -185,7 +193,7 @@ export default function AuthPhone() {
           </button>
           <BrandLogo className="h-16 w-24 object-contain" />
           <span className="rounded-full border border-[#d9d5cd] bg-white px-3 py-1.5 text-[10px] font-bold text-[#8e8b82]">
-            {stepNumber} <span className="mx-1 text-[#a17b29]">/</span> ٠٣
+            {stepNumber} <span className="mx-1 text-[#b57920]">/</span> ٠٣
           </span>
         </header>
 
@@ -198,7 +206,7 @@ export default function AuthPhone() {
             className="space-y-7"
           >
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#a17b29]">التحقق الآمن</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#b57920]">التحقق الآمن</p>
               <h1 className="mt-3 text-[32px] font-black leading-tight tracking-[-0.04em]">{stepTitle}</h1>
               <p className="mt-3 text-sm leading-7 text-[#77766f]">
                 {step === "phone" && "سنرسل رمزاً قصيراً إلى رقمك لتبدأ تجربتك بأمان."}
@@ -213,6 +221,29 @@ export default function AuthPhone() {
               <>
                 <div className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-primary/10 text-primary shadow-[0_12px_28px_rgba(14,47,98,0.08)]">
                   <Phone className="h-9 w-9" />
+                </div>
+                <div className="space-y-3">
+                  <p className="text-sm font-extrabold text-primary">كيف ستستخدم فزعة؟</p>
+                  <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="نوع الحساب">
+                    {(Object.entries(roleLabels) as [RegistrationRole, (typeof roleLabels)[RegistrationRole]][]).map(([option, copy]) => {
+                      const OptionIcon = option === "provider" ? BriefcaseBusiness : UserRound;
+                      const isSelected = role === option;
+                      return (
+                        <button
+                          key={option}
+                          type="button"
+                          role="radio"
+                          aria-checked={isSelected}
+                          onClick={() => setRole(option)}
+                          className={`rounded-2xl border p-3 text-right transition-colors ${isSelected ? "border-primary bg-primary text-white" : "border-[#d4d9df] bg-white text-primary hover:border-primary/40"}`}
+                        >
+                          <OptionIcon className={`mb-2 h-5 w-5 ${isSelected ? "text-accent" : "text-[#b57920]"}`} />
+                          <span className="block text-xs font-extrabold">{copy.title}</span>
+                          <span className={`mt-1 block text-[10px] leading-4 ${isSelected ? "text-white/75" : "text-[#77766f]"}`}>{copy.description}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
                 <Input
                   type="tel"
@@ -257,11 +288,11 @@ export default function AuthPhone() {
                       <motion.div
                         initial={{ opacity: 0, y: -4 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center justify-center gap-2 text-xs font-bold text-[#a17b29]"
+                        className="flex items-center justify-center gap-2 text-xs font-bold text-[#b57920]"
                         role="status"
                         aria-live="polite"
                       >
-                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#a17b29]" />
+                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#b57920]" />
                         نتحقق من الرمز ونجهز حسابك...
                       </motion.div>
                     )}
@@ -272,7 +303,7 @@ export default function AuthPhone() {
 
             {step === "otp" && (
               <>
-                <div className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-accent/20 text-[#a17b29] shadow-[0_12px_28px_rgba(161,123,41,0.08)]">
+                <div className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-accent/20 text-[#b57920] shadow-[0_12px_28px_rgba(161,123,41,0.08)]">
                   <ShieldCheck className="h-9 w-9" />
                 </div>
                 <div>
@@ -299,7 +330,7 @@ export default function AuthPhone() {
                   {loading ? "جاري التحقق..." : "تأكيد الرمز"}
                   <Check className="mr-2 h-4 w-4" />
                 </Button>
-                <button type="button" onClick={sendOtp} className="w-full text-center text-sm font-bold text-[#a17b29]">
+                <button type="button" onClick={sendOtp} className="w-full text-center text-sm font-bold text-[#b57920]">
                   إعادة إرسال الرمز
                 </button>
               </>
@@ -336,9 +367,18 @@ export default function AuthPhone() {
                   {role === "client" && name.trim() && namePartsCount < 4 && <p className="text-xs font-bold text-red-600">يرجى إدخال الاسم الرباعي كاملاً</p>}
                 </div>
                 {role === "provider" && (
+                  <div className="space-y-3 rounded-[26px] border border-primary/10 bg-white p-4 shadow-[0_12px_28px_rgba(14,47,98,0.06)]">
+                    <p className="text-sm font-extrabold text-primary">التحقق من الهوية والتواصل</p>
+                    <div className="flex gap-2"><Input inputMode="numeric" maxLength={11} placeholder="الرقم الوطني — 11 رقمًا" value={nationalId} onChange={e => setNationalId(e.target.value.replace(/\D/g, ""))} className="h-12 rounded-xl" dir="ltr" /><label className="flex h-12 shrink-0 cursor-pointer items-center gap-1 rounded-xl bg-primary px-3 text-xs font-bold text-white"><Camera className="h-4 w-4 text-accent" /> قراءة الباركود<input type="file" accept="image/*" capture="environment" className="sr-only" onChange={e => { const file=e.target.files?.[0]; if (file) { setBarcodeRead(file.name); toast({ title: "تم التقاط صورة البطاقة", description: "تحقق من الرقم الوطني يدويًا قبل المتابعة." }); } }} /></label></div>
+                    {barcodeRead && <p className="text-[10px] text-amber-700">تمت قراءة صورة البطاقة: {barcodeRead} — راجع الرقم المدخل.</p>}
+                    <Input inputMode="numeric" maxLength={9} placeholder="واتساب اليمن — 771234567" value={whatsapp} onChange={e => setWhatsapp(e.target.value.replace(/\D/g, ""))} className="h-12 rounded-xl" dir="ltr" />
+                  </div>
+                )}
+
+                {role === "provider" && (
                   <div className="space-y-4 rounded-[26px] border border-primary/10 bg-white p-4 shadow-[0_12px_28px_rgba(14,47,98,0.06)]">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/20 text-[#a17b29]">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/20 text-[#b57920]">
                         <BriefcaseBusiness className="h-4 w-4" />
                       </div>
                       <div>
@@ -364,15 +404,15 @@ export default function AuthPhone() {
                     </div>
                     {selectedCategory?.specialties?.length ? <div className="relative"><select value={specialty} onChange={(event) => setSpecialty(event.target.value)} className="h-14 w-full appearance-none rounded-2xl border border-[#d4d9df] bg-[#fbfaf7] px-4 pl-10 text-sm font-bold text-primary outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"><option value="">اختر تخصصك الفرعي</option>{selectedCategory.specialties.map((item) => <option key={item} value={item}>{item}</option>)}</select><ChevronDown className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8e8b82]" /></div> : null}
                     <div className="relative">
-                      <FileText className="pointer-events-none absolute right-4 top-4 h-4 w-4 text-[#a17b29]" />
+                      <FileText className="pointer-events-none absolute right-4 top-4 h-4 w-4 text-[#b57920]" />
                       <Textarea
                         value={bio}
                         onChange={(event) => setBio(event.target.value)}
                         placeholder="اكتب وصف تخصصك أو مجالك، مثل: أقدم خدمات السباكة المنزلية وإصلاح التسربات..."
                         className="min-h-[96px] resize-none rounded-2xl border-[#d4d9df] bg-[#fbfaf7] pr-11 pt-3 text-sm leading-6 shadow-none focus-visible:ring-primary"
-                        maxLength={240}
+                        maxLength={1000}
                       />
-                      <span className="mt-1 block text-left text-[10px] text-[#aaa69b]">{bio.length}/240</span>
+                      <span className="mt-1 block text-left text-[10px] text-[#aaa69b]">{bio.length}/1000</span>
                     </div>
                     <Input
                       type="number"
@@ -390,10 +430,11 @@ export default function AuthPhone() {
                   <LocationPicker value={customerLocation} onChange={setCustomerLocation} />
                 ) : (
                   <div className="relative">
-                    <MapPin className="absolute right-4 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-[#a17b29]" />
+                    <MapPin className="absolute right-4 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-[#b57920]" />
                     <CitySelector value={city} onChange={setCity} placeholder="المدينة (اختياري)" />
                   </div>
                 )}
+                {role === "provider" && <div className="rounded-2xl border border-[#d4d9df] bg-white p-3"><label className="flex items-start gap-2 text-xs leading-5 text-[#637087]"><input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} className="mt-1 h-4 w-4 accent-[#182d53]" /><span>أوافق على التعهد والشروط والأحكام. <button type="button" className="font-bold text-[#b57920] underline" onClick={() => window.alert("أتعهد بأن بياناتي ومستنداتي صحيحة، وأوافق على مراجعتها وفق شروط منصة فزعة.")}>قراءة التعهد</button></span></label></div>}
                 <Button onClick={completeRegistration} disabled={loading || !name.trim() || !clientProfileReady} className="h-14 w-full rounded-2xl bg-primary text-base font-extrabold text-primary-foreground shadow-[0_12px_26px_rgba(14,47,98,0.16)] hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">
                   {loading ? "جاري إنشاء الحساب..." : "المتابعة"}
                   <ArrowLeft className="mr-2 h-4 w-4" />

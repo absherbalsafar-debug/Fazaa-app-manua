@@ -95,7 +95,10 @@ export function registerProviderVerificationRoutes(app: Express) {
     if (!db) return jsonError(res, 503, "قاعدة البيانات غير متاحة حالياً");
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id <= 0) return jsonError(res, 400, "رقم الطلب غير صالح");
+    const request = (await db.select({ providerId: providerVerificationRequests.providerId }).from(providerVerificationRequests).where(eq(providerVerificationRequests.id, id)).limit(1))[0];
+    if (!request) return jsonError(res, 404, "طلب الاعتماد غير موجود");
     await db.update(providerVerificationRequests).set({ status, reviewedAt: status === "pending" ? null : new Date(), updatedAt: new Date() }).where(eq(providerVerificationRequests.id, id));
+    await db.update(phoneUsers).set({ providerAccountStatus: status === "approved" ? "approved" : "pending" }).where(eq(phoneUsers.id, request.providerId));
     return res.json({ success: true, status });
   });
 

@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CitySelector } from "@/components/city-selector";
 import { useAuth, apiRequest } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
-import { getPostAuthPath, getRegistrationRole } from "@/lib/registration";
+import { getFirstLoginPath, getRegistrationRole } from "@/lib/registration";
 
 type Mode = "login" | "register";
 type Category = { id: number; name: string; icon?: string | null };
@@ -100,7 +100,7 @@ export default function AuthEmail() {
         }
       }
       login(data.token, data.user);
-      navigate(getPostAuthPath(data.user.role === "provider" ? "provider" : "client"));
+      navigate(getFirstLoginPath(data.user.role === "provider" ? "provider" : "client"));
     } catch (err: any) {
       toast({ title: "خطأ", description: err.message, variant: "destructive" });
     } finally {
@@ -121,10 +121,10 @@ export default function AuthEmail() {
           </div>
           <div className="text-right leading-none">
             <p className="text-sm font-black">فزعة</p>
-            <p className="mt-1 text-[8px] font-bold uppercase tracking-[0.24em] text-[#a17b29]">FAZAAH</p>
+            <p className="mt-1 text-[8px] font-bold uppercase tracking-[0.24em] text-[#b57920]">FAZAAH</p>
           </div>
         </div>
-        <span className="w-10 text-center text-[10px] font-bold text-[#a17b29]">آمن</span>
+        <span className="w-10 text-center text-[10px] font-bold text-[#b57920]">آمن</span>
       </div>
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 pb-10 sm:max-w-lg sm:px-9">
         <h1 className="text-3xl font-black tracking-[-0.04em]">
@@ -185,7 +185,7 @@ export default function AuthEmail() {
               {role === "provider" && (
                 <div className="space-y-4 rounded-[26px] border border-primary/10 bg-white p-4 shadow-[0_12px_28px_rgba(14,47,98,0.06)]">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/20 text-[#a17b29]">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/20 text-[#b57920]">
                       <BriefcaseBusiness className="h-4 w-4" />
                     </div>
                     <div>
@@ -210,7 +210,7 @@ export default function AuthEmail() {
                     <ChevronDown className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8e8b82]" />
                   </div>
                   <div className="relative">
-                    <FileText className="pointer-events-none absolute right-4 top-4 h-4 w-4 text-[#a17b29]" />
+                    <FileText className="pointer-events-none absolute right-4 top-4 h-4 w-4 text-[#b57920]" />
                     <Textarea
                       value={bio}
                       onChange={(event) => setBio(event.target.value)}

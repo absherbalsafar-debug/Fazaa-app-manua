@@ -21,7 +21,7 @@ export default function Terms() {
         </div>
       </header>
       <article className="mx-auto max-w-lg space-y-4 px-4 py-6">
-        <div className="rounded-[26px] border border-accent/30 bg-accent/10 p-5"><p className="text-xs font-bold text-[#a17b29]">استخدام مسؤول</p><h2 className="mt-2 text-2xl font-black text-primary">شروط واضحة للجميع</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">تهدف هذه الشروط إلى تنظيم العلاقة بين العملاء ومقدمي الخدمات.</p></div>
+        <div className="rounded-[26px] border border-accent/30 bg-accent/10 p-5"><p className="text-xs font-bold text-[#b57920]">استخدام مسؤول</p><h2 className="mt-2 text-2xl font-black text-primary">شروط واضحة للجميع</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">تهدف هذه الشروط إلى تنظيم العلاقة بين العملاء ومقدمي الخدمات.</p></div>
         {sections.map(([title, text]) => <section key={title} className="rounded-[22px] border border-border bg-card p-5"><div className="flex items-start gap-3"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" /><div><h3 className="font-extrabold">{title}</h3><p className="mt-2 text-sm leading-7 text-muted-foreground">{text}</p></div></div></section>)}
         <p className="text-center text-xs text-muted-foreground">آخر تحديث: 6 سبتمبر 2026</p>
       </article>

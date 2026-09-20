@@ -1,33 +1,55 @@
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useLocation } from "wouter";
 import {
   ArrowLeft,
+  ArrowRight,
   BriefcaseBusiness,
   Check,
   ChevronLeft,
+  Clock3,
   Code2,
   Construction,
   Droplets,
   Mail,
-  MapPin,
-  PaintRoller,
+  Paintbrush,
   Phone,
+  Search,
   ShieldCheck,
   Snowflake,
   Sparkles,
   UserRound,
+  UsersRound,
   Wrench,
-  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { useAuth, apiRequest } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
-import { buildGoogleAuthPayload, getPostAuthPath, type RegistrationRole } from "@/lib/registration";
+import { buildGoogleAuthPayload, getFirstLoginPath, getPostAuthPath, type RegistrationRole } from "@/lib/registration";
 import { BrandLogo } from "@/components/brand-logo";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+const ONBOARDING_COMPLETED_KEY = "fazaah_onboarding_completed_v1";
+const ONBOARDING_ROLE_KEY = "fazaah_onboarding_role_v1";
+
+type Role = "client" | "provider";
+
+const roleCopy: Record<Role, { title: string; description: string; detail: string }> = {
+  client: { title: "أبحث عن خدمة", description: "أصل إلى الشخص المناسب بثقة", detail: "اطلب، تابع، وقيّم تجربتك من مكان واحد" },
+  provider: { title: "أقدّم خدمة", description: "أحوّل خبرتي إلى فرص حقيقية", detail: "اعرض مهارتك واستقبل طلبات من حولك" },
+};
+
+const services = [
+  { label: "سباكة", icon: Wrench },
+  { label: "كهرباء", icon: Sparkles },
+  { label: "تكييف", icon: Snowflake },
+  { label: "برمجة", icon: Code2 },
+  { label: "دهان", icon: Paintbrush },
+  { label: "تصميم", icon: Sparkles },
+  { label: "مقاولات", icon: Construction },
+  { label: "صيانة عامة", icon: Wrench },
+];
 
 function GoogleButton({ role }: { role: RegistrationRole }) {
   const { login } = useAuth();
@@ -37,13 +59,13 @@ function GoogleButton({ role }: { role: RegistrationRole }) {
   async function handleGoogleSuccess(credentialResponse: { credential?: string }) {
     if (!credentialResponse.credential) return;
     try {
-      const payload = JSON.parse(atob(credentialResponse.credential.split('.')[1]));
-      const data = await apiRequest('/auth/google', {
-        method: 'POST',
+      const payload = JSON.parse(atob(credentialResponse.credential.split(".")[1]));
+      const data = await apiRequest("/auth/google", {
+        method: "POST",
         body: JSON.stringify(buildGoogleAuthPayload(payload, role)),
       });
       login(data.token, data.user);
-      navigate(getPostAuthPath(data.user.role === "provider" ? "provider" : "client"));
+      navigate(getFirstLoginPath(data.user.role === "provider" ? "provider" : "client"));
     } catch (err: any) {
       toast({ title: "خطأ", description: err.message, variant: "destructive" });
     }
@@ -52,15 +74,11 @@ function GoogleButton({ role }: { role: RegistrationRole }) {
   if (!GOOGLE_CLIENT_ID) {
     return (
       <button
-        className="w-full flex items-center justify-center gap-3 h-13 rounded-2xl border border-[#d9d5cd] bg-white hover:bg-[#faf9f6] transition-colors text-[#162a2a] font-bold text-sm shadow-[0_8px_24px_rgba(22,42,42,0.05)]"
-        onClick={() => window.alert('يرجى تكوين VITE_GOOGLE_CLIENT_ID لتفعيل تسجيل الدخول بجوجل')}
+        type="button"
+        className="flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-[#d9dfe7] bg-white text-sm font-bold text-[#182d53] shadow-[0_8px_24px_rgba(14,47,98,0.05)] transition-colors hover:bg-[#f7f8fa]"
+        onClick={() => window.alert("يرجى تكوين VITE_GOOGLE_CLIENT_ID لتفعيل تسجيل الدخول بجوجل")}
       >
-        <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="#4285F4" d="M22.56 12.25c-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-        </svg>
+        <span className="text-lg font-black text-[#4285F4]">G</span>
         المتابعة باستخدام جوجل
       </button>
     );
@@ -69,276 +87,205 @@ function GoogleButton({ role }: { role: RegistrationRole }) {
   return (
     <div className="overflow-hidden rounded-2xl [&>div]:w-full">
       <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-        <GoogleLogin
-          onSuccess={handleGoogleSuccess}
-          onError={() => {}}
-          size="large"
-          width="100%"
-          text="continue_with"
-          shape="rectangular"
-        />
+        <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => undefined} size="large" width="100%" text="continue_with" shape="rectangular" />
       </GoogleOAuthProvider>
     </div>
   );
 }
 
-type Step = 'intro' | 'start';
-type Role = 'client' | 'provider';
+function ProgressDots({ active }: { active: number }) {
+  return (
+    <div className="flex items-center justify-center gap-2" aria-label={`المرحلة ${active + 1} من 3`}>
+      {[0, 1, 2].map((dot) => (
+        <span key={dot} className={`h-2 rounded-full transition-all duration-300 ${dot === active ? "w-8 bg-[#f0b046]" : "w-2 bg-[#c8d3e1]"}`} />
+      ))}
+    </div>
+  );
+}
 
-const roleCopy = {
-  client: {
-    title: "أبحث عن خدمة",
-    description: "أصل إلى الشخص المناسب بثقة",
-    icon: UserRound,
-    detail: "اطلب، تابع، وقيّم تجربتك من مكان واحد",
-  },
-  provider: {
-    title: "أقدّم خدمة",
-    description: "أحوّل خبرتي إلى فرص حقيقية",
-    icon: BriefcaseBusiness,
-    detail: "اعرض مهارتك واستقبل طلبات من حولك",
-  },
-} as const;
+function FeatureBenefits() {
+  const benefits = [
+    { icon: UsersRound, title: "مهنيون محترفون", detail: "في مختلف المجالات" },
+    { icon: Clock3, title: "تواصل سريع", detail: "ومباشر" },
+    { icon: ShieldCheck, title: "موثوقون", detail: "ومعتمدون" },
+  ];
+  return <div className="mt-2 grid w-full grid-cols-3 divide-x divide-x-reverse divide-[#dbe4ef] rounded-2xl bg-white/75 px-2 py-3 shadow-[0_8px_24px_rgba(24,45,83,0.06)]">{benefits.map(({ icon: Icon, title, detail }) => <div key={title} className="flex flex-col items-center gap-1 px-1 text-center"><Icon className="h-6 w-6 text-[#182d53]" /><b className="text-[9px] text-[#182d53]">{title}</b><span className="text-[8px] text-[#637087]">{detail}</span></div>)}</div>;
+}
+
+function PhonePreview({ detailed = false }: { detailed?: boolean }) {
+  return (
+    <div className={`relative mx-auto w-full max-w-[255px] ${detailed ? "rotate-[1deg]" : "-rotate-2"}`}>
+      <div className="absolute -inset-3 rounded-[42px] bg-[#182d53]/10 blur-2xl" />
+      <div className="relative rounded-[35px] border-[7px] border-[#182d53] bg-[#182d53] p-1.5 shadow-[0_28px_60px_rgba(14,47,98,0.25)]">
+        <div className="relative overflow-hidden rounded-[27px] bg-[#f7f8fa]">
+          <div className="flex items-center justify-center bg-[#182d53] py-2">
+            <div className="h-1.5 w-14 rounded-full bg-white/40" />
+          </div>
+          <div className="px-4 pb-5 pt-4" dir="rtl">
+            <div className="flex items-center justify-between">
+              <BrandLogo className="h-9 w-11 object-contain" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#182d53] shadow-sm"><UserRound className="h-4 w-4" /></div>
+            </div>
+            {detailed ? (
+              <>
+                <p className="mt-4 text-[10px] font-bold text-[#637087]">مرحباً بك في فزعة</p>
+                <div className="mt-2 flex h-9 items-center gap-2 rounded-xl border border-[#dfe5ec] bg-white px-3 text-[9px] text-[#8c897f] shadow-sm"><Search className="h-3.5 w-3.5" /> ابحث عن خدمة أو مهني</div>
+                <p className="mt-4 text-xs font-black text-[#182d53]">ما الخدمة التي تحتاجها؟</p>
+                <div className="mt-3 grid grid-cols-4 gap-2">
+                  {services.map(({ label, icon: Icon }) => (
+                    <div key={label} className="flex min-h-[57px] flex-col items-center justify-center gap-1 rounded-xl border border-[#e2e9f1] bg-white p-1 text-center shadow-[0_4px_12px_rgba(14,47,98,0.05)]">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#fff5db] text-[#b57920]"><Icon className="h-3.5 w-3.5" /></div>
+                      <span className="text-[7px] font-bold text-[#60728a]">{label}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 rounded-xl bg-[#182d53] p-3 text-white"><p className="text-[9px] font-bold">مهنيون موثوقون بالقرب منك</p><p className="mt-1 text-[7px] text-white/65">اختر، تواصل، وأنجز احتياجك بأمان</p></div>
+              </>
+            ) : (
+              <>
+                <div className="mt-7 rounded-2xl bg-[#182d53] p-4 text-white"><p className="text-[10px] text-[#f0b046]">خدماتك أقرب</p><p className="mt-2 text-lg font-black leading-7">الشخص المناسب<br />في الوقت المناسب</p><div className="mt-5 flex items-center gap-2"><div className="h-2 w-2 rounded-full bg-[#f0b046]" /><span className="text-[8px] text-white/70">فزعة توصلك بثقة</span></div></div>
+                <div className="mt-4 grid grid-cols-2 gap-2"><div className="h-16 rounded-2xl bg-[#fff2c6]" /><div className="h-16 rounded-2xl bg-[#dfeafa]" /></div>
+              </>
+            )}
+          </div>
+          <div className="mx-auto mb-2 h-1 w-12 rounded-full bg-[#182d53]/35" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Welcome() {
   const [, navigate] = useLocation();
-  const [step, setStep] = useState<Step>('intro');
-  const [selectedRole, setSelectedRole] = useState<Role>('client');
+  const [step, setStep] = useState(0);
+  const [selectedRole, setSelectedRole] = useState<Role>("client");
+  const [isLaunchingAuth, setIsLaunchingAuth] = useState(false);
 
-  const getAuthPath = (type: 'phone' | 'email') => (
-    type === 'phone'
-      ? `/auth/phone?mode=register&role=${selectedRole}`
-      : `/auth/email?role=${selectedRole}`
-  );
+  useEffect(() => {
+    const completed = localStorage.getItem(ONBOARDING_COMPLETED_KEY) === "true";
+    const savedRole = localStorage.getItem(ONBOARDING_ROLE_KEY) === "provider" ? "provider" : "client";
+    if (completed) {
+      navigate(`/auth/phone?mode=login&role=${savedRole}`, { replace: true });
+    }
+  }, [navigate]);
+
+  function completeOnboarding(role: Role = selectedRole) {
+    localStorage.setItem(ONBOARDING_COMPLETED_KEY, "true");
+    localStorage.setItem(ONBOARDING_ROLE_KEY, role);
+  }
+
+  const authPath = (type: "phone" | "email") => {
+    completeOnboarding();
+    return type === "phone" ? `/auth/phone?mode=register&role=${selectedRole}` : `/auth/email?role=${selectedRole}`;
+  };
+  const launchAuth = (type: "phone" | "email") => {
+    const destination = authPath(type);
+    setIsLaunchingAuth(true);
+    window.setTimeout(() => navigate(destination), 520);
+  };
+  const goToRoleSelection = () => {
+    completeOnboarding();
+    setStep(2);
+  };
+  const skipOnboarding = () => {
+    completeOnboarding("client");
+    setIsLaunchingAuth(true);
+    window.setTimeout(() => navigate("/auth/phone?mode=register&role=client"), 520);
+  };
 
   return (
-    <main className="min-h-[100dvh] overflow-hidden bg-[#f7f8fa] text-primary" dir="rtl">
+    <main className="min-h-[100dvh] overflow-hidden bg-[#f7f8fa] text-[#182d53]" dir="rtl">
       <AnimatePresence mode="wait">
-        {step === 'intro' ? (
-          <motion.section
-            key="intro"
-            initial={{ opacity: 0, x: 28 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 28 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="relative min-h-[100dvh] overflow-hidden bg-[#f7f8fa]"
-          >
-            <div className="absolute inset-x-0 bottom-0 h-[28%] bg-primary" />
-            <div className="absolute -bottom-20 left-1/2 h-56 w-[130%] -translate-x-1/2 rounded-[50%] bg-primary" />
-
-            <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 pb-5 pt-6 sm:max-w-lg sm:px-9">
-              <header className="flex justify-center">
-                <BrandLogo className="h-[142px] w-[176px] object-contain" />
-              </header>
-
-              <div className="flex flex-1 flex-col items-center pt-1 text-center">
-                <motion.div
-                  initial={{ opacity: 0, y: 24 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.12, duration: 0.65 }}
-                  className="mt-1 inline-flex w-fit items-center gap-2 rounded-full border border-[#e4c778]/30 bg-[#e4c778]/10 px-3.5 py-2 text-[11px] font-bold text-[#a17b29]"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span>خدمة تستحق الثقة</span>
-                </motion.div>
-
-                <motion.h1
-                  initial={{ opacity: 0, y: 24 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2, duration: 0.7 }}
-                  className="mt-4 max-w-[19rem] text-[31px] font-black leading-[1.25] tracking-[-0.04em] text-primary sm:text-[40px]"
-                >
-                  أهلاً وسهلاً بك في
-                  <span className="relative mx-auto block w-fit text-[#b08625] after:absolute after:-bottom-1 after:right-0 after:h-1 after:w-20 after:rounded-full after:bg-[#e4c778]">فزعة</span>
-                </motion.h1>
-                <motion.p
-                  initial={{ opacity: 0, y: 18 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3, duration: 0.65 }}
-                  className="mt-3 max-w-[20rem] text-[14px] leading-7 text-[#637087]"
-                >
-                  منصة توصلك بأفضل المهنيين والفنيين لإنجاز احتياجاتك بسهولة وسرعة.
-                </motion.p>
-
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.94 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.38, duration: 0.7 }}
-                  className="relative mt-5 h-[340px] w-full overflow-hidden rounded-[34px] border border-white/70 bg-white shadow-[0_18px_50px_rgba(14,47,98,0.14)]"
-                >
-                  <img src="/manus-storage/fazaah-worker-hero_0e3583a1.png" alt="" className="absolute inset-0 h-full w-full object-cover object-center" />
-                  <div className="absolute inset-0 bg-gradient-to-b from-card/90 via-transparent to-primary/15" />
-                  <div className="absolute right-5 top-7 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-primary shadow-md">
-                    <Zap className="h-5 w-5 text-[#e4c778]" />
-                  </div>
-                  <div className="absolute left-5 top-12 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-primary shadow-md">
-                    <Wrench className="h-5 w-5" />
-                  </div>
-                  <div className="absolute left-1/2 top-4 flex h-12 w-12 -translate-x-1/2 items-center justify-center rounded-full bg-white/90 text-primary shadow-md">
-                    <Construction className="h-5 w-5 text-[#b08625]" />
-                  </div>
-                  <div className="absolute right-3 top-28 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-primary shadow-md">
-                    <Droplets className="h-5 w-5" />
-                  </div>
-                  <div className="absolute left-3 top-28 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-primary shadow-md">
-                    <Snowflake className="h-5 w-5" />
-                  </div>
-                </motion.div>
+        {step === 0 && (
+          <motion.section key="intro" initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -28 }} transition={{ duration: 0.35 }} className="relative min-h-[100dvh]">
+            <div className="onboarding-wave absolute inset-x-0 bottom-0 h-[24%] overflow-hidden bg-[#182d53]"><span className="onboarding-wave-gold" /></div>
+            <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 pb-5 pt-7 sm:max-w-lg sm:px-9">
+              <header className="flex items-center justify-between"><span className="text-[11px] font-bold text-[#182d53]">9:41</span><BrandLogo className="h-24 w-28 object-contain" /><span className="flex gap-1"><span className="h-2 w-2 rounded-full bg-[#182d53]" /><span className="h-2 w-2 rounded-full bg-[#f0b046]" /></span></header>
+              <div className="flex flex-1 flex-col items-center text-center">
+                <span className="mt-2 inline-flex items-center gap-2 rounded-full border border-[#f0b046]/30 bg-[#fff5db] px-3 py-2 text-[10px] font-bold text-[#b57920]"><Sparkles className="h-3.5 w-3.5" /> خدمة تستحق الثقة</span>
+                <h1 className="mt-5 text-[34px] font-black leading-[1.25] tracking-[-0.04em] sm:text-[42px]">أهلاً وسهلاً بك في <span className="block text-[#b57920]">فزعة</span></h1>
+                <p className="mt-3 max-w-[20rem] text-sm leading-7 text-[#637087]">منصة توصلك بأفضل المهنيين والفنيين لإنجاز احتياجاتك بسهولة وسرعة.</p>
+                <div className="mt-5 w-full"><PhonePreview /></div><FeatureBenefits />
               </div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.6 }}
-                className="relative z-10 mt-4 w-full"
-              >
-                <button
-                  type="button"
-                  onClick={() => setStep('start')}
-                  className="group flex h-14 w-full items-center justify-between rounded-2xl bg-[#f5ba20] px-5 text-right text-[15px] font-extrabold text-primary shadow-[0_14px_28px_rgba(228,199,120,0.25)] transition-transform hover:bg-[#ffca3a] active:scale-[0.98]"
-                >
-                  <span>لنبدأ</span>
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 transition-transform group-hover:-translate-x-1">
-                    <ChevronLeft className="h-5 w-5" />
-                  </span>
-                </button>
-                <div className="mt-4 flex items-center justify-center gap-2 text-[10px] font-medium text-white/65">
-                  <ShieldCheck className="h-3.5 w-3.5 text-[#d9b765]" />
-                  <span>تجربة آمنة ومصممة لك</span>
-                </div>
-                <button type="button" onClick={() => setStep('start')} className="mt-3 block w-full text-center text-[11px] font-semibold text-white/55 hover:text-white">تخطي</button>
-              </motion.div>
+              <div className="relative z-10 mt-5 space-y-4">
+                <Button type="button" onClick={() => setStep(1)} className="group h-14 w-full justify-between rounded-2xl bg-[#f0b046] px-5 text-base font-black text-[#182d53] shadow-[0_14px_28px_rgba(245,185,22,0.24)] hover:bg-[#ffca3a]"><span>لنبدأ</span><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#182d53]/10"><ChevronLeft className="h-5 w-5" /></span></Button>
+                <ProgressDots active={0} />
+                <button type="button" onClick={skipOnboarding} className="block w-full text-center text-xs font-semibold text-white/70 hover:text-white">تخطي</button>
+              </div>
             </div>
           </motion.section>
-        ) : (
-          <motion.section
-            key="start"
-            initial={{ opacity: 0, x: -28 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -28 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="min-h-[100dvh] bg-[#f7f8fa]"
-          >
+        )}
+
+        {step === 1 && (
+          <motion.section key="discover" initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -28 }} transition={{ duration: 0.35 }} className="relative min-h-[100dvh] bg-[#f7f8fa]">
+            <div className="onboarding-wave absolute inset-x-0 bottom-0 h-[27%] overflow-hidden bg-[#182d53]"><span className="onboarding-wave-gold" /></div>
+            <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 pb-5 pt-7 sm:max-w-lg sm:px-9">
+              <header className="flex items-center justify-between"><button type="button" onClick={() => setStep(0)} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#ddd8ce] bg-white text-[#182d53]" aria-label="العودة"><ArrowRight className="h-4 w-4" /></button><BrandLogo className="h-20 w-24 object-contain" /><span className="text-[10px] font-bold text-[#182d53]">9:41</span></header>
+              <div className="flex flex-1 flex-col items-center text-center">
+                <h2 className="mt-5 text-[31px] font-black leading-[1.3] tracking-[-0.04em]">تواصل مباشرة مع <span className="block text-[#b57920]">المهني المناسب</span></h2>
+                <p className="mt-3 max-w-[20rem] text-sm leading-7 text-[#637087]">اختر نوع الخدمة، وتواصل مع أفضل المهنيين المعتمدين لإنجاز احتياجك بسهولة وأمان.</p>
+                <div className="mt-5 w-full"><PhonePreview detailed /></div><FeatureBenefits />
+              </div>
+              <div className="relative z-10 mt-5 space-y-4">
+                <Button type="button" onClick={goToRoleSelection} className="group h-14 w-full justify-between rounded-2xl bg-[#f0b046] px-5 text-base font-black text-[#182d53] shadow-[0_14px_28px_rgba(245,185,22,0.24)] hover:bg-[#ffca3a]"><span>التالي</span><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#182d53]/10"><ChevronLeft className="h-5 w-5" /></span></Button>
+                <ProgressDots active={1} />
+                <button type="button" onClick={skipOnboarding} className="block w-full text-center text-xs font-semibold text-white/70 hover:text-white">تخطي</button>
+              </div>
+            </div>
+          </motion.section>
+        )}
+
+        {step === 2 && (
+          <motion.section key="role" initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -28 }} transition={{ duration: 0.35 }} className="min-h-[100dvh] bg-[#f7f8fa]">
             <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 pb-7 pt-7 sm:max-w-lg sm:px-9">
-              <header className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => setStep('intro')}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-[#ddd8ce] bg-white text-primary transition-colors hover:bg-[#ebe8e0]"
-                  aria-label="العودة للشاشة السابقة"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </button>
-                <div className="flex items-center gap-2">
-                  <span className="h-1.5 w-7 rounded-full bg-[#162a2a]" />
-                  <span className="h-1.5 w-7 rounded-full bg-[#d9b765]" />
-                  <span className="text-[10px] font-bold text-[#8e8b82]">٠٢ / ٠٢</span>
-                </div>
-              </header>
-
-              <div className="flex flex-1 flex-col pt-8">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1, duration: 0.55 }}
-                >
-                  <BrandLogo className="mb-2 h-20 w-28 object-contain object-right" />
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#a17b29]">مرحباً بك في فزعة</p>
-                  <h2 className="mt-3 text-[34px] font-black leading-[1.2] tracking-[-0.04em] text-primary">
-                    اختر تجربتك،
-                    <span className="block text-[#a17b29]">ونبدأ معاً.</span>
-                  </h2>
-                  <p className="mt-4 max-w-[19rem] text-sm leading-7 text-[#77766f]">
-                    أخبرنا كيف ستستخدم فزعة لنجهز لك رحلة تناسب احتياجك من أول خطوة.
-                  </p>
-                </motion.div>
-
-                <div className="mt-8 space-y-3">
-                  {(Object.entries(roleCopy) as [Role, typeof roleCopy[Role]][]).map(([role, item], index) => {
-                    const Icon = item.icon;
-                    const isSelected = selectedRole === role;
-                    return (
-                      <motion.button
-                        key={role}
-                        type="button"
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 + index * 0.08, duration: 0.5 }}
-                        whileTap={{ scale: 0.985 }}
-                        onClick={() => setSelectedRole(role)}
-                        className={`group relative flex w-full items-center gap-4 overflow-hidden rounded-[24px] border p-4 text-right transition-all duration-300 ${
-                          isSelected
-                            ? "border-primary bg-primary text-white shadow-[0_16px_32px_rgba(14,47,98,0.16)]"
-                            : "border-[#dedad1] bg-white text-primary hover:border-[#c9b77c]"
-                        }`}
-                      >
-                        {isSelected && <div className="absolute -left-6 -top-10 h-24 w-24 rounded-full bg-[#d9b765]/20 blur-xl" />}
-                        <div className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${
-                          isSelected ? "bg-[#e4c778] text-primary" : "bg-[#f1eee7] text-[#a17b29]"
-                        }`}>
-                          <Icon className="h-6 w-6" />
-                        </div>
-                        <div className="relative min-w-0 flex-1">
-                          <p className="text-[15px] font-extrabold">{item.title}</p>
-                          <p className={`mt-1 text-xs ${isSelected ? "text-white/60" : "text-[#8a887f]"}`}>{item.description}</p>
-                          <p className={`mt-2 text-[10px] font-medium ${isSelected ? "text-[#e4c778]" : "text-[#aaa69b]"}`}>{item.detail}</p>
-                        </div>
-                        <div className={`relative flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
-                          isSelected ? "border-[#e4c778] bg-[#e4c778] text-[#162a2a]" : "border-[#d4d0c6] text-transparent"
-                        }`}>
-                          <Check className="h-3.5 w-3.5" strokeWidth={3} />
-                        </div>
-                      </motion.button>
-                    );
-                  })}
-                </div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4, duration: 0.5 }}
-                  className="mt-auto pt-8"
-                >
-                  <p className="mb-3 text-center text-[11px] font-semibold text-[#9a978e]">ابدأ بطريقتك المفضلة</p>
-                  <motion.div whileTap={{ scale: 0.985 }}>
-                    <Button
-                      className="h-14 w-full rounded-2xl bg-primary text-[15px] font-extrabold text-white shadow-[0_14px_28px_rgba(14,47,98,0.16)] hover:bg-primary/90"
-                      onClick={() => navigate(getAuthPath('phone'))}
-                    >
-                      <Phone className="ml-2 h-5 w-5 text-[#e4c778]" />
-                      التسجيل برقم الهاتف
-                    </Button>
-                  </motion.div>
-                  <div className="my-3 flex items-center gap-3">
-                    <div className="h-px flex-1 bg-[#dedad1]" />
-                    <span className="text-[10px] font-bold text-[#aaa69b]">أو</span>
-                    <div className="h-px flex-1 bg-[#dedad1]" />
-                  </div>
-                  <GoogleButton role={selectedRole} />
-                  <motion.div whileTap={{ scale: 0.985 }} className="mt-3">
-                    <Button
-                      variant="outline"
-                      className="h-12 w-full rounded-2xl border-[#d9d5cd] bg-transparent text-sm font-bold text-[#3a4a48] hover:bg-white"
-                      onClick={() => navigate(getAuthPath('email'))}
-                    >
-                      <Mail className="ml-2 h-4 w-4 text-[#a17b29]" />
-                      التسجيل بالبريد الإلكتروني
-                    </Button>
-                  </motion.div>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/auth/phone?mode=login&role=client')}
-                    className="mt-5 block w-full text-center text-xs text-[#8b897f] transition-colors hover:text-primary"
-                  >
-                    لديك حساب بالفعل؟ <span className="font-extrabold text-[#a17b29]">تسجيل الدخول برقم الهاتف</span>
-                  </button>
-                  <p className="mt-4 text-center text-[10px] leading-5 text-[#aaa69b]">
-                    بالمتابعة توافق على شروط الاستخدام وسياسة الخصوصية
-                  </p>
-                </motion.div>
+              <header className="flex items-center justify-between"><button type="button" onClick={() => setStep(1)} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#ddd8ce] bg-white text-[#182d53]" aria-label="العودة"><ArrowRight className="h-4 w-4" /></button><BrandLogo className="h-20 w-24 object-contain" /><span className="text-[10px] font-bold text-[#182d53]">9:41</span></header>
+              <div className="flex flex-1 flex-col pt-7">
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#b57920]">الخطوة الأخيرة</p>
+                <h2 className="mt-3 text-[32px] font-black leading-[1.25] tracking-[-0.04em]">اختر تجربتك،<span className="block text-[#b57920]">ونبدأ معاً.</span></h2>
+                <p className="mt-4 max-w-[19rem] text-sm leading-7 text-[#777f8c]">أخبرنا كيف ستستخدم فزعة لنجهز لك رحلة تناسب احتياجك من أول خطوة.</p>
+                <div className="mt-7 space-y-3">{(Object.entries(roleCopy) as [Role, (typeof roleCopy)[Role]][]).map(([role, item]) => { const Icon = role === "provider" ? BriefcaseBusiness : UserRound; const selected = selectedRole === role; return <motion.button key={role} type="button" whileTap={{ scale: 0.985 }} onClick={() => setSelectedRole(role)} className={`relative flex w-full items-center gap-4 overflow-hidden rounded-[24px] border p-4 text-right transition-all ${selected ? "border-[#182d53] bg-[#182d53] text-white shadow-[0_16px_32px_rgba(14,47,98,0.16)]" : "border-[#dedad1] bg-white text-[#182d53] hover:border-[#c9b77c]"}`}><span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${selected ? "bg-[#f0b046] text-[#182d53]" : "bg-[#fff4d2] text-[#b57920]"}`}><Icon className="h-6 w-6" /></span><span className="min-w-0 flex-1"><b className="block text-[15px]">{item.title}</b><small className={`mt-1 block text-xs ${selected ? "text-white/70" : "text-[#77766f]"}`}>{item.description}</small><small className={`mt-2 block text-[10px] ${selected ? "text-[#f0b046]" : "text-[#b57920]"}`}>{item.detail}</small></span><span className={`flex h-6 w-6 items-center justify-center rounded-full border ${selected ? "border-[#f0b046] bg-[#f0b046] text-[#182d53]" : "border-[#d4d0c6] text-transparent"}`}><Check className="h-3.5 w-3.5" /></span></motion.button>; })}</div>
+                <div className="mt-auto pt-7"><p className="mb-3 text-center text-[11px] font-semibold text-[#8b98a8]">ابدأ بطريقتك المفضلة</p><Button type="button" onClick={() => launchAuth("phone")} className="h-14 w-full rounded-2xl bg-[#182d53] text-[15px] font-extrabold text-white shadow-[0_14px_28px_rgba(14,47,98,0.16)] hover:bg-[#182d53]"><Phone className="ml-2 h-5 w-5 text-[#f0b046]" />التسجيل برقم الهاتف<ArrowLeft className="mr-auto h-4 w-4" /></Button><div className="my-3 flex items-center gap-3"><div className="h-px flex-1 bg-[#dedad1]" /><span className="text-[10px] font-bold text-[#9a978e]">أو</span><div className="h-px flex-1 bg-[#dedad1]" /></div><GoogleButton role={selectedRole} /><Button type="button" variant="outline" onClick={() => launchAuth("email")} className="mt-3 h-12 w-full rounded-2xl border-[#d9e1ea] bg-transparent text-sm font-bold text-[#3a4a48] hover:bg-white"><Mail className="ml-2 h-4 w-4 text-[#b57920]" />التسجيل بالبريد الإلكتروني</Button><button type="button" onClick={() => navigate(`/auth/phone?mode=login&role=${selectedRole}`)} className="mt-5 block w-full text-center text-xs text-[#8b98a8]">لديك حساب بالفعل؟ <span className="font-extrabold text-[#b57920]">تسجيل الدخول برقم الهاتف</span></button></div>
               </div>
+              <div className="mt-5"><ProgressDots active={2} /><p className="mt-3 text-center text-[10px] leading-5 text-[#9a978e]">بالاستمرار توافق على شروط الاستخدام وسياسة الخصوصية</p></div>
             </div>
           </motion.section>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isLaunchingAuth && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#182d53]"
+            role="status"
+            aria-live="polite"
+          >
+            <motion.div
+              initial={{ scale: 0.72, opacity: 0, rotate: -8 }}
+              animate={{ scale: 1, opacity: 1, rotate: 0 }}
+              transition={{ duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
+              className="absolute h-72 w-72 rounded-full bg-[#f0b046]/20 blur-3xl"
+            />
+            <motion.div
+              initial={{ y: 18, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.1, duration: 0.35 }}
+              className="relative flex flex-col items-center gap-5 text-center"
+            >
+              <div className="flex h-24 w-24 items-center justify-center rounded-[30px] bg-white p-3 shadow-[0_18px_55px_rgba(0,0,0,0.2)]">
+                <BrandLogo className="h-full w-full object-contain" />
+              </div>
+              <div>
+                <p className="text-lg font-black text-white">نجهّز لك تجربة فزعة</p>
+                <p className="mt-2 text-xs text-white/60">لحظات ونبدأ معك</p>
+              </div>
+              <div className="flex gap-1.5" aria-hidden="true">
+                {[0, 1, 2].map((dot) => <motion.span key={dot} animate={{ opacity: [0.35, 1, 0.35], scale: [0.85, 1, 0.85] }} transition={{ repeat: Infinity, duration: 1, delay: dot * 0.16 }} className="h-2 w-2 rounded-full bg-[#f0b046]" />)}
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </main>

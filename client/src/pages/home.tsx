@@ -61,27 +61,27 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-[#f7f8fa] pb-24 text-[#0e2f62]" dir="rtl">
-      <header className="relative border-b border-[#0e2f62]/[0.06] bg-white px-4 pb-2 pt-3">
+    <div className="min-h-[100dvh] bg-[#f7f8fa] pb-24 text-[#182d53]" dir="rtl">
+      <header className="relative border-b border-[#182d53]/[0.06] bg-white px-4 pb-2 pt-3">
         <div className="mx-auto flex h-[74px] max-w-lg items-center justify-between">
           <button
             type="button"
-            className="flex items-center gap-1.5 rounded-full bg-[#f3f6fa] px-3 py-2 text-[11px] font-bold text-[#0e2f62]"
+            className="flex items-center gap-1.5 rounded-full bg-[#f3f6fa] px-3 py-2 text-[11px] font-bold text-[#182d53]"
             aria-label="اختيار المدينة"
           >
             <ChevronDown className="h-3.5 w-3.5" />
             <span>{user?.city ?? "صنعاء"}</span>
-            <MapPin className="h-4 w-4 text-[#0e2f62]" />
+            <MapPin className="h-4 w-4 text-[#182d53]" />
           </button>
 
           <Link href="/" className="absolute left-1/2 top-2 -translate-x-1/2">
             <BrandLogo className="h-[76px] w-[126px] object-contain" />
           </Link>
 
-          <div className="flex items-center gap-4 text-[#0e2f62]">
+          <div className="flex items-center gap-4 text-[#182d53]">
             <Link href="/notifications" className="relative">
               <Bell className="h-[22px] w-[22px]" strokeWidth={1.7} />
-              <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-white bg-[#f5b916]" />
+              <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-white bg-[#f0b046]" />
             </Link>
             <Link href="/profile">
               <UserRound className="h-[22px] w-[22px]" strokeWidth={1.7} />
@@ -91,19 +91,19 @@ export default function Home() {
       </header>
 
       <main className="mx-auto max-w-lg space-y-5 px-4 pt-4">
-        <p className="text-lg font-black text-[#0e2f62]">أهلًا {user?.name?.trim().split(/\s+/)[0] || "بك"}</p>
+        <p className="text-lg font-black text-[#182d53]">أهلًا {user?.name?.trim().split(/\s+/)[0] || "بك"}</p>
         <section className="relative h-[178px] overflow-hidden rounded-[25px] bg-[#eef2f6] shadow-[0_10px_25px_rgba(14,47,98,0.08)]">
           <img
-            src="/manus-storage/fazaah-worker-hero_0e3583a1.png"
-            alt=""
+            src="/assets/fazaah-hero.svg"
+            alt="فني من فزعة"
             className="absolute inset-0 h-full w-full object-cover object-center"
           />
           <div className="absolute inset-0 bg-gradient-to-l from-card via-card/80 to-transparent" />
           <div className="relative z-10 flex h-full max-w-[62%] flex-col justify-center px-5">
             <p className="text-[11px] font-semibold text-[#60728a]">احتياجك .. نوصلك بالشخص المناسب</p>
-            <h1 className="mt-1 text-[25px] font-black leading-[1.25] text-[#0e2f62]">
+            <h1 className="mt-1 text-[25px] font-black leading-[1.25] text-[#182d53]">
               تحتاج شيء؟
-              <span className="relative block w-fit text-[#0e2f62] after:absolute after:-bottom-1 after:right-0 after:h-1 after:w-16 after:rounded-full after:bg-[#f5b916]">
+              <span className="relative block w-fit text-[#182d53] after:absolute after:-bottom-1 after:right-0 after:h-1 after:w-16 after:rounded-full after:bg-[#f0b046]">
                 فزعت لك!
               </span>
             </h1>
@@ -115,7 +115,7 @@ export default function Home() {
           <button
             type="button"
             onClick={handleSearch}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f5b916] text-[#0e2f62] transition-transform active:scale-95"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f0b046] text-[#182d53] transition-transform active:scale-95"
             aria-label="بحث"
           >
             <Search className="h-5 w-5" strokeWidth={2.5} />
@@ -128,7 +128,7 @@ export default function Home() {
             onChange={(event) => setSearchQuery(event.target.value)}
             onKeyDown={(event) => event.key === "Enter" && handleSearch()}
           />
-          <button type="button" onClick={() => navigate("/providers")} className="px-2 text-[#0e2f62]" aria-label="تصفية البحث">
+          <button type="button" onClick={() => navigate("/providers")} className="px-2 text-[#182d53]" aria-label="تصفية البحث">
             <SlidersHorizontal className="h-5 w-5" strokeWidth={1.7} />
           </button>
         </div>
@@ -140,8 +140,8 @@ export default function Home() {
               <ChevronLeft className="h-3.5 w-3.5" />
             </Link>
             <div className="flex items-center gap-2">
-              <span className="h-1 w-7 rounded-full bg-[#f5b916]" />
-              <h2 className="text-[15px] font-black text-[#0e2f62]">اختر نوع الخدمة</h2>
+              <span className="h-1 w-7 rounded-full bg-[#f0b046]" />
+              <h2 className="text-[15px] font-black text-[#182d53]">اختر نوع الخدمة</h2>
             </div>
           </div>
 
@@ -151,9 +151,9 @@ export default function Home() {
                 <Link key={category.id} href={`/providers?categoryId=${category.id}`}>
                   <motion.div
                     whileTap={{ scale: 0.95 }}
-                    className="flex h-[94px] flex-col items-center justify-center gap-2 rounded-[16px] border border-[#e5e9ee] bg-white text-[#0e2f62] shadow-[0_4px_12px_rgba(14,47,98,0.04)] transition-colors hover:border-[#f5b916]"
+                    className="flex h-[94px] flex-col items-center justify-center gap-2 rounded-[16px] border border-[#e5e9ee] bg-white text-[#182d53] shadow-[0_4px_12px_rgba(14,47,98,0.04)] transition-colors hover:border-[#f0b046]"
                   >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#f4f7fa] text-[#0e2f62]">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#f4f7fa] text-[#182d53]">
                       <CategoryIcon name={`${category.name} ${category.icon ?? ""}`} />
                     </div>
                     <span className="text-[10px] font-bold">{category.name}</span>
@@ -174,18 +174,18 @@ export default function Home() {
 
         <section className="relative h-[104px] overflow-hidden rounded-[20px] bg-[#fff5db] shadow-[0_8px_18px_rgba(14,47,98,0.05)]">
           <img
-            src="/manus-storage/fazaah-worker-hero_0e3583a1.png"
-            alt=""
+            src="/assets/fazaah-hero.svg"
+            alt="فني من فزعة"
             className="absolute left-0 top-0 h-full w-[53%] object-cover object-bottom"
           />
           <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent to-[#fff5db]" />
           <div className="relative z-10 flex h-full flex-col justify-center px-5">
             <div className="flex items-center gap-1.5">
-              <Sparkles className="h-4 w-4 text-[#f5b916]" />
-              <h2 className="text-[15px] font-black text-[#0e2f62]">محتاج مساعدة أكثر؟</h2>
+              <Sparkles className="h-4 w-4 text-[#f0b046]" />
+              <h2 className="text-[15px] font-black text-[#182d53]">محتاج مساعدة أكثر؟</h2>
             </div>
             <p className="mt-1 text-[10px] text-[#67758a]">تصفح جميع المهنيين والخدمات المتاحة.</p>
-            <Link href="/providers" className="mt-2 w-fit rounded-full bg-[#f5b916] px-4 py-1.5 text-[10px] font-black text-[#0e2f62]">
+            <Link href="/providers" className="mt-2 w-fit rounded-full bg-[#f0b046] px-4 py-1.5 text-[10px] font-black text-[#182d53]">
               تصفح الكل
             </Link>
           </div>
@@ -194,8 +194,8 @@ export default function Home() {
         {featuredAdvertisements.length > 0 && (
           <section>
             <div className="mb-3 flex items-center justify-between">
-              <span className="rounded-full bg-[#f5b916]/15 px-2 py-1 text-[10px] font-bold text-[#8c6b00]">إعلانات مدفوعة</span>
-              <h2 className="text-[15px] font-black text-[#0e2f62]">مهنيون مميزون</h2>
+              <span className="rounded-full bg-[#f0b046]/15 px-2 py-1 text-[10px] font-bold text-[#8c6b00]">إعلانات مدفوعة</span>
+              <h2 className="text-[15px] font-black text-[#182d53]">مهنيون مميزون</h2>
             </div>
             <div className="space-y-2.5">
               {featuredAdvertisements.slice(0, 3).map((ad) => (
@@ -205,10 +205,10 @@ export default function Home() {
                     <div className="px-4 py-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-black text-[#0e2f62]">{ad.title}</p>
+                        <p className="truncate text-sm font-black text-[#182d53]">{ad.title}</p>
                         <p className="mt-1 truncate text-[11px] text-[#708198]">{ad.providerName || "مهني موصى به"} · {ad.city}</p>
                       </div>
-                      <span className="shrink-0 rounded-full bg-[#f5b916] px-2 py-1 text-[9px] font-black text-[#0e2f62]">إعلان</span>
+                      <span className="shrink-0 rounded-full bg-[#f0b046] px-2 py-1 text-[9px] font-black text-[#182d53]">إعلان</span>
                     </div>
                     {ad.description && <p className="mt-2 line-clamp-1 text-[11px] text-[#60728a]">{ad.description}</p>}
                     </div>
@@ -226,8 +226,8 @@ export default function Home() {
               <ChevronLeft className="h-3.5 w-3.5" />
             </Link>
             <div className="flex items-center gap-2">
-              <History className="h-4 w-4 text-[#0e2f62]" />
-              <h2 className="text-[15px] font-black text-[#0e2f62]">خدماتك الأخيرة</h2>
+              <History className="h-4 w-4 text-[#182d53]" />
+              <h2 className="text-[15px] font-black text-[#182d53]">خدماتك الأخيرة</h2>
             </div>
           </div>
           {recentRequests.length ? (
@@ -235,16 +235,16 @@ export default function Home() {
               {recentRequests.map((request) => (
                 <Link key={request.id} href={`/my-requests/${request.id}`}>
                   <div className="flex items-center gap-3 rounded-[18px] border border-[#e5e9ee] bg-white px-4 py-3 shadow-[0_4px_12px_rgba(14,47,98,0.04)]">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f4f7fa] text-xs font-black text-[#0e2f62]">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f4f7fa] text-xs font-black text-[#182d53]">
                       {request.isImmediate ? "عاجل" : "طلب"}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-black text-[#0e2f62]">{request.serviceType}</p>
+                      <p className="truncate text-sm font-black text-[#182d53]">{request.serviceType}</p>
                       <p className="mt-1 truncate text-[11px] text-[#708198]">
                         {user?.role === "provider" ? request.clientName : request.providerName || "بانتظار المهني"}
                       </p>
                     </div>
-                    <span className="shrink-0 rounded-full bg-[#f5b916]/15 px-2 py-1 text-[10px] font-bold text-[#8c6b00]">
+                    <span className="shrink-0 rounded-full bg-[#f0b046]/15 px-2 py-1 text-[10px] font-bold text-[#8c6b00]">
                       {request.status === "pending" ? "قيد الانتظار" :
                         request.status === "accepted" ? "مقبول" :
                         request.status === "completed" ? "مكتمل" :
@@ -261,10 +261,10 @@ export default function Home() {
               className="flex w-full items-center justify-between rounded-[18px] border border-dashed border-[#cbd5e1] bg-white px-4 py-4 text-right"
             >
               <span>
-                <span className="block text-sm font-black text-[#0e2f62]">لا توجد طلبات محفوظة</span>
+                <span className="block text-sm font-black text-[#182d53]">لا توجد طلبات محفوظة</span>
                 <span className="mt-1 block text-[11px] text-[#708198]">تصفح المهنيين وأنشئ طلب خدمة حقيقياً.</span>
               </span>
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f5b916] text-[#0e2f62]">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f0b046] text-[#182d53]">
                 <ChevronLeft className="h-5 w-5" />
               </span>
             </button>

@@ -29,7 +29,7 @@ export default function Earnings() {
         </div>
         <div className="rounded-[24px] border border-border bg-card p-5">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/20 text-[#a17b29]"><Clock3 className="h-5 w-5" /></div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/20 text-[#b57920]"><Clock3 className="h-5 w-5" /></div>
             <div>
               <h2 className="font-extrabold">الأرباح قيد التفعيل</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">سيتم تفعيل المحفظة والسحب الإلكتروني عند جاهزية نظام الدفع.</p>

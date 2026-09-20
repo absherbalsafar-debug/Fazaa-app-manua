@@ -226,9 +226,15 @@ export default function ProviderDetail() {
           )}
 
           {/* Reviews */}
-          {reviews && reviews.length > 0 && (
-            <section>
-              <h3 className="font-bold text-lg mb-4">التقييمات والآراء</h3>
+          <section>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h3 className="font-bold text-lg">التقييمات والآراء</h3>
+                <div className="flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-sm font-bold text-amber-600">
+                  <Star className="h-4 w-4 fill-current" />
+                  {Number(provider.rating ?? 0).toFixed(1)}
+                </div>
+              </div>
+              {reviews && reviews.length > 0 ? (
               <div className="space-y-4">
                 {reviews.map((review) => (
                   <div key={review.id} className="bg-muted/30 p-4 rounded-2xl">
@@ -250,8 +256,12 @@ export default function ProviderDetail() {
                   </div>
                 ))}
               </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-5 text-center text-sm text-muted-foreground">
+                  لا توجد تقييمات منشورة بعد. كن أول من يقيّم تجربة الخدمة.
+                </div>
+              )}
             </section>
-          )}
         </div>
       </div>
     </div>

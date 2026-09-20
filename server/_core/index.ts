@@ -8,6 +8,7 @@ import { registerStorageProxy } from "./storageProxy";
 import { registerPhoneAuthRoutes } from "../phoneAuth";
 import { registerProviderCatalogRoutes } from "../providerCatalog";
 import { registerProviderVerificationRoutes } from "../providerVerification";
+import { registerProviderSubscriptionRoutes } from "../providerSubscription";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -41,6 +42,7 @@ async function startServer() {
   registerPhoneAuthRoutes(app);
   registerProviderCatalogRoutes(app);
   registerProviderVerificationRoutes(app);
+  registerProviderSubscriptionRoutes(app);
   registerOAuthRoutes(app);
   // tRPC API
   app.use(

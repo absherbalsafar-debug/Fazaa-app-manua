@@ -230,6 +230,15 @@ export default function Profile() {
             </div>
 
             <div className="border-t border-border/60 px-4 py-3">
+              <p className="text-sm font-bold">المجال والتخصص</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                <span className="rounded-full bg-primary/10 px-3 py-1.5 font-bold text-primary">{providerDetails.categoryName || "لم يحدد المجال"}</span>
+                <span className="text-muted-foreground">←</span>
+                <span className="rounded-full bg-accent/20 px-3 py-1.5 font-bold text-amber-800">{(providerDetails as typeof providerDetails & { specialty?: string }).specialty || "لم يحدد التخصص الفرعي"}</span>
+              </div>
+            </div>
+
+            <div className="border-t border-border/60 px-4 py-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-bold">أرقام التواصل</p>

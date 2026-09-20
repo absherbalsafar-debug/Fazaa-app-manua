@@ -135,7 +135,7 @@ export function LocationPicker({ value, onChange, error }: LocationPickerProps) 
   return (
     <section className="space-y-4 rounded-[28px] border border-primary/10 bg-white p-4 shadow-[0_16px_36px_rgba(14,47,98,0.08)]">
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent/20 text-[#a17b29]"><MapPin className="h-5 w-5" /></div>
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent/20 text-[#b57920]"><MapPin className="h-5 w-5" /></div>
         <div className="min-w-0 flex-1">
           <h2 className="text-base font-black text-primary">حدد موقعك</h2>
           <p className="mt-1 text-xs leading-6 text-[#77766f]">نحتاج موقعك لعرض أقرب المهنيين والخدمات المتاحة حولك.</p>
@@ -148,7 +148,7 @@ export function LocationPicker({ value, onChange, error }: LocationPickerProps) 
       <div ref={mapElement} className="h-64 w-full overflow-hidden rounded-2xl border border-[#d9d5cd] bg-[#eef1ed]" aria-label="خريطة تحديد موقع العميل" />
       <div className="flex items-center justify-between gap-2 text-[11px] text-[#77766f]">
         <span>{value ? "تم حفظ موقعك ويمكنك تغييره من الخريطة أو الزر أعلاه" : "اضغط على الخريطة أو حرّك المؤشر لاختيار موقع أدق"}</span>
-        {resolving && <span className="flex items-center gap-1 font-bold text-[#a17b29]"><RefreshCw className="h-3 w-3 animate-spin" /> قراءة العنوان</span>}
+        {resolving && <span className="flex items-center gap-1 font-bold text-[#b57920]"><RefreshCw className="h-3 w-3 animate-spin" /> قراءة العنوان</span>}
       </div>
       {value && (
         <div className="grid grid-cols-2 gap-2 rounded-2xl border border-[#ece8df] bg-[#fbfaf7] p-3 text-[11px]">

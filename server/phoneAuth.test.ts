@@ -2,6 +2,9 @@ import express from "express";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { registerPhoneAuthRoutes } from "./phoneAuth";
 
+// This suite validates HTTP behavior with an in-memory auth store; Neon integration is covered separately.
+process.env.PHONE_AUTH_USE_DB = "false";
+
 let baseUrl = "";
 let server: ReturnType<import("node:http").Server>;
 
@@ -102,5 +105,40 @@ describe("phone authentication", () => {
     });
     expect(response.status).toBe(409);
     expect((await response.json()).error).toContain("رقم الهاتف مسجل من قبل");
+  });
+
+  it("creates a provider account when the provider role is selected", async () => {
+    const phone = "712345681";
+    const sent = await fetch(`${baseUrl}/api/auth/send-otp`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ phone, role: "provider" }),
+    });
+    const otp = (await sent.json() as { otp: string }).otp;
+    const response = await fetch(`${baseUrl}/api/auth/verify-otp`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ phone, code: otp, name: "علي محمد سالم الشظبي", role: "provider", categoryId: 1, specialty: "تمديدات", nationalId: "12345678901", whatsapp: "771234567", termsAccepted: true, bio: "فني اختبار يقدم خدمات موثوقة وآمنة للعملاء مع خبرة واسعة في تنفيذ أعمال الصيانة المنزلية باحترافية" }),
+    });
+    expect(response.status).toBe(200);
+    const body = await response.json() as { user: { role: string } };
+    expect(body.user.role).toBe("provider");
+  });
+
+  it("requires an explicit role for a new phone account", async () => {
+    const phone = "712345682";
+    const sent = await fetch(`${baseUrl}/api/auth/send-otp`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ phone }),
+    });
+    const otp = (await sent.json() as { otp: string }).otp;
+    const response = await fetch(`${baseUrl}/api/auth/verify-otp`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ phone, code: otp, name: "محمد علي سالم حسن" }),
+    });
+    expect(response.status).toBe(400);
+    expect((await response.json()).error).toBe("حدد نوع الحساب: عميل أو مهني");
   });
 });

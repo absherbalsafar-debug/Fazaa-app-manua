@@ -1,0 +1,1 @@
+const r="fazaah_first_login_welcomed_v1";function o(e){return new URLSearchParams(e).get("role")==="provider"?"provider":"client"}function t(e){return e==="provider"?"/provider-dashboard":"/"}function n(e){return localStorage.getItem(r)==="true"?t(e):`/welcome-back?next=${encodeURIComponent(t(e))}`}export{r as F,n as a,o as g};

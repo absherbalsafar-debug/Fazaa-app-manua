@@ -5,6 +5,9 @@ export const phoneRole = pgEnum("phone_role", ["client", "provider"]);
 export const phoneStatus = pgEnum("phone_status", ["active", "suspended"]);
 export const verificationStatus = pgEnum("verification_status", ["pending", "approved", "rejected"]);
 export const documentType = pgEnum("document_type", ["selfie", "id_front", "id_back", "portfolio", "certificate"]);
+export const providerAccountStatus = pgEnum("provider_account_status", ["pending", "approved"]);
+export const subscriptionPlan = pgEnum("subscription_plan", ["monthly", "yearly"]);
+export const subscriptionPaymentStatus = pgEnum("subscription_payment_status", ["pending", "approved", "rejected"]);
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -33,10 +36,16 @@ export const phoneUsers = pgTable("phone_users", {
   district: varchar("district", { length: 120 }),
   latitude: varchar("latitude", { length: 32 }),
   longitude: varchar("longitude", { length: 32 }),
+  nationalId: varchar("nationalId", { length: 11 }),
+  whatsapp: varchar("whatsapp", { length: 9 }),
   categoryId: integer("categoryId"),
   specialty: varchar("specialty", { length: 160 }),
   bio: text("bio"),
   yearsExperience: integer("yearsExperience"),
+  providerAccountStatus: providerAccountStatus("providerAccountStatus").default("pending").notNull(),
+  subscriptionPlan: subscriptionPlan("subscriptionPlan"),
+  subscriptionExpiresAt: timestamp("subscriptionExpiresAt", { withTimezone: true }),
+  termsAcceptedAt: timestamp("termsAcceptedAt", { withTimezone: true }),
   phoneVerified: integer("phoneVerified").default(1).notNull(),
   createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow().notNull(),
@@ -85,5 +94,18 @@ export const providerVerificationDocuments = pgTable("provider_verification_docu
   createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
 }, table => ({ requestIndex: index("provider_verification_document_request_idx").on(table.requestId) }));
 
+export const providerSubscriptionPayments = pgTable("provider_subscription_payments", {
+  id: serial("id").primaryKey(),
+  providerId: integer("providerId").notNull(),
+  plan: subscriptionPlan("plan").notNull(),
+  amount: integer("amount").notNull(),
+  status: subscriptionPaymentStatus("status").default("pending").notNull(),
+  proofPath: varchar("proofPath", { length: 512 }),
+  submittedAt: timestamp("submittedAt", { withTimezone: true }).defaultNow().notNull(),
+  reviewedAt: timestamp("reviewedAt", { withTimezone: true }),
+  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
+}, table => ({ providerIndex: index("provider_subscription_payment_provider_idx").on(table.providerId), statusIndex: index("provider_subscription_payment_status_idx").on(table.status) }));
+
 export type ProviderVerificationRequest = typeof providerVerificationRequests.$inferSelect;
 export type ProviderVerificationDocument = typeof providerVerificationDocuments.$inferSelect;
+export type ProviderSubscriptionPayment = typeof providerSubscriptionPayments.$inferSelect;

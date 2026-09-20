@@ -13,8 +13,8 @@ beforeAll(async () => {
   if (!connectionString) throw new Error("NEON_DATABASE_URL is not configured");
   pool = new pg.Pool({ connectionString, ssl: { rejectUnauthorized: false } });
   const provider = await pool.query<{ id: number }>(
-    `INSERT INTO phone_users (phone, name, role, status, city, "categoryId", specialty, bio, "yearsExperience")
-     VALUES ($1, $2, 'provider', 'active', $3, $4, $5, $6, $7) RETURNING id`,
+    `INSERT INTO phone_users (phone, name, role, status, city, "categoryId", specialty, bio, "yearsExperience", "providerAccountStatus", "subscriptionPlan", "subscriptionExpiresAt")
+     VALUES ($1, $2, 'provider', 'active', $3, $4, $5, $6, $7, 'approved', 'monthly', now() + interval '30 days') RETURNING id`,
     [phone, "مهني اختبار Neon", "صنعاء", 1, "تمديدات", "مهني لاختبار كتالوج فزعة", 7],
   );
   await pool.query(
@@ -22,6 +22,7 @@ beforeAll(async () => {
     [provider.rows[0].id],
   );
   const app = express();
+  app.use(express.json());
   registerProviderCatalogRoutes(app);
   await new Promise<void>((resolve) => {
     server = app.listen(0, "127.0.0.1", () => {
@@ -47,5 +48,24 @@ describe("provider catalog Neon integration", () => {
     expect(body.providers).toEqual(expect.arrayContaining([
       expect.objectContaining({ phone, categoryId: 1, specialty: "تمديدات", yearsExperience: 7 }),
     ]));
+  });
+
+  it("returns provider details, an empty review state, and contact success", async () => {
+    const listResponse = await fetch(`${baseUrl}/api/providers?search=${encodeURIComponent("مهني اختبار Neon")}`);
+    const listBody = await listResponse.json() as { providers: Array<{ id: number; phone: string }> };
+    const provider = listBody.providers.find(item => item.phone === phone);
+    expect(provider).toBeDefined();
+    const details = await fetch(`${baseUrl}/api/providers/${provider!.id}`);
+    expect(details.status).toBe(200);
+    expect((await details.json()) as { phone: string; whatsapp: string }).toEqual(expect.objectContaining({ phone, whatsapp: phone }));
+    const reviews = await fetch(`${baseUrl}/api/providers/${provider!.id}/reviews`);
+    expect(reviews.status).toBe(200);
+    expect(await reviews.json()).toEqual([]);
+    const contact = await fetch(`${baseUrl}/api/providers/${provider!.id}/contact-click`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ kind: "whatsapp" }),
+    });
+    expect(contact.status).toBe(200);
   });
 });

@@ -41,7 +41,8 @@ export function ProviderCard({ provider, compact = false }: ProviderCardProps) {
             )}
           </div>
           <p className="font-bold text-sm truncate mb-0.5">{providerName}</p>
-          <p className="text-xs text-muted-foreground truncate mb-1.5">{provider.categoryName || "خدمات مهنية"}</p>
+          <p className="text-xs text-muted-foreground truncate">{provider.categoryName || "خدمات مهنية"}</p>
+          {provider.specialty && <p className="mt-1 truncate rounded-full bg-accent/15 px-2 py-1 text-[10px] font-bold text-amber-800">التخصص الفرعي: {provider.specialty}</p>}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-0.5 text-amber-500">
               <Star className="w-3 h-3 fill-amber-500" />
@@ -91,10 +92,10 @@ export function ProviderCard({ provider, compact = false }: ProviderCardProps) {
               </div>
 
               {/* Category + specialty */}
-              <div className="flex items-center gap-1 mb-1.5">
+              <div className="flex flex-wrap items-center gap-1 mb-1.5">
                 <span className="text-sm">{provider.categoryIcon}</span>
                 <span className="text-xs text-muted-foreground font-medium">{provider.categoryName || "خدمات مهنية"}</span>
-                {provider.specialty && <span className="text-xs text-primary/70">· {provider.specialty}</span>}
+                {provider.specialty && <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold text-amber-800">التخصص الفرعي: {provider.specialty}</span>}
               </div>
 
               {/* Location + jobs */}

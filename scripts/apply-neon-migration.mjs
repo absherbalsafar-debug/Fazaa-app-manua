@@ -5,8 +5,10 @@ const connectionString = process.env.NEON_DATABASE_URL;
 if (!connectionString) throw new Error("NEON_DATABASE_URL is not configured");
 const pool = new pg.Pool({ connectionString, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 10000 });
 try {
-  const sql = await readFile(new URL("../drizzle/0004_neon_init.sql", import.meta.url), "utf8");
-  await pool.query(sql);
+  const baseSql = await readFile(new URL("../drizzle/0004_neon_init.sql", import.meta.url), "utf8");
+  const providerSql = await readFile(new URL("../drizzle/0005_provider_onboarding.sql", import.meta.url), "utf8");
+  await pool.query(baseSql);
+  await pool.query(providerSql);
   const result = await pool.query(`
     SELECT table_name
     FROM information_schema.tables

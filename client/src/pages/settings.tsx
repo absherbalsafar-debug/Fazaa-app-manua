@@ -20,7 +20,7 @@ export default function Settings() {
 
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <div className="mb-6">
-      <p className="mb-2 px-4 text-[10px] font-bold uppercase tracking-[0.16em] text-[#a17b29]">{title}</p>
+      <p className="mb-2 px-4 text-[10px] font-bold uppercase tracking-[0.16em] text-[#b57920]">{title}</p>
       <div className="premium-card mx-4 divide-y divide-border overflow-hidden rounded-[24px] bg-card">
         {children}
       </div>

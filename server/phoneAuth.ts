@@ -21,13 +21,23 @@ type PhoneUser = {
   district: string | null;
   latitude: number | null;
   longitude: number | null;
+  nationalId: string | null;
+  whatsapp: string | null;
   categoryId: number | null;
   specialty: string | null;
   bio: string | null;
   yearsExperience: number | null;
+  providerAccountStatus: "pending" | "approved";
+  subscriptionPlan: "monthly" | "yearly" | null;
+  subscriptionExpiresAt: string | null;
+  termsAcceptedAt: string | null;
   createdAt: string;
 };
 type OtpRecord = { codeHash: string; expiresAt: number; attempts: number };
+
+function parseRegistrationRole(value: unknown): RegistrationRole | null {
+  return value === "provider" || value === "client" ? value : null;
+}
 
 // Local-only fallback used by unit tests when DATABASE_URL is intentionally absent.
 const localOtpRecords = new Map<string, OtpRecord>();
@@ -74,10 +84,16 @@ function toApiUser(user: typeof phoneUsers.$inferSelect): PhoneUser {
     district: user.district,
     latitude: user.latitude === null ? null : Number(user.latitude),
     longitude: user.longitude === null ? null : Number(user.longitude),
+    nationalId: user.nationalId,
+    whatsapp: user.whatsapp,
     categoryId: user.categoryId,
     specialty: user.specialty,
     bio: user.bio,
     yearsExperience: user.yearsExperience,
+    providerAccountStatus: user.providerAccountStatus,
+    subscriptionPlan: user.subscriptionPlan,
+    subscriptionExpiresAt: user.subscriptionExpiresAt?.toISOString() ?? null,
+    termsAcceptedAt: user.termsAcceptedAt?.toISOString() ?? null,
     createdAt: user.createdAt.toISOString(),
   };
 }
@@ -163,10 +179,24 @@ export function registerPhoneAuthRoutes(app: Express) {
         return jsonError(res, 409, "رقم الهاتف مسجل من قبل. اختر تسجيل الدخول بدلاً من إنشاء حساب جديد");
       }
       if (!existing && typeof body.name !== "string") return res.json({ needsRegistration: true });
-      const role: RegistrationRole = body.role === "provider" ? "provider" : "client";
+      const requestedRole = parseRegistrationRole(body.role);
+      if (!existing && !requestedRole) return jsonError(res, 400, "حدد نوع الحساب: عميل أو مهني");
+      const role: RegistrationRole = existing?.role ?? requestedRole ?? "client";
       const nameParts = typeof body.name === "string" ? body.name.trim().split(/\s+/).filter(Boolean) : [];
       const latitude = typeof body.latitude === "number" ? body.latitude : Number(body.latitude);
       const longitude = typeof body.longitude === "number" ? body.longitude : Number(body.longitude);
+      const nationalId = typeof body.nationalId === "string" ? body.nationalId.trim() : "";
+      const whatsapp = typeof body.whatsapp === "string" ? body.whatsapp.replace(/\D/g, "") : "";
+      const termsAccepted = body.termsAccepted === true;
+      if (!existing && role === "provider") {
+        if (nameParts.length < 4) return jsonError(res, 400, "يرجى إدخال الاسم الرباعي كاملاً");
+        if (!/^\d{11}$/.test(nationalId)) return jsonError(res, 400, "الرقم الوطني يجب أن يتكون من 11 رقماً");
+        if (!/^7\d{8}$/.test(whatsapp)) return jsonError(res, 400, "رقم واتساب يمني صحيح مطلوب من 9 أرقام");
+        if (!Number.isInteger(Number(body.categoryId)) || Number(body.categoryId) <= 0) return jsonError(res, 400, "اختر المجال الرئيسي");
+        if (typeof body.specialty !== "string" || !body.specialty.trim()) return jsonError(res, 400, "اختر المجال الفرعي");
+        if (typeof body.bio !== "string" || body.bio.trim().length < 50 || body.bio.trim().length > 1000) return jsonError(res, 400, "وصف التخصص يجب أن يكون بين 50 و1000 حرف");
+        if (!termsAccepted) return jsonError(res, 400, "يجب الموافقة على التعهد والشروط");
+      }
       if (!existing && role === "client" && nameParts.length < 4) {
         return jsonError(res, 400, "يرجى إدخال الاسم الرباعي كاملاً");
       }
@@ -186,10 +216,14 @@ export function registerPhoneAuthRoutes(app: Express) {
           district: typeof body.district === "string" ? body.district : null,
           latitude: Number.isFinite(latitude) ? String(latitude) : null,
           longitude: Number.isFinite(longitude) ? String(longitude) : null,
+          nationalId: role === "provider" ? nationalId : null,
+          whatsapp: role === "provider" ? whatsapp : null,
           categoryId: typeof body.categoryId === "number" ? body.categoryId : null,
           specialty: typeof body.specialty === "string" ? body.specialty.trim() : null,
           bio: typeof body.bio === "string" ? body.bio.trim() : null,
           yearsExperience: typeof body.yearsExperience === "number" ? body.yearsExperience : null,
+          providerAccountStatus: "pending",
+          termsAcceptedAt: role === "provider" && termsAccepted ? new Date() : null,
           phoneVerified: 1,
         });
         const created = (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, phone)).limit(1))[0];
@@ -202,11 +236,25 @@ export function registerPhoneAuthRoutes(app: Express) {
       if (existing && mode === "register") {
         return jsonError(res, 409, "رقم الهاتف مسجل من قبل. اختر تسجيل الدخول بدلاً من إنشاء حساب جديد");
       }
-      const role: RegistrationRole = body.role === "provider" ? "provider" : "client";
+      const requestedRole = parseRegistrationRole(body.role);
+      if (!existing && !requestedRole) return jsonError(res, 400, "حدد نوع الحساب: عميل أو مهني");
+      const role: RegistrationRole = existing?.role ?? requestedRole ?? "client";
       const nameParts = typeof body.name === "string" ? body.name.trim().split(/\s+/).filter(Boolean) : [];
       const latitude = Number(body.latitude);
       const longitude = Number(body.longitude);
+      const nationalId = typeof body.nationalId === "string" ? body.nationalId.trim() : "";
+      const whatsapp = typeof body.whatsapp === "string" ? body.whatsapp.replace(/\D/g, "") : "";
+      const termsAccepted = body.termsAccepted === true;
       if (!existing && typeof body.name !== "string") return res.json({ needsRegistration: true });
+      if (!existing && role === "provider") {
+        if (nameParts.length < 4) return jsonError(res, 400, "يرجى إدخال الاسم الرباعي كاملاً");
+        if (!/^\d{11}$/.test(nationalId)) return jsonError(res, 400, "الرقم الوطني يجب أن يتكون من 11 رقماً");
+        if (!/^7\d{8}$/.test(whatsapp)) return jsonError(res, 400, "رقم واتساب يمني صحيح مطلوب من 9 أرقام");
+        if (!Number.isInteger(Number(body.categoryId)) || Number(body.categoryId) <= 0) return jsonError(res, 400, "اختر المجال الرئيسي");
+        if (typeof body.specialty !== "string" || !body.specialty.trim()) return jsonError(res, 400, "اختر المجال الفرعي");
+        if (typeof body.bio !== "string" || body.bio.trim().length < 50 || body.bio.trim().length > 1000) return jsonError(res, 400, "وصف التخصص يجب أن يكون بين 50 و1000 حرف");
+        if (!termsAccepted) return jsonError(res, 400, "يجب الموافقة على التعهد والشروط");
+      }
       if (!existing && role === "client" && nameParts.length < 4) return jsonError(res, 400, "يرجى إدخال الاسم الرباعي كاملاً");
       if (!existing && role === "client" && (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180)) {
         return jsonError(res, 400, "يجب تحديد موقعك للعثور على المهنيين القريبين منك");
@@ -227,10 +275,16 @@ export function registerPhoneAuthRoutes(app: Express) {
         district: typeof body.district === "string" ? body.district : null,
         latitude: Number.isFinite(Number(body.latitude)) ? Number(body.latitude) : null,
         longitude: Number.isFinite(Number(body.longitude)) ? Number(body.longitude) : null,
+        nationalId: role === "provider" ? nationalId : null,
+        whatsapp: role === "provider" ? whatsapp : null,
         categoryId: typeof body.categoryId === "number" ? body.categoryId : null,
         specialty: typeof body.specialty === "string" ? body.specialty.trim() : null,
         bio: typeof body.bio === "string" ? body.bio.trim() : null,
         yearsExperience: typeof body.yearsExperience === "number" ? body.yearsExperience : null,
+        providerAccountStatus: "pending",
+        subscriptionPlan: null,
+        subscriptionExpiresAt: null,
+        termsAcceptedAt: role === "provider" && termsAccepted ? new Date().toISOString() : null,
         createdAt: new Date().toISOString(),
       };
       localUsers.set(phone, user);

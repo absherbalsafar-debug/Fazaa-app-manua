@@ -1,17 +1,17 @@
 import type { Express } from "express";
 import { and, eq } from "drizzle-orm";
 import { getDb } from "./db";
-import { phoneUsers, providerVerificationRequests } from "../drizzle/schema";
+import { phoneAuthSessions, phoneUsers, providerVerificationDocuments, providerVerificationRequests } from "../drizzle/schema";
 
 const categories = [
-  { id: 1, name: "سباكة", icon: "🔧", providerCount: 0 },
-  { id: 2, name: "كهرباء", icon: "⚡", providerCount: 0 },
-  { id: 3, name: "تكييف وتبريد", icon: "❄️", providerCount: 0 },
-  { id: 4, name: "نجارة", icon: "🪚", providerCount: 0 },
-  { id: 5, name: "دهانات", icon: "🎨", providerCount: 0 },
-  { id: 6, name: "تنظيف", icon: "🧹", providerCount: 0 },
-  { id: 7, name: "نقل أثاث", icon: "🚚", providerCount: 0 },
-  { id: 8, name: "بناء ومقاولات", icon: "🏗️", providerCount: 0 },
+  { id: 1, name: "سباكة", icon: "🔧", providerCount: 0, specialties: ["تمديدات مياه", "إصلاح تسربات", "تركيب مضخات", "صيانة سخانات"] },
+  { id: 2, name: "كهرباء", icon: "⚡", providerCount: 0, specialties: ["تمديدات كهربائية", "لوحات كهرباء", "طاقة شمسية", "صيانة أعطال"] },
+  { id: 3, name: "تكييف وتبريد", icon: "❄️", providerCount: 0, specialties: ["تركيب مكيفات", "صيانة مكيفات", "تنظيف مكيفات", "تبريد مركزي"] },
+  { id: 4, name: "نجارة", icon: "🪚", providerCount: 0, specialties: ["أثاث منزلي", "مطابخ", "أبواب ونوافذ", "ديكور خشبي"] },
+  { id: 5, name: "دهانات", icon: "🎨", providerCount: 0, specialties: ["دهان داخلي", "دهان خارجي", "ديكورات وجدران", "ترميم دهانات"] },
+  { id: 6, name: "تنظيف", icon: "🧹", providerCount: 0, specialties: ["تنظيف منازل", "تنظيف مكاتب", "تنظيف سجاد", "مكافحة حشرات"] },
+  { id: 7, name: "نقل أثاث", icon: "🚚", providerCount: 0, specialties: ["نقل داخل المدينة", "فك وتركيب", "تغليف أثاث", "نقل تجاري"] },
+  { id: 8, name: "بناء ومقاولات", icon: "🏗️", providerCount: 0, specialties: ["أعمال خرسانة", "بناء وتشطيب", "بلاط وسيراميك", "حدادة وألمنيوم"] },
 ];
 
 type CatalogQuery = {
@@ -94,7 +94,7 @@ function toSummary(provider: ProviderRow, query: CatalogQuery, approvedIds: Set<
     id: provider.id,
     name: provider.name,
     phone: provider.phone,
-    whatsapp: null,
+    whatsapp: provider.phone,
     avatarUrl: null,
     categoryId: provider.categoryId,
     categoryName: category?.name ?? "مقدم خدمة",
@@ -125,7 +125,13 @@ async function activeProviders() {
       .from(providerVerificationRequests)
       .where(eq(providerVerificationRequests.status, "approved")),
   ]);
-  return { providers, approvedIds: new Set(approved.map(row => row.providerId)) };
+  const now = Date.now();
+  const eligible = providers.filter(provider =>
+    provider.providerAccountStatus === "approved" &&
+    provider.subscriptionExpiresAt !== null &&
+    provider.subscriptionExpiresAt.getTime() > now,
+  );
+  return { providers: eligible, approvedIds: new Set(approved.map(row => row.providerId)) };
 }
 
 async function listProviders(query: CatalogQuery, sort: "name" | "distance" = "name") {
@@ -152,8 +158,44 @@ async function listProviders(query: CatalogQuery, sort: "name" | "distance" = "n
   return { providers, total: providers.length };
 }
 
+async function portfolioForProvider(providerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select({
+    id: providerVerificationDocuments.id,
+    objectPath: providerVerificationDocuments.objectPath,
+    description: providerVerificationDocuments.originalName,
+    createdAt: providerVerificationDocuments.createdAt,
+  }).from(providerVerificationDocuments)
+    .innerJoin(providerVerificationRequests, eq(providerVerificationDocuments.requestId, providerVerificationRequests.id))
+    .where(and(
+      eq(providerVerificationRequests.providerId, providerId),
+      eq(providerVerificationRequests.status, "approved"),
+      eq(providerVerificationDocuments.type, "portfolio"),
+    ));
+  return rows.map(row => ({
+    id: row.id,
+    providerId,
+    imageUrl: `/manus-storage/${row.objectPath.replace(/^\/+/, "")}`,
+    description: row.description,
+    createdAt: row.createdAt.toISOString(),
+  }));
+}
+
 export function registerProviderCatalogRoutes(app: Express) {
   app.get("/api/categories", (_req, res) => res.json(categories));
+
+  app.get("/api/providers/me", async (req, res) => {
+    const token = (req.headers.authorization ?? "").replace(/^Bearer\s+/, "");
+    const db = await getDb();
+    if (!db || !token) return res.status(401).json({ error: "تحتاج إلى تسجيل الدخول" });
+    const session = (await db.select().from(phoneAuthSessions).where(eq(phoneAuthSessions.token, token)).limit(1))[0];
+    if (!session || session.expiresAt.getTime() <= Date.now()) return res.status(401).json({ error: "انتهت جلسة الدخول" });
+    const provider = (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, session.phone)).limit(1))[0];
+    if (!provider || provider.role !== "provider") return res.status(403).json({ error: "هذا المسار للمهنيين فقط" });
+    const approved = await db.select({ providerId: providerVerificationRequests.providerId }).from(providerVerificationRequests).where(and(eq(providerVerificationRequests.providerId, provider.id), eq(providerVerificationRequests.status, "approved"))).limit(1);
+    return res.json({ ...toSummary(provider, parseQuery({}), new Set(approved.map(row => row.providerId))), subscriptionPlan: provider.subscriptionPlan, subscriptionExpiresAt: provider.subscriptionExpiresAt, providerAccountStatus: provider.providerAccountStatus, nationalId: provider.nationalId, whatsapp: provider.whatsapp });
+  });
 
   app.get("/api/providers", async (req, res) => {
     const query = parseQuery(req.query as Record<string, unknown>);
@@ -180,5 +222,39 @@ export function registerProviderCatalogRoutes(app: Express) {
     if (query.lat < -90 || query.lat > 90 || query.lng < -180 || query.lng > 180) return res.status(400).json({ error: "إحداثيات الموقع غير صالحة" });
     const result = await listProviders(query, "distance");
     res.json(result.providers.slice(0, query.limit));
+  });
+
+  app.get("/api/providers/:id", async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "معرف المهني غير صالح" });
+    const result = await listProviders(parseQuery({}));
+    const provider = result.providers.find(item => item.id === id);
+    if (!provider) return res.status(404).json({ error: "لم يتم العثور على المهني" });
+    return res.json({ ...provider, isFavorited: false, createdAt: new Date().toISOString() });
+  });
+
+  app.get("/api/providers/:id/reviews", async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "معرف المهني غير صالح" });
+    const result = await listProviders(parseQuery({}));
+    if (!result.providers.some(item => item.id === id)) return res.status(404).json({ error: "لم يتم العثور على المهني" });
+    return res.json([]);
+  });
+
+  app.get("/api/providers/:id/portfolio", async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "معرف المهني غير صالح" });
+    const result = await listProviders(parseQuery({}));
+    if (!result.providers.some(item => item.id === id)) return res.status(404).json({ error: "لم يتم العثور على المهني" });
+    return res.json(await portfolioForProvider(id));
+  });
+
+  app.post("/api/providers/:id/contact-click", async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "معرف المهني غير صالح" });
+    const result = await listProviders(parseQuery({}));
+    if (!result.providers.some(item => item.id === id)) return res.status(404).json({ error: "لم يتم العثور على المهني" });
+    if (req.body?.kind !== "call" && req.body?.kind !== "whatsapp") return res.status(400).json({ error: "نوع الاتصال غير صالح" });
+    return res.json({ success: true });
   });
 }

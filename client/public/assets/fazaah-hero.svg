@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" role="img" aria-labelledby="title desc">
+  <title id="title">فني فزعة</title>
+  <desc id="desc">رسم توضيحي لفني يحمل أدواته</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7fbff"/>
+      <stop offset="1" stop-color="#dfeaf5"/>
+    </linearGradient>
+    <linearGradient id="shirt" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#173d72"/>
+      <stop offset="1" stop-color="#182d53"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="620" rx="52" fill="url(#bg)"/>
+  <circle cx="710" cy="135" r="72" fill="#f0b046" opacity=".22"/>
+  <circle cx="140" cy="480" r="110" fill="#182d53" opacity=".07"/>
+  <path d="M238 548c18-116 83-190 177-190s159 74 177 190H238Z" fill="url(#shirt)"/>
+  <path d="M321 348c25 35 59 52 94 52s69-17 94-52l-26-27H347l-26 27Z" fill="#f2b28d"/>
+  <circle cx="415" cy="235" r="92" fill="#f4bd98"/>
+  <path d="M325 221c3-83 45-124 99-124 61 0 97 48 87 125-25-16-49-43-63-73-28 42-69 65-123 72Z" fill="#17283f"/>
+  <path d="M338 228c-9 14-13 28-12 43 2 47 40 89 89 89 49 0 87-42 89-89 1-16-3-31-11-45-22 28-53 45-83 45-29 0-55-14-72-43Z" fill="#f4bd98"/>
+  <circle cx="382" cy="238" r="7" fill="#17304e"/>
+  <circle cx="450" cy="238" r="7" fill="#17304e"/>
+  <path d="M395 277c14 11 29 11 43 0" fill="none" stroke="#9b5f4e" stroke-width="6" stroke-linecap="round"/>
+  <path d="M282 385 183 456l39 58 113-74Z" fill="#f4bd98"/>
+  <path d="m551 380 112 68-35 62-127-75Z" fill="#f4bd98"/>
+  <rect x="142" y="444" width="84" height="112" rx="16" transform="rotate(-18 142 444)" fill="#f0b046"/>
+  <path d="m180 463 41 13-28 82-41-13Z" fill="#182d53" opacity=".86"/>
+  <rect x="628" y="423" width="35" height="132" rx="17" transform="rotate(27 628 423)" fill="#182d53"/>
+  <path d="m638 414 18-31 19 10-17 34Z" fill="#f0b046"/>
+  <path d="M382 392h66v45h-66z" fill="#f0b046"/>
+  <path d="M371 398h88v16h-88z" fill="#d89e0e"/>
+</svg>
