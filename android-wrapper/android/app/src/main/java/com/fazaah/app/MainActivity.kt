@@ -145,7 +145,7 @@ private fun FazaahAuthScreen(container: AppContainer, darkMode: Boolean, onToggl
     }
 
     if (state.step == AuthStep.HOME) {
-        CatalogShell(container.catalogRepository, container.authRepository, onLogout = viewModel::logout)
+        CatalogShell(container.catalogRepository, container.authRepository, state.role, onLogout = viewModel::logout)
         return
     }
 

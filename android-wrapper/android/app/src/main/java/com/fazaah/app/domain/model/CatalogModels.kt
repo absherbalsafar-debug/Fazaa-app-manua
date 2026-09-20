@@ -20,12 +20,15 @@ data class ProviderSummary(
     val district: String = "",
     val rating: Double = 0.0,
     val reviewCount: Int = 0,
+    val completedJobs: Int = 0,
     val yearsExperience: Int = 0,
     val isVerified: Boolean = false,
     val isAvailable: Boolean = false,
     val distanceKm: Double? = null,
     val isFavorited: Boolean = false,
 )
+
+data class ProviderUpdateRequest(val isAvailable: Boolean)
 
 data class ProvidersPage(
     val providers: List<ProviderSummary> = emptyList(),

@@ -69,7 +69,9 @@ import androidx.navigation.navArgument
 import com.fazaah.app.data.repository.CatalogRepository
 import com.fazaah.app.data.repository.AuthRepository
 import com.fazaah.app.presentation.auth.AuthViewModel
+import com.fazaah.app.presentation.auth.UserRole
 import com.fazaah.app.presentation.navigation.Routes
+import com.fazaah.app.presentation.provider.ProviderDashboardScreen
 import com.fazaah.app.presentation.profile.ProfileViewModel
 import com.fazaah.app.presentation.requests.RequestViewModel
 import com.fazaah.app.presentation.requests.RequestsScreen
@@ -84,7 +86,7 @@ import com.fazaah.app.presentation.utility.TermsScreen
 import com.fazaah.app.presentation.emergency.EmergencyScreen
 
 @Composable
-fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepository, onLogout: () -> Unit) {
+fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepository, role: UserRole, onLogout: () -> Unit) {
     val navController = rememberNavController()
     val catalogViewModel: CatalogViewModel = viewModel(factory = CatalogViewModel.factory(catalogRepository))
     val state by catalogViewModel.uiState.collectAsStateWithLifecycle()
@@ -92,14 +94,14 @@ fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepos
     val notificationsViewModel: NotificationsViewModel = viewModel(factory = NotificationsViewModel.factory(catalogRepository))
     val currentEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentEntry?.destination?.route
-    val bottomRoutes = setOf(Routes.Home, Routes.Discover, Routes.Providers, Routes.Requests, Routes.Profile)
+    val bottomRoutes = if (role == UserRole.PROVIDER) setOf(Routes.ProviderDashboard, Routes.Requests, Routes.Profile, Routes.Settings) else setOf(Routes.Home, Routes.Discover, Routes.Providers, Routes.Requests, Routes.Profile)
 
     Scaffold(
-        bottomBar = { if (currentRoute in bottomRoutes) CatalogBottomBar(navController) },
+        bottomBar = { if (currentRoute in bottomRoutes) CatalogBottomBar(navController, role) },
     ) { padding ->
         NavHost(
             navController = navController,
-            startDestination = Routes.Home,
+            startDestination = if (role == UserRole.PROVIDER) Routes.ProviderDashboard else Routes.Home,
             modifier = Modifier.padding(padding),
         ) {
             composable(Routes.Home) { HomeScreen(state, catalogViewModel, navController) }
@@ -121,27 +123,22 @@ fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepos
             composable(Routes.Privacy) { PrivacyScreen() }
             composable(Routes.Terms) { TermsScreen() }
             composable(Routes.Emergency) { EmergencyScreen(catalogRepository, authRepository, navController) }
+            composable(Routes.ProviderDashboard) { ProviderDashboardScreen(catalogRepository, navController) }
         }
     }
 }
 
 @Composable
-private fun CatalogBottomBar(navController: NavHostController) {
+private fun CatalogBottomBar(navController: NavHostController, role: UserRole) {
     val current by navController.currentBackStackEntryAsState()
     val currentRoute = current?.destination?.route
     NavigationBar {
-        NavigationBarItem(
-            selected = currentRoute == Routes.Home,
-            onClick = { navController.navigateSingleTop(Routes.Home) },
-            icon = { Icon(Icons.Default.Home, contentDescription = null) },
-            label = { Text("الرئيسية") },
-        )
-        NavigationBarItem(
-            selected = currentRoute == Routes.Providers,
-            onClick = { navController.navigateSingleTop(Routes.Providers) },
-            icon = { Icon(Icons.Default.Search, contentDescription = null) },
-            label = { Text("استعرض") },
-        )
+        if (role == UserRole.PROVIDER) {
+            NavigationBarItem(selected = currentRoute == Routes.ProviderDashboard, onClick = { navController.navigateSingleTop(Routes.ProviderDashboard) }, icon = { Icon(Icons.Default.Home, null) }, label = { Text("لوحتي") })
+        } else {
+            NavigationBarItem(selected = currentRoute == Routes.Home, onClick = { navController.navigateSingleTop(Routes.Home) }, icon = { Icon(Icons.Default.Home, null) }, label = { Text("الرئيسية") })
+            NavigationBarItem(selected = currentRoute == Routes.Providers, onClick = { navController.navigateSingleTop(Routes.Providers) }, icon = { Icon(Icons.Default.Search, null) }, label = { Text("استعرض") })
+        }
         NavigationBarItem(
             selected = currentRoute == Routes.Requests || currentRoute?.startsWith("${Routes.RequestDetail}/") == true,
             onClick = { navController.navigateSingleTop(Routes.Requests) },
@@ -152,8 +149,9 @@ private fun CatalogBottomBar(navController: NavHostController) {
             selected = currentRoute == Routes.Profile,
             onClick = { navController.navigateSingleTop(Routes.Profile) },
             icon = { Icon(Icons.Default.Person, contentDescription = null) },
-            label = { Text("حسابي") },
+            label = { Text(if (role == UserRole.PROVIDER) "ملفي" else "حسابي") },
         )
+        if (role == UserRole.PROVIDER) NavigationBarItem(selected = currentRoute == Routes.Settings, onClick = { navController.navigateSingleTop(Routes.Settings) }, icon = { Icon(Icons.Default.Tune, null) }, label = { Text("الإعدادات") })
     }
 }
 

@@ -17,4 +17,8 @@ object Routes {
     const val Privacy = "privacy"
     const val Terms = "terms"
     const val Emergency = "emergency"
+    const val ProviderDashboard = "provider/dashboard"
+    const val ProviderSubscription = "provider/subscription"
+    const val Earnings = "earnings"
+    const val Wallet = "wallet"
 }

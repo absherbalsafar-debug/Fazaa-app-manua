@@ -49,7 +49,8 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
         execute(request = {
             repository.verifyOtp(VerifyOtpRequest(state.phone, state.code, role = state.role.apiValue, mode = "login"))
         }, onSuccess = { response ->
-            _uiState.update { current -> current.copy(step = if (response.needsRegistration) AuthStep.PROFILE else AuthStep.HOME) }
+            val authenticatedRole = if (response.user?.role == "provider") UserRole.PROVIDER else state.role
+            _uiState.update { current -> current.copy(role = authenticatedRole, step = if (response.needsRegistration) AuthStep.PROFILE else AuthStep.HOME) }
         })
     }
 
@@ -88,7 +89,8 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
                         if (data != null) repository.uploadVerificationDocument(VerificationDocumentRequest(type, "$type.jpg", dataBase64 = data))
                     }
                 }
-                _uiState.update { it.copy(step = AuthStep.HOME, message = if (state.role == UserRole.PROVIDER) "تم إرسال طلب اعتمادك للمراجعة" else null) }
+                val authenticatedRole = if (response.user?.role == "provider") UserRole.PROVIDER else state.role
+                _uiState.update { it.copy(role = authenticatedRole, step = AuthStep.HOME, message = if (authenticatedRole == UserRole.PROVIDER) "تم إرسال طلب اعتمادك للمراجعة" else null) }
             }
         })
     }

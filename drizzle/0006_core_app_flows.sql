@@ -5,6 +5,8 @@ BEGIN
   END IF;
 END $$;
 
+ALTER TABLE phone_users ADD COLUMN IF NOT EXISTS "isAvailable" boolean NOT NULL DEFAULT true;
+
 CREATE TABLE IF NOT EXISTS service_requests (
   id serial PRIMARY KEY,
   "clientId" integer NOT NULL,

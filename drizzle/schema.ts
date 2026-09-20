@@ -31,6 +31,7 @@ export const phoneUsers = pgTable("phone_users", {
   name: varchar("name", { length: 160 }).notNull(),
   role: phoneRole("role").default("client").notNull(),
   status: phoneStatus("status").default("active").notNull(),
+  isAvailable: boolean("isAvailable").default(true).notNull(),
   city: varchar("city", { length: 120 }),
   country: varchar("country", { length: 120 }),
   governorate: varchar("governorate", { length: 120 }),

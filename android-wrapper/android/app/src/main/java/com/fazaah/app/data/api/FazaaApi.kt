@@ -3,6 +3,7 @@ package com.fazaah.app.data.api
 import com.fazaah.app.domain.model.AuthUser
 import com.fazaah.app.domain.model.Category
 import com.fazaah.app.domain.model.ProvidersPage
+import com.fazaah.app.domain.model.ProviderUpdateRequest
 import com.fazaah.app.domain.model.ProviderSummary
 import com.fazaah.app.domain.model.SendOtpRequest
 import com.fazaah.app.domain.model.SendOtpResponse
@@ -57,6 +58,12 @@ interface FazaaApi {
 
     @GET("providers/{id}")
     suspend fun provider(@Path("id") id: Int): ProviderSummary
+
+    @GET("providers/me")
+    suspend fun providerProfile(): ProviderSummary
+
+    @PATCH("providers/{id}")
+    suspend fun updateProvider(@Path("id") id: Int, @Body request: ProviderUpdateRequest): ProviderSummary
 
     @GET("favorites")
     suspend fun favorites(): List<ProviderSummary>

@@ -109,7 +109,7 @@ function toSummary(provider: ProviderRow, query: CatalogQuery, approvedIds: Set<
     yearsExperience: provider.yearsExperience ?? 0,
     hourlyRate: null,
     isVerified: approvedIds.has(provider.id),
-    isAvailable: provider.status === "active",
+    isAvailable: provider.isAvailable,
     distanceKm: distance,
     lat: hasCoordinates ? lat : null,
     lng: hasCoordinates ? lng : null,
@@ -202,6 +202,22 @@ export function registerProviderCatalogRoutes(app: Express) {
     const result = await listProviders(query);
     const start = (query.page - 1) * query.limit;
     res.json({ providers: result.providers.slice(start, start + query.limit), total: result.total, page: query.page, limit: query.limit });
+  });
+
+  app.patch("/api/providers/:id", async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "معرف المهني غير صالح" });
+    const token = (req.headers.authorization ?? "").replace(/^Bearer\s+/, "");
+    const db = await getDb();
+    if (!db) return res.status(503).json({ error: "قاعدة البيانات غير متاحة حالياً" });
+    const session = (await db.select().from(phoneAuthSessions).where(eq(phoneAuthSessions.token, token)).limit(1))[0];
+    if (!session || session.expiresAt.getTime() <= Date.now()) return res.status(401).json({ error: "تحتاج إلى تسجيل الدخول" });
+    const provider = (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, session.phone)).limit(1))[0];
+    if (!provider || provider.role !== "provider" || provider.id !== id) return res.status(403).json({ error: "لا يمكنك تعديل هذا الملف" });
+    if (typeof req.body?.isAvailable !== "boolean") return res.status(400).json({ error: "حالة الإتاحة غير صالحة" });
+    const updated = (await db.update(phoneUsers).set({ isAvailable: req.body.isAvailable, updatedAt: new Date() }).where(eq(phoneUsers.id, id)).returning())[0];
+    const approved = await db.select({ providerId: providerVerificationRequests.providerId }).from(providerVerificationRequests).where(and(eq(providerVerificationRequests.providerId, id), eq(providerVerificationRequests.status, "approved"))).limit(1);
+    return res.json({ ...toSummary(updated, parseQuery({}), new Set(approved.map(row => row.providerId))), subscriptionPlan: updated.subscriptionPlan, subscriptionExpiresAt: updated.subscriptionExpiresAt, providerAccountStatus: updated.providerAccountStatus });
   });
 
   app.get("/api/providers/top-rated", async (req, res) => {
