@@ -42,6 +42,7 @@ import com.fazaah.app.presentation.auth.AuthStep
 import com.fazaah.app.presentation.auth.AuthUiState
 import com.fazaah.app.presentation.auth.AuthViewModel
 import com.fazaah.app.presentation.auth.UserRole
+import com.fazaah.app.presentation.catalog.CatalogShell
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,7 +52,7 @@ class MainActivity : ComponentActivity() {
             androidx.compose.runtime.CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MaterialTheme {
                     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                        FazaahAuthScreen(container.authRepository)
+                        FazaahAuthScreen(container)
                     }
                 }
             }
@@ -60,8 +61,8 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun FazaahAuthScreen(repository: com.fazaah.app.data.repository.AuthRepository) {
-    val viewModel: AuthViewModel = viewModel(factory = AuthViewModel.factory(repository))
+private fun FazaahAuthScreen(container: AppContainer) {
+    val viewModel: AuthViewModel = viewModel(factory = AuthViewModel.factory(container.authRepository))
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     Column(
@@ -95,7 +96,7 @@ private fun FazaahAuthScreen(repository: com.fazaah.app.data.repository.AuthRepo
             AuthStep.PHONE -> PhoneStep(state, viewModel)
             AuthStep.OTP -> OtpStep(state, viewModel)
             AuthStep.PROFILE -> ProfileStep(state, viewModel)
-            AuthStep.HOME -> HomeStep(viewModel)
+            AuthStep.HOME -> HomeStep(container, viewModel)
         }
 
         state.message?.let {
@@ -151,10 +152,6 @@ private fun ProfileStep(state: AuthUiState, viewModel: AuthViewModel) {
 }
 
 @Composable
-private fun HomeStep(viewModel: AuthViewModel) {
-    Text("تم تسجيل الدخول بنجاح", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-    Spacer(Modifier.height(12.dp))
-    Text("هذه أول شاشة أصلية بـ Kotlin. سيتم ترحيل بقية وظائف التطبيق إليها تدريجيًا.")
-    Spacer(Modifier.height(20.dp))
-    Button(onClick = viewModel::logout, modifier = Modifier.fillMaxWidth()) { Text("تسجيل الخروج") }
+private fun HomeStep(container: AppContainer, viewModel: AuthViewModel) {
+    CatalogShell(container.catalogRepository, onLogout = viewModel::logout)
 }
