@@ -11,6 +11,7 @@ data class Category(
 data class ProviderSummary(
     val id: Int,
     val name: String,
+    val phone: String = "",
     val categoryName: String = "مقدم خدمة",
     val categoryIcon: String? = null,
     val specialty: String = "",

@@ -13,4 +13,6 @@ class CatalogRepository(private val api: FazaaApi) {
         specialty: String? = null,
         city: String? = null,
     ): ProvidersPage = api.providers(categoryId, search, specialty, city)
+
+    suspend fun provider(id: Int) = api.provider(id)
 }

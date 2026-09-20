@@ -3,6 +3,7 @@ package com.fazaah.app.data.api
 import com.fazaah.app.domain.model.AuthUser
 import com.fazaah.app.domain.model.Category
 import com.fazaah.app.domain.model.ProvidersPage
+import com.fazaah.app.domain.model.ProviderSummary
 import com.fazaah.app.domain.model.SendOtpRequest
 import com.fazaah.app.domain.model.SendOtpResponse
 import com.fazaah.app.domain.model.VerifyOtpRequest
@@ -10,6 +11,7 @@ import com.fazaah.app.domain.model.VerifyOtpResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface FazaaApi {
@@ -37,4 +39,7 @@ interface FazaaApi {
         @Query("page") page: Int = 1,
         @Query("limit") limit: Int = 50,
     ): ProvidersPage
+
+    @GET("providers/{id}")
+    suspend fun provider(@Path("id") id: Int): ProviderSummary
 }

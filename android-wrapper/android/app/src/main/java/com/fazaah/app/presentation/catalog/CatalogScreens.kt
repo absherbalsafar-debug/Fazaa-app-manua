@@ -1,5 +1,8 @@
 package com.fazaah.app.presentation.catalog
 
+import android.content.Intent
+import android.net.Uri
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,7 +34,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,12 +43,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.fazaah.app.data.repository.CatalogRepository
 import com.fazaah.app.presentation.auth.AuthViewModel
 import com.fazaah.app.presentation.navigation.Routes
@@ -67,7 +74,13 @@ fun CatalogShell(catalogRepository: CatalogRepository, onLogout: () -> Unit) {
         ) {
             composable(Routes.Home) { HomeScreen(state, catalogViewModel, navController) }
             composable(Routes.Discover) { ServicesScreen(state, catalogViewModel, navController) }
-            composable(Routes.Providers) { ProvidersScreen(state, catalogViewModel) }
+            composable(Routes.Providers) { ProvidersScreen(state, catalogViewModel, navController) }
+            composable(
+                route = "${Routes.Providers}/{providerId}",
+                arguments = listOf(navArgument("providerId") { type = NavType.IntType }),
+            ) { entry ->
+                ProviderDetailsScreen(catalogRepository, entry.arguments?.getInt("providerId") ?: 0, navController)
+            }
             composable(Routes.Profile) { ProfilePlaceholder(onLogout) }
         }
     }
@@ -75,22 +88,23 @@ fun CatalogShell(catalogRepository: CatalogRepository, onLogout: () -> Unit) {
 
 @Composable
 private fun CatalogBottomBar(navController: NavHostController) {
-    val current = navController.currentBackStackEntry?.destination?.route
+    val current by navController.currentBackStackEntryAsState()
+    val currentRoute = current?.destination?.route
     NavigationBar {
         NavigationBarItem(
-            selected = current == Routes.Home,
+            selected = currentRoute == Routes.Home,
             onClick = { navController.navigateSingleTop(Routes.Home) },
             icon = { Icon(Icons.Default.Home, contentDescription = null) },
             label = { Text("الرئيسية") },
         )
         NavigationBarItem(
-            selected = current == Routes.Discover,
+            selected = currentRoute == Routes.Discover,
             onClick = { navController.navigateSingleTop(Routes.Discover) },
             icon = { Icon(Icons.Default.Tune, contentDescription = null) },
             label = { Text("الخدمات") },
         )
         NavigationBarItem(
-            selected = current == Routes.Providers,
+            selected = currentRoute == Routes.Providers || currentRoute?.startsWith("${Routes.Providers}/") == true,
             onClick = { navController.navigateSingleTop(Routes.Providers) },
             icon = { Icon(Icons.Default.Search, contentDescription = null) },
             label = { Text("المهنيون") },
@@ -119,7 +133,7 @@ private fun HomeScreen(state: CatalogUiState, viewModel: CatalogViewModel, navCo
         }
         item { SectionTitle("مهنيون متاحون") }
         if (state.isLoading) item { LoadingRow() }
-        items(state.providers.take(5)) { ProviderCard(it) }
+        items(state.providers.take(5)) { provider -> ProviderCard(provider) { navController.navigate("${Routes.Providers}/${provider.id}") } }
         if (state.providers.isEmpty() && !state.isLoading) item { EmptyState("لا توجد نتائج متاحة حاليًا") }
     }
 }
@@ -148,7 +162,7 @@ private fun ServicesScreen(state: CatalogUiState, viewModel: CatalogViewModel, n
 }
 
 @Composable
-private fun ProvidersScreen(state: CatalogUiState, viewModel: CatalogViewModel) {
+private fun ProvidersScreen(state: CatalogUiState, viewModel: CatalogViewModel, navController: NavHostController) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("قائمة المهنيين", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(10.dp))
@@ -166,8 +180,38 @@ private fun ProvidersScreen(state: CatalogUiState, viewModel: CatalogViewModel) 
         if (state.isLoading) LoadingRow()
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            items(state.providers) { ProviderCard(it) }
+            items(state.providers) { provider -> ProviderCard(provider) { navController.navigate("${Routes.Providers}/${provider.id}") } }
             if (state.providers.isEmpty() && !state.isLoading) item { EmptyState("لا توجد نتائج مطابقة") }
+        }
+    }
+}
+
+@Composable
+private fun ProviderDetailsScreen(repository: CatalogRepository, providerId: Int, navController: NavHostController) {
+    val viewModel: ProviderDetailsViewModel = viewModel(factory = ProviderDetailsViewModel.factory(repository, providerId))
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    Column(modifier = Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        TextButton(onClick = { navController.popBackStack() }) { Text("رجوع إلى المهنيين") }
+        when {
+            state.loading -> LoadingRow()
+            state.error != null -> Text(state.error!!, color = MaterialTheme.colorScheme.error)
+            state.provider != null -> {
+                val provider = state.provider!!
+                Text(provider.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text(provider.categoryName + if (provider.specialty.isNotBlank()) " • ${provider.specialty}" else "", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (provider.isVerified) Text("✓ مهني موثق", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                Text(provider.bio.ifBlank { "يقدم خدمات مهنية عبر منصة فزعة." })
+                Text(listOf(provider.city, provider.district).filter(String::isNotBlank).joinToString(" • "))
+                Text(if (provider.isAvailable) "متاح الآن" else "غير متاح حاليًا", color = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = { context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:${provider.phone}"))) }, enabled = provider.phone.isNotBlank(), modifier = Modifier.weight(1f)) { Text("اتصال") }
+                    Button(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/${provider.phone}"))) }, enabled = provider.phone.isNotBlank(), modifier = Modifier.weight(1f)) { Text("واتساب") }
+                }
+                Button(onClick = { /* ربط إنشاء الطلب في المرحلة التالية */ }, modifier = Modifier.fillMaxWidth()) { Text("طلب خدمة") }
+            }
         }
     }
 }
@@ -183,8 +227,8 @@ private fun CategoryCard(name: String, icon: String?, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ProviderCard(provider: com.fazaah.app.domain.model.ProviderSummary) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun ProviderCard(provider: com.fazaah.app.domain.model.ProviderSummary, onClick: () -> Unit = {}) {
+    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(provider.categoryIcon ?: "👤", style = MaterialTheme.typography.headlineSmall)
