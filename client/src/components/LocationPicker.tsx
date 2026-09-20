@@ -17,6 +17,8 @@ type LocationPickerProps = {
   value: CustomerLocation | null;
   onChange: (location: CustomerLocation) => void;
   error?: string;
+  title?: string;
+  description?: string;
 };
 
 const DEFAULT_CENTER: L.LatLngExpression = [15.3694, 44.191];
@@ -42,7 +44,7 @@ function parseAddress(address: Record<string, string> | undefined, latitude: num
   };
 }
 
-export function LocationPicker({ value, onChange, error }: LocationPickerProps) {
+export function LocationPicker({ value, onChange, error, title = "حدد موقعك", description = "نحتاج موقعك لعرض أقرب المهنيين والخدمات المتاحة حولك." }: LocationPickerProps) {
   const { toast } = useToast();
   const mapElement = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -137,15 +139,15 @@ export function LocationPicker({ value, onChange, error }: LocationPickerProps) 
       <div className="flex items-start gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent/20 text-[#b57920]"><MapPin className="h-5 w-5" /></div>
         <div className="min-w-0 flex-1">
-          <h2 className="text-base font-black text-primary">حدد موقعك</h2>
-          <p className="mt-1 text-xs leading-6 text-[#77766f]">نحتاج موقعك لعرض أقرب المهنيين والخدمات المتاحة حولك.</p>
+          <h2 className="text-base font-black text-primary">{title} <span className="text-red-500">*</span></h2>
+          <p className="mt-1 text-xs leading-6 text-[#77766f]">{description}</p>
         </div>
       </div>
       <button type="button" onClick={locateMe} disabled={locating || resolving} className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-extrabold text-white shadow-[0_10px_22px_rgba(14,47,98,0.16)] transition active:scale-[.98] disabled:opacity-60">
         {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Crosshair className="h-4 w-4" />}
         {locating ? "جاري تحديد موقعك..." : value ? "تحديث موقعي الحالي" : "تحديد موقعي الحالي"}
       </button>
-      <div ref={mapElement} className="h-64 w-full overflow-hidden rounded-2xl border border-[#d9d5cd] bg-[#eef1ed]" aria-label="خريطة تحديد موقع العميل" />
+      <div ref={mapElement} className="h-64 w-full overflow-hidden rounded-2xl border border-[#d9d5cd] bg-[#eef1ed]" aria-label="خريطة تحديد الموقع بدقة" />
       <div className="flex items-center justify-between gap-2 text-[11px] text-[#77766f]">
         <span>{value ? "تم حفظ موقعك ويمكنك تغييره من الخريطة أو الزر أعلاه" : "اضغط على الخريطة أو حرّك المؤشر لاختيار موقع أدق"}</span>
         {resolving && <span className="flex items-center gap-1 font-bold text-[#b57920]"><RefreshCw className="h-3 w-3 animate-spin" /> قراءة العنوان</span>}

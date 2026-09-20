@@ -192,6 +192,7 @@ export function registerPhoneAuthRoutes(app: Express) {
         if (nameParts.length < 4) return jsonError(res, 400, "يرجى إدخال الاسم الرباعي كاملاً");
         if (!/^\d{11}$/.test(nationalId)) return jsonError(res, 400, "الرقم الوطني يجب أن يتكون من 11 رقماً");
         if (!/^7\d{8}$/.test(whatsapp)) return jsonError(res, 400, "رقم واتساب يمني صحيح مطلوب من 9 أرقام");
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return jsonError(res, 400, "يجب تحديد موقع العمل بدقة من خلال GPS والخريطة");
         if (!Number.isInteger(Number(body.categoryId)) || Number(body.categoryId) <= 0) return jsonError(res, 400, "اختر المجال الرئيسي");
         if (typeof body.specialty !== "string" || !body.specialty.trim()) return jsonError(res, 400, "اختر المجال الفرعي");
         if (typeof body.bio !== "string" || body.bio.trim().length < 50 || body.bio.trim().length > 1000) return jsonError(res, 400, "وصف التخصص يجب أن يكون بين 50 و1000 حرف");
@@ -250,6 +251,7 @@ export function registerPhoneAuthRoutes(app: Express) {
         if (nameParts.length < 4) return jsonError(res, 400, "يرجى إدخال الاسم الرباعي كاملاً");
         if (!/^\d{11}$/.test(nationalId)) return jsonError(res, 400, "الرقم الوطني يجب أن يتكون من 11 رقماً");
         if (!/^7\d{8}$/.test(whatsapp)) return jsonError(res, 400, "رقم واتساب يمني صحيح مطلوب من 9 أرقام");
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return jsonError(res, 400, "يجب تحديد موقع العمل بدقة من خلال GPS والخريطة");
         if (!Number.isInteger(Number(body.categoryId)) || Number(body.categoryId) <= 0) return jsonError(res, 400, "اختر المجال الرئيسي");
         if (typeof body.specialty !== "string" || !body.specialty.trim()) return jsonError(res, 400, "اختر المجال الفرعي");
         if (typeof body.bio !== "string" || body.bio.trim().length < 50 || body.bio.trim().length > 1000) return jsonError(res, 400, "وصف التخصص يجب أن يكون بين 50 و1000 حرف");

@@ -118,7 +118,7 @@ describe("phone authentication", () => {
     const response = await fetch(`${baseUrl}/api/auth/verify-otp`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ phone, code: otp, name: "علي محمد سالم الشظبي", role: "provider", categoryId: 1, specialty: "تمديدات", nationalId: "12345678901", whatsapp: "771234567", termsAccepted: true, bio: "فني اختبار يقدم خدمات موثوقة وآمنة للعملاء مع خبرة واسعة في تنفيذ أعمال الصيانة المنزلية باحترافية" }),
+      body: JSON.stringify({ phone, code: otp, name: "علي محمد سالم الشظبي", role: "provider", categoryId: 1, specialty: "تمديدات", nationalId: "12345678901", whatsapp: "771234567", termsAccepted: true, bio: "فني اختبار يقدم خدمات موثوقة وآمنة للعملاء مع خبرة واسعة في تنفيذ أعمال الصيانة المنزلية باحترافية", latitude: 15.3694, longitude: 44.191 }),
     });
     expect(response.status).toBe(200);
     const body = await response.json() as { user: { role: string } };
