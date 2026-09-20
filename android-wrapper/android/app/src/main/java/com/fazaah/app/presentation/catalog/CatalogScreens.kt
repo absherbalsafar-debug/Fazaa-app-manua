@@ -14,8 +14,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.background
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -49,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
@@ -179,25 +181,38 @@ private fun HomeScreen(state: CatalogUiState, viewModel: CatalogViewModel, navCo
 
 @Composable
 private fun ServicesScreen(state: CatalogUiState, viewModel: CatalogViewModel, navController: NavHostController) {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("الخدمات والتخصصات", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text("اختر نوع الخدمة للوصول إلى المهنيين", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(14.dp))
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            items(state.categories) { category ->
-                Card(onClick = { viewModel.selectCategory(category.id); navController.navigateSingleTop(Routes.Providers) }, modifier = Modifier.fillMaxWidth()) {
-                    Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(category.icon ?: "🛠️", style = MaterialTheme.typography.headlineSmall)
-                        Spacer(Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(category.name, fontWeight = FontWeight.Bold)
-                            Text(category.specialties.take(3).joinToString(" • "), maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
+    LazyColumn(modifier = Modifier.fillMaxSize().background(Color(0xFFF7F8FA)), verticalArrangement = Arrangement.spacedBy(16.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)) {
+        item { Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primary).padding(horizontal = 18.dp, vertical = 24.dp)) { Text("✦  اكتشف", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold); Text("أفضل المهنيين والخدمات في منطقتك", color = Color.White.copy(alpha = .65f)) } }
+        item {
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                SectionTitle("عروض مميزة")
+                Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OfferCard("خصم ٢٠٪ على خدمات الكهرباء", "صالح حتى نهاية الشهر", Color(0xFFB87A08))
+                    OfferCard("أول طلب مجاناً للمستخدمين الجدد", "للمستخدمين الجدد فقط", Color(0xFF198754))
+                    OfferCard("خدمة تنظيف شاملة بسعر مميز", "احجز الآن واحصل على خصم", Color(0xFF2563EB))
                 }
             }
         }
+        item {
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                SectionTitle("شارات التميز")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { listOf("🏆 الأعلى تقييماً", "⚡ الأسرع استجابة", "✅ موثق رسمياً").forEach { label -> Card(colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color.White)) { Text(label, modifier = Modifier.padding(10.dp), style = MaterialTheme.typography.bodySmall) } } }
+            }
+        }
+        item {
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                SectionTitle("الأكثر طلباً")
+                LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.height(210.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { items(state.categories.take(6)) { category -> CategoryCard(category.name, category.icon) { viewModel.selectCategory(category.id); navController.navigateSingleTop(Routes.Providers) } } }
+            }
+        }
+        item { Column(modifier = Modifier.padding(horizontal = 16.dp)) { SectionTitle("الأعلى تقييماً") } }
+        items(state.providers.take(4)) { provider -> ProviderCard(provider) { navController.navigate("${Routes.Providers}/${provider.id}") } }
     }
+}
+
+@Composable
+private fun OfferCard(title: String, subtitle: String, color: Color) {
+    Card(modifier = Modifier.width(220.dp).height(130.dp), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = color), shape = RoundedCornerShape(16.dp)) { Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.Center) { Text("✦", color = Color.White, fontSize = 26.sp); Text(title, color = Color.White, fontWeight = FontWeight.Bold); Text(subtitle, color = Color.White.copy(alpha = .72f), style = MaterialTheme.typography.bodySmall) } }
 }
 
 @Composable
