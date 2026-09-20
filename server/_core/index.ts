@@ -10,6 +10,7 @@ import { registerProviderCatalogRoutes } from "../providerCatalog";
 import { registerProviderVerificationRoutes } from "../providerVerification";
 import { registerProviderSubscriptionRoutes } from "../providerSubscription";
 import { registerAppFlowRoutes } from "../appFlows";
+import { registerAppUpdateRoutes } from "../appUpdate";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -45,6 +46,7 @@ async function startServer() {
   registerProviderVerificationRoutes(app);
   registerProviderSubscriptionRoutes(app);
   registerAppFlowRoutes(app);
+  registerAppUpdateRoutes(app);
   registerOAuthRoutes(app);
   // tRPC API
   app.use(

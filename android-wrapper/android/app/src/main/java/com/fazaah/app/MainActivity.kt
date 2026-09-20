@@ -15,6 +15,10 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.Build
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 import android.view.View
 import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
@@ -65,6 +69,7 @@ class MainActivity : ComponentActivity() {
         clearWebSessionOnFirstInstall()
         setupWebView()
         setContentView(webView)
+        checkForAppUpdate()
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -82,6 +87,57 @@ class MainActivity : ComponentActivity() {
                 }
             }
         })
+    }
+
+    private fun checkForAppUpdate() {
+        Thread {
+            val connection = runCatching { URL("${BuildConfig.API_BASE_URL}/app-version").openConnection() as HttpURLConnection }.getOrNull()
+            if (connection == null) return@Thread
+            try {
+                connection.connectTimeout = 7000
+                connection.readTimeout = 7000
+                connection.requestMethod = "GET"
+                if (connection.responseCode !in 200..299) return@Thread
+                val payload = connection.inputStream.bufferedReader().use { it.readText() }
+                val update = JSONObject(payload)
+                val latestVersionCode = update.optInt("versionCode", BuildConfig.VERSION_CODE)
+                if (latestVersionCode <= BuildConfig.VERSION_CODE) return@Thread
+                val versionName = update.optString("versionName", "أحدث إصدار")
+                val downloadUrl = update.optString("downloadUrl", BuildConfig.WEB_APP_URL)
+                val title = update.optString("title", "هناك تحديث جديد في التطبيق")
+                val message = update.optString("message", "نزّل أحدث نسخة من تطبيق فزعة للاستفادة من التحسينات الجديدة.")
+                val forceUpdate = update.optBoolean("forceUpdate", false)
+                runOnUiThread { showUpdateDialog(title, message, versionName, downloadUrl, forceUpdate) }
+            } catch (_: Exception) {
+                // فشل الفحص لا يمنع تشغيل التطبيق أو استخدام الموقع.
+            } finally {
+                connection.disconnect()
+            }
+        }.start()
+    }
+
+    private fun showUpdateDialog(title: String, message: String, versionName: String, downloadUrl: String, forceUpdate: Boolean) {
+        if (isFinishing || isDestroyed) return
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(title)
+            .setMessage("$message\n\nالإصدار المتاح: $versionName")
+            .setPositiveButton("تنزيل أحدث نسخة") { _, _ ->
+                runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl))) }
+                    .onFailure { Toast.makeText(this, "تعذر فتح رابط التنزيل", Toast.LENGTH_SHORT).show() }
+            }
+            .create()
+        if (!forceUpdate) dialog.setButton(AlertDialog.BUTTON_NEGATIVE, "لاحقاً", null as android.content.DialogInterface.OnClickListener?)
+        dialog.setCancelable(!forceUpdate)
+        dialog.setOnShowListener {
+            dialog.window?.setBackgroundDrawable(ColorDrawable(AndroidColor.rgb(21, 27, 41)))
+            dialog.window?.setDimAmount(0.72f)
+            val titleId = resources.getIdentifier("alertTitle", "id", "android")
+            dialog.findViewById<TextView>(titleId)?.setTextColor(AndroidColor.WHITE)
+            dialog.findViewById<TextView>(android.R.id.message)?.setTextColor(AndroidColor.rgb(220, 226, 236))
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(AndroidColor.rgb(155, 170, 193))
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(AndroidColor.rgb(242, 181, 68))
+        }
+        dialog.show()
     }
 
     private fun clearWebSessionOnFirstInstall() {
