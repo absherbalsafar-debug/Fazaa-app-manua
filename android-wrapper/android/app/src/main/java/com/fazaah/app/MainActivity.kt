@@ -37,8 +37,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Typography
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +57,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -66,17 +69,17 @@ import com.fazaah.app.presentation.auth.AuthViewModel
 import com.fazaah.app.presentation.auth.UserRole
 import com.fazaah.app.presentation.catalog.CatalogShell
 
-private val FazaahColors = lightColorScheme(
-    primary = Color(0xFF182D53),
+private val FazaahColors = darkColorScheme(
+    primary = Color(0xFF2B78C7),
     onPrimary = Color.White,
     secondary = Color(0xFFF0B046),
     onSecondary = Color(0xFF182D53),
-    background = Color(0xFFF5F3EE),
-    onBackground = Color(0xFF182D53),
-    surface = Color.White,
-    onSurface = Color(0xFF182D53),
-    surfaceVariant = Color(0xFFEFECE5),
-    onSurfaceVariant = Color(0xFF637087),
+    background = Color(0xFF0C111D),
+    onBackground = Color(0xFFF4F6FA),
+    surface = Color(0xFF151B29),
+    onSurface = Color(0xFFF4F6FA),
+    surfaceVariant = Color(0xFF1B2433),
+    onSurfaceVariant = Color(0xFF8B9AAF),
 )
 private val FazaahFont = FontFamily(
     Font(com.fazaah.app.R.font.noto_sans_arabic_regular, FontWeight.Normal),
@@ -105,6 +108,8 @@ private val FazaahTypography = Typography().let { base ->
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.statusBarColor = Color(0xFF080B12).toArgb()
+        window.navigationBarColor = Color(0xFF080B12).toArgb()
         val container = AppContainer(applicationContext)
         setContent {
             androidx.compose.runtime.CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -135,9 +140,9 @@ private fun FazaahAuthScreen(container: AppContainer) {
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 36.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+        verticalArrangement = Arrangement.Top,
     ) {
         if (state.step != AuthStep.PHONE && state.step != AuthStep.HOME) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
@@ -227,8 +232,8 @@ private fun WelcomeScreen(onStart: (UserRole) -> Unit, onSkip: () -> Unit) {
 
 @Composable
 private fun PhoneStep(state: AuthUiState, viewModel: AuthViewModel) {
-    Surface(modifier = Modifier.height(80.dp).width(80.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(26.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = .10f)) {
-        Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Phone, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.height(34.dp).width(34.dp)) }
+    Surface(modifier = Modifier.height(118.dp).width(118.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(34.dp), color = Color(0xFF0D2233)) {
+        Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Phone, contentDescription = null, tint = Color(0xFF2B78C7), modifier = Modifier.height(54.dp).width(54.dp)) }
     }
     Spacer(Modifier.height(16.dp))
     Text("كيف ستستخدم فزعة؟", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.fillMaxWidth())
@@ -237,20 +242,38 @@ private fun PhoneStep(state: AuthUiState, viewModel: AuthViewModel) {
         RoleCard("أقدم خدمة", "ستستقبل طلبات العملاء وتدير عملك", state.role == UserRole.PROVIDER, { viewModel.setRole(UserRole.PROVIDER) }, Modifier.weight(1f))
     }
     Spacer(Modifier.height(14.dp))
-    OutlinedTextField(state.phone, viewModel::setPhone, label = { Text("رقم الهاتف") }, placeholder = { Text("7XXXXXXXX") }, singleLine = true, modifier = Modifier.fillMaxWidth(), textStyle = androidx.compose.ui.text.TextStyle(textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontSize = 18.sp))
+    TextField(
+        value = state.phone,
+        onValueChange = viewModel::setPhone,
+        placeholder = { Text("7XXXXXXXXX", modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center) },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth().height(64.dp),
+        textStyle = androidx.compose.ui.text.TextStyle(textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontSize = 20.sp, fontWeight = FontWeight.Bold),
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = Color(0xFF151B29),
+            unfocusedContainerColor = Color(0xFF151B29),
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            focusedTextColor = Color(0xFFF4F6FA),
+            unfocusedTextColor = Color(0xFFF4F6FA),
+            unfocusedPlaceholderColor = Color(0xFF8796AA),
+            focusedPlaceholderColor = Color(0xFF8796AA),
+        ),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+    )
     Spacer(Modifier.height(16.dp))
-    Button(enabled = !state.loading && state.phone.length >= 9, onClick = viewModel::sendOtp, modifier = Modifier.fillMaxWidth().height(54.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)) {
+    Button(enabled = !state.loading && state.phone.length >= 9, onClick = viewModel::sendOtp, modifier = Modifier.fillMaxWidth().height(64.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp)) {
         if (state.loading) CircularProgressIndicator(modifier = Modifier.width(20.dp).height(20.dp), color = MaterialTheme.colorScheme.onPrimary) else { Text("إرسال رمز التحقق", fontWeight = FontWeight.Bold); Spacer(Modifier.width(8.dp)); Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) }
     }
 }
 
 @Composable
 private fun RoleCard(title: String, description: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier) {
-    Card(onClick = onClick, modifier = modifier, colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = if (selected) MaterialTheme.colorScheme.primary else Color.White), border = androidx.compose.foundation.BorderStroke(1.dp, if (selected) MaterialTheme.colorScheme.primary else Color(0xFFD4D9DF))) {
+    Card(onClick = onClick, modifier = modifier, colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = if (selected) Color(0xFF2B78C7) else Color(0xFF151B29)), border = androidx.compose.foundation.BorderStroke(1.dp, if (selected) Color(0xFF2B78C7) else Color(0xFF293243))) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(if (title.contains("أقدم")) "▣" else "♙", color = if (selected) MaterialTheme.colorScheme.secondary else Color(0xFFB57920), fontSize = 22.sp)
+            Text(if (title.contains("أقدم")) "▣" else "♙", color = Color(0xFFF0B046), fontSize = 22.sp)
             Text(title, fontWeight = FontWeight.Bold, color = if (selected) Color.White else MaterialTheme.colorScheme.primary)
-            Text(description, style = MaterialTheme.typography.bodySmall, color = if (selected) Color.White.copy(alpha = .75f) else MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(description, style = MaterialTheme.typography.bodySmall, color = if (selected) Color.White.copy(alpha = .78f) else Color(0xFF8B9AAF))
         }
     }
 }
