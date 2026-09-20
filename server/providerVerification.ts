@@ -6,9 +6,11 @@ import {
   phoneUsers,
   providerVerificationDocuments,
   providerVerificationRequests,
+  providerVerificationReviewHistory,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { sdk } from "./_core/sdk";
+import { storageGetSignedUrl } from "./storage";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const allowedTypes = new Set(["selfie", "id_front", "id_back", "portfolio", "certificate"]);
@@ -72,24 +74,32 @@ export function registerProviderVerificationRoutes(app: Express) {
       .innerJoin(phoneUsers, eq(providerVerificationRequests.providerId, phoneUsers.id))
       .orderBy(desc(providerVerificationRequests.createdAt));
     const items = await Promise.all(rows.map(async ({ request, provider }) => {
-      const documents = await db.select({ type: providerVerificationDocuments.type, objectPath: providerVerificationDocuments.objectPath, originalName: providerVerificationDocuments.originalName })
+      const documents = await db.select({ id: providerVerificationDocuments.id, type: providerVerificationDocuments.type, objectPath: providerVerificationDocuments.objectPath, originalName: providerVerificationDocuments.originalName })
         .from(providerVerificationDocuments)
         .where(eq(providerVerificationDocuments.requestId, request.id));
+      const history = await db.select().from(providerVerificationReviewHistory)
+        .where(eq(providerVerificationReviewHistory.requestId, request.id))
+        .orderBy(desc(providerVerificationReviewHistory.createdAt));
+      const documentsWithUrls = await Promise.all(documents.map(async document => ({ id: document.id, type: document.type, originalName: document.originalName, url: await storageGetSignedUrl(document.objectPath) })));
       return {
         id: request.id,
         status: request.status,
         submittedAt: request.submittedAt,
         reviewedAt: request.reviewedAt,
-        provider: { id: provider.id, name: provider.name, phone: provider.phone, city: provider.city, categoryId: provider.categoryId, specialty: provider.specialty, bio: provider.bio, yearsExperience: provider.yearsExperience },
-        documents: documents.map(document => ({ ...document, url: `/manus-storage/${document.objectPath}` })),
+        rejectionReason: request.rejectionReason,
+        provider: { id: provider.id, name: provider.name, phone: provider.phone, whatsapp: provider.whatsapp, city: provider.city, governorate: provider.governorate, district: provider.district, latitude: provider.latitude, longitude: provider.longitude, nationalId: provider.nationalId, categoryId: provider.categoryId, specialty: provider.specialty, bio: provider.bio, yearsExperience: provider.yearsExperience, createdAt: provider.createdAt, avatarUrl: documentsWithUrls.find(document => document.type === "selfie")?.url ?? null },
+        documents: documentsWithUrls,
+        history,
       };
     }));
     return res.json({ requests: items });
   });
 
   app.patch("/api/admin/provider-verifications/:id", async (req, res) => {
-    if (!(await currentAdmin(req))) return jsonError(res, 403, "صلاحية الإدارة مطلوبة");
+    const admin = await currentAdmin(req);
+    if (!admin) return jsonError(res, 403, "صلاحية الإدارة مطلوبة");
     const status = readBody(req).status;
+    const rejectionReason = typeof readBody(req).rejectionReason === "string" ? String(readBody(req).rejectionReason).trim().slice(0, 2000) : null;
     if (status !== "approved" && status !== "rejected" && status !== "pending") return jsonError(res, 400, "حالة التوثيق غير صالحة");
     const db = await getDb();
     if (!db) return jsonError(res, 503, "قاعدة البيانات غير متاحة حالياً");
@@ -97,7 +107,8 @@ export function registerProviderVerificationRoutes(app: Express) {
     if (!Number.isInteger(id) || id <= 0) return jsonError(res, 400, "رقم الطلب غير صالح");
     const request = (await db.select({ providerId: providerVerificationRequests.providerId }).from(providerVerificationRequests).where(eq(providerVerificationRequests.id, id)).limit(1))[0];
     if (!request) return jsonError(res, 404, "طلب الاعتماد غير موجود");
-    await db.update(providerVerificationRequests).set({ status, reviewedAt: status === "pending" ? null : new Date(), updatedAt: new Date() }).where(eq(providerVerificationRequests.id, id));
+    await db.update(providerVerificationRequests).set({ status, rejectionReason: status === "rejected" ? rejectionReason : null, reviewedAt: status === "pending" ? null : new Date(), updatedAt: new Date() }).where(eq(providerVerificationRequests.id, id));
+    await db.insert(providerVerificationReviewHistory).values({ requestId: id, status, rejectionReason, adminOpenId: admin.openId, adminName: admin.name ?? null });
     await db.update(phoneUsers).set({ providerAccountStatus: status === "approved" ? "approved" : "pending" }).where(eq(phoneUsers.id, request.providerId));
     return res.json({ success: true, status });
   });
