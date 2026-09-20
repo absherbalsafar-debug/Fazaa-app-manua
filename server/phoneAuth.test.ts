@@ -97,14 +97,18 @@ describe("phone authentication", () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ phone: "712345678", role: "client" }),
     });
-    const otp = (await sent.json() as { otp: string }).otp;
-    const response = await fetch(`${baseUrl}/api/auth/verify-otp`, {
+    expect(sent.status).toBe(409);
+    expect((await sent.json()).error).toBe("هذا الرقم مسجل من قبل، لا يمكنك التسجيل به. يرجى تغيير الرقم");
+  });
+
+  it("blocks a client number from being used as a provider", async () => {
+    const response = await fetch(`${baseUrl}/api/auth/send-otp`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ phone: "712345678", code: otp, role: "client", mode: "register" }),
+      body: JSON.stringify({ phone: "712345678", role: "provider", mode: "register" }),
     });
     expect(response.status).toBe(409);
-    expect((await response.json()).error).toContain("رقم الهاتف مسجل من قبل");
+    expect((await response.json()).error).toBe("هذا الرقم مسجل ومفعل حسابه على حساب العملاء، لا يمكنك التسجيل به");
   });
 
   it("creates a provider account when the provider role is selected", async () => {

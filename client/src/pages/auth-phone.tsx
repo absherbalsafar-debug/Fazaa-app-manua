@@ -100,7 +100,8 @@ export default function AuthPhone() {
       setOtpSent(true);
       toast({ title: "تم الإرسال", description: "تم إرسال رمز التحقق إلى هاتفك" });
     } catch (err: any) {
-      toast({ title: "خطأ", description: err.message, variant: "destructive" });
+      const message = err?.message || "تعذر إرسال رمز التحقق";
+      toast({ title: message.includes("هذا الرقم") ? "لا يمكن استخدام هذا الرقم" : "خطأ", description: message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -125,7 +126,8 @@ export default function AuthPhone() {
         navigate(getFirstLoginPath(role));
       }
     } catch (err: any) {
-      toast({ title: "رمز خاطئ", description: err.message, variant: "destructive" });
+      const message = err?.message || "رمز التحقق غير صحيح";
+      toast({ title: message.includes("هذا الرقم") ? "لا يمكن استخدام هذا الرقم" : "رمز خاطئ", description: message, variant: "destructive" });
     } finally {
       setLoading(false);
     }

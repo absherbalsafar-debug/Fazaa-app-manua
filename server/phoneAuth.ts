@@ -39,6 +39,22 @@ function parseRegistrationRole(value: unknown): RegistrationRole | null {
   return value === "provider" || value === "client" ? value : null;
 }
 
+function accountConflictMessage(existingRole: RegistrationRole, requestedRole: RegistrationRole | null, mode: "login" | "register") {
+  if (mode === "register") {
+    if (existingRole === "client" && requestedRole === "provider") {
+      return "هذا الرقم مسجل ومفعل حسابه على حساب العملاء، لا يمكنك التسجيل به";
+    }
+    return "هذا الرقم مسجل من قبل، لا يمكنك التسجيل به. يرجى تغيير الرقم";
+  }
+  if (requestedRole && requestedRole !== existingRole) {
+    if (existingRole === "client" && requestedRole === "provider") {
+      return "هذا الرقم مسجل ومفعل حسابه على حساب العملاء، لا يمكنك التسجيل به";
+    }
+    return "هذا الرقم مرتبط بحساب مهني، اختر حساب المهني لتسجيل الدخول";
+  }
+  return null;
+}
+
 // Local-only fallback used by unit tests when DATABASE_URL is intentionally absent.
 const localOtpRecords = new Map<string, OtpRecord>();
 const localUsers = new Map<string, PhoneUser>();
@@ -117,6 +133,18 @@ export function registerPhoneAuthRoutes(app: Express) {
     const expiresAt = new Date(Date.now() + OTP_TTL_MS);
     const codeHash = hashCode(code);
     const db = await getAuthDb();
+    const mode = body.mode === "login" ? "login" : "register";
+    const requestedRole = parseRegistrationRole(body.role);
+
+    if (db) {
+      const existing = (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, phone)).limit(1))[0];
+      const conflict = existing && accountConflictMessage(existing.role, requestedRole, mode);
+      if (conflict) return jsonError(res, 409, conflict);
+    } else if (isTestFallback()) {
+      const existing = localUsers.get(phone);
+      const conflict = existing && accountConflictMessage(existing.role, requestedRole, mode);
+      if (conflict) return jsonError(res, 409, conflict);
+    }
 
     if (db) {
       await db.insert(phoneOtpCodes).values({ phone, codeHash, expiresAt, attempts: 0 }).onConflictDoUpdate({
@@ -175,11 +203,12 @@ export function registerPhoneAuthRoutes(app: Express) {
     if (db) {
       const existing = (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, phone)).limit(1))[0];
       const mode = body.mode === "login" ? "login" : "register";
-      if (existing && mode === "register") {
-        return jsonError(res, 409, "رقم الهاتف مسجل من قبل. اختر تسجيل الدخول بدلاً من إنشاء حساب جديد");
+      const requestedRole = parseRegistrationRole(body.role);
+      if (existing) {
+        const conflict = accountConflictMessage(existing.role, requestedRole, mode);
+        if (conflict) return jsonError(res, 409, conflict);
       }
       if (!existing && typeof body.name !== "string") return res.json({ needsRegistration: true });
-      const requestedRole = parseRegistrationRole(body.role);
       if (!existing && !requestedRole) return jsonError(res, 400, "حدد نوع الحساب: عميل أو مهني");
       const role: RegistrationRole = existing?.role ?? requestedRole ?? "client";
       const nameParts = typeof body.name === "string" ? body.name.trim().split(/\s+/).filter(Boolean) : [];
@@ -234,10 +263,11 @@ export function registerPhoneAuthRoutes(app: Express) {
     } else {
       const existing = localUsers.get(phone);
       const mode = body.mode === "login" ? "login" : "register";
-      if (existing && mode === "register") {
-        return jsonError(res, 409, "رقم الهاتف مسجل من قبل. اختر تسجيل الدخول بدلاً من إنشاء حساب جديد");
-      }
       const requestedRole = parseRegistrationRole(body.role);
+      if (existing) {
+        const conflict = accountConflictMessage(existing.role, requestedRole, mode);
+        if (conflict) return jsonError(res, 409, conflict);
+      }
       if (!existing && !requestedRole) return jsonError(res, 400, "حدد نوع الحساب: عميل أو مهني");
       const role: RegistrationRole = existing?.role ?? requestedRole ?? "client";
       const nameParts = typeof body.name === "string" ? body.name.trim().split(/\s+/).filter(Boolean) : [];
