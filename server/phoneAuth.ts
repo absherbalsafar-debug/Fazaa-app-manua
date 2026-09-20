@@ -9,12 +9,12 @@ type PhoneUser = {
   id: number;
   name: string;
   phone: string;
-  email: null;
+  email: string | null;
   role: RegistrationRole;
   status: "active" | "suspended";
-  avatarUrl: null;
+  avatarUrl: string | null;
   phoneVerified: boolean;
-  emailVerified: false;
+  emailVerified: boolean;
   city: string | null;
   country: string | null;
   governorate: string | null;
@@ -88,12 +88,12 @@ function toApiUser(user: typeof phoneUsers.$inferSelect): PhoneUser {
     id: user.id,
     name: user.name,
     phone: user.phone,
-    email: null,
+    email: user.email ?? null,
     role: user.role,
     status: user.status,
-    avatarUrl: null,
+    avatarUrl: user.avatarUrl ?? null,
     phoneVerified: Boolean(user.phoneVerified),
-    emailVerified: false,
+    emailVerified: Boolean(user.emailVerified),
     city: user.city,
     country: user.country,
     governorate: user.governorate,
