@@ -8,6 +8,8 @@ export const documentType = pgEnum("document_type", ["selfie", "id_front", "id_b
 export const providerAccountStatus = pgEnum("provider_account_status", ["pending", "approved"]);
 export const subscriptionPlan = pgEnum("subscription_plan", ["monthly", "yearly"]);
 export const subscriptionPaymentStatus = pgEnum("subscription_payment_status", ["pending", "approved", "rejected"]);
+export const advertisementPlan = pgEnum("advertisement_plan", ["standard", "featured", "homepage", "vip"]);
+export const advertisementStatus = pgEnum("advertisement_status", ["pending", "active", "rejected", "expired"]);
 export const serviceRequestStatus = pgEnum("service_request_status", ["pending", "accepted", "rejected", "in_progress", "completed", "cancelled"]);
 
 export const users = pgTable("users", {
@@ -107,6 +109,27 @@ export const providerSubscriptionPayments = pgTable("provider_subscription_payme
   reviewedAt: timestamp("reviewedAt", { withTimezone: true }),
   createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
 }, table => ({ providerIndex: index("provider_subscription_payment_provider_idx").on(table.providerId), statusIndex: index("provider_subscription_payment_status_idx").on(table.status) }));
+
+export const providerAdvertisements = pgTable("provider_advertisements", {
+  id: serial("id").primaryKey(),
+  providerId: integer("providerId").notNull(),
+  title: varchar("title", { length: 180 }).notNull(),
+  description: text("description").notNull().default(""),
+  city: varchar("city", { length: 120 }).notNull(),
+  district: varchar("district", { length: 120 }).notNull().default(""),
+  targetAudience: text("targetAudience"),
+  categoryId: integer("categoryId"),
+  plan: advertisementPlan("plan").notNull(),
+  durationDays: integer("durationDays").notNull(),
+  budget: integer("budget").notNull(),
+  imagePath: varchar("imagePath", { length: 512 }),
+  status: advertisementStatus("status").default("pending").notNull(),
+  reviewNote: text("reviewNote"),
+  startsAt: timestamp("startsAt", { withTimezone: true }),
+  endsAt: timestamp("endsAt", { withTimezone: true }),
+  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow().notNull(),
+}, table => ({ providerIndex: index("provider_advertisement_provider_idx").on(table.providerId), statusIndex: index("provider_advertisement_status_idx").on(table.status) }));
 
 export const serviceRequests = pgTable("service_requests", {
   id: serial("id").primaryKey(),

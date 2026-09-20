@@ -19,7 +19,13 @@ export default function ProviderSubscription() {
 
   useEffect(() => {
     Promise.all([apiRequest("/subscription-plans"), apiRequest("/providers/me/subscription")])
-      .then(([planData, subscription]) => { setPlans(planData.plans ?? []); setStatus(subscription); })
+      .then(([planData, subscription]) => {
+        const rawPlans = Array.isArray(planData) ? planData : planData?.plans ?? [];
+        setPlans(rawPlans
+          .filter((plan: any) => plan.id === "monthly" || plan.id === "yearly")
+          .map((plan: any) => ({ id: plan.id, title: plan.title ?? plan.name, days: plan.days ?? (plan.id === "yearly" ? 365 : 30), amount: plan.amount ?? plan.monthlyPrice ?? 0, description: plan.description ?? "" })));
+        setStatus(subscription);
+      })
       .catch(error => toast({ title: "تعذر تحميل الاشتراك", description: error instanceof Error ? error.message : "حاول مرة أخرى", variant: "destructive" }))
       .finally(() => setLoading(false));
   }, [toast]);
