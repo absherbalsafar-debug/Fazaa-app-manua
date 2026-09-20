@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { ProtectedRoute } from "@/components/layout/protected-route";
 import { PageTransition } from "@/components/layout/page-transition";
+import { ControlCenterLayout } from "@/control-center/ControlCenterLayout";
 
 // Auth Pages
 const Welcome = lazy(() => import("@/pages/welcome"));
@@ -34,12 +35,12 @@ const ProviderSubscription = lazy(() => import("@/pages/provider-subscription"))
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 // Admin Pages
-const AdminDashboard = lazy(() => import("@/pages/admin/dashboard"));
-const AdminUsers = lazy(() => import("@/pages/admin/users"));
-const AdminProviders = lazy(() => import("@/pages/admin/providers"));
-const AdminBusiness = lazy(() => import("@/pages/admin/business"));
-const AdminComplaints = lazy(() => import("@/pages/admin/complaints"));
-const AdminTaxonomy = lazy(() => import("@/pages/admin/taxonomy"));
+const AdminDashboard = lazy(() => import("@/control-center/pages/dashboard"));
+const AdminUsers = lazy(() => import("@/control-center/pages/users"));
+const AdminProviders = lazy(() => import("@/control-center/pages/providers"));
+const AdminBusiness = lazy(() => import("@/control-center/pages/business"));
+const AdminComplaints = lazy(() => import("@/control-center/pages/complaints"));
+const AdminTaxonomy = lazy(() => import("@/control-center/pages/taxonomy"));
 const ProviderDashboard = lazy(() => import("@/pages/provider-dashboard"));
 const ProviderBusiness = lazy(() => import("@/pages/provider-business"));
 const Earnings = lazy(() => import("@/pages/earnings"));
@@ -82,34 +83,6 @@ const queryClient = new QueryClient({
     queries: { retry: 1, refetchOnWindowFocus: false },
   },
 });
-
-const AdminLayout = ({ children }: { children: React.ReactNode }) => (
-  <div className="premium-surface flex min-h-screen bg-background text-foreground" dir="rtl">
-    <aside className="w-64 border-l border-border bg-card/90 p-4 shadow-[0_0_40px_rgba(14,47,98,0.06)] backdrop-blur-xl">
-      <div className="mb-8 flex items-center gap-3 px-2">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent text-primary shadow-sm">
-          <span className="text-lg font-black">ف</span>
-        </div>
-        <div>
-          <h2 className="text-base font-black text-primary">إدارة فزعة</h2>
-          <p className="mt-0.5 text-[10px] font-medium text-muted-foreground">لوحة التحكم المركزية</p>
-        </div>
-      </div>
-      <nav className="flex flex-col gap-1">
-        <a href="/admin" className="rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-primary/8 hover:text-primary">لوحة التحكم</a>
-        <a href="/admin/users" className="rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-primary/8 hover:text-primary">المستخدمين</a>
-        <a href="/admin/providers" className="rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-primary/8 hover:text-primary">المهنيين</a>
-        <a href="/admin/business" className="rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-primary/8 hover:text-primary">الاشتراكات والإعلانات</a>
-        <a href="/admin/complaints" className="rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-primary/8 hover:text-primary">الشكاوى والنزاعات</a>
-        <a href="/admin/taxonomy" className="rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-primary/8 hover:text-primary">التخصصات والخدمات</a>
-      </nav>
-      <a href="/" className="mt-auto block rounded-xl px-4 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-primary">← العودة للتطبيق</a>
-    </aside>
-      <main className="app-stage min-w-0 flex-1 overflow-y-auto">
-      <PageTransition>{children}</PageTransition>
-    </main>
-  </div>
-);
 
 function AppShell({ children, showNav = true }: { children: React.ReactNode; showNav?: boolean }) {
   return (
@@ -171,37 +144,27 @@ function Router() {
       <Route path="/login"><Redirect to="/auth/email" /></Route>
       <Route path="/register"><Redirect to="/welcome" /></Route>
 
-      {/* ── Admin Routes ── */}
-      <Route path="/admin">
-        <ProtectedRoute allowedRoles={['admin']}>
-          <AdminLayout><AdminDashboard /></AdminLayout>
-        </ProtectedRoute>
+      {/* ── Standalone Control Center ── */}
+      <Route path="/control-center">
+        <ProtectedRoute allowedRoles={["admin"]}><ControlCenterLayout><AdminDashboard /></ControlCenterLayout></ProtectedRoute>
       </Route>
-      <Route path="/admin/users">
-        <ProtectedRoute allowedRoles={['admin']}>
-          <AdminLayout><AdminUsers /></AdminLayout>
-        </ProtectedRoute>
+      <Route path="/control-center/users">
+        <ProtectedRoute allowedRoles={["admin"]}><ControlCenterLayout><AdminUsers /></ControlCenterLayout></ProtectedRoute>
       </Route>
-      <Route path="/admin/providers">
-        <ProtectedRoute allowedRoles={['admin']}>
-          <AdminLayout><AdminProviders /></AdminLayout>
-        </ProtectedRoute>
+      <Route path="/control-center/providers">
+        <ProtectedRoute allowedRoles={["admin"]}><ControlCenterLayout><AdminProviders /></ControlCenterLayout></ProtectedRoute>
       </Route>
-      <Route path="/admin/business">
-        <ProtectedRoute allowedRoles={['admin']}>
-          <AdminLayout><AdminBusiness /></AdminLayout>
-        </ProtectedRoute>
+      <Route path="/control-center/business">
+        <ProtectedRoute allowedRoles={["admin"]}><ControlCenterLayout><AdminBusiness /></ControlCenterLayout></ProtectedRoute>
       </Route>
-      <Route path="/admin/complaints">
-        <ProtectedRoute allowedRoles={['admin']}>
-          <AdminLayout><AdminComplaints /></AdminLayout>
-        </ProtectedRoute>
+      <Route path="/control-center/complaints">
+        <ProtectedRoute allowedRoles={["admin"]}><ControlCenterLayout><AdminComplaints /></ControlCenterLayout></ProtectedRoute>
       </Route>
-      <Route path="/admin/taxonomy">
-        <ProtectedRoute allowedRoles={['admin']}>
-          <AdminLayout><AdminTaxonomy /></AdminLayout>
-        </ProtectedRoute>
+      <Route path="/control-center/taxonomy">
+        <ProtectedRoute allowedRoles={["admin"]}><ControlCenterLayout><AdminTaxonomy /></ControlCenterLayout></ProtectedRoute>
       </Route>
+      <Route path="/admin"><Redirect to="/control-center" /></Route>
+      <Route path="/admin/:rest*"><Redirect to="/control-center" /></Route>
 
       {/* ── Protected App Routes ── */}
       <Route path="/">
