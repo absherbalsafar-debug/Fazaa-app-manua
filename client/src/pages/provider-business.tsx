@@ -254,16 +254,25 @@ export default function ProviderBusiness() {
               <WalletCards className="h-5 w-5 text-primary" />
               <div><h2 className="font-black">اختر محفظة الدفع</h2><p className="mt-1 text-xs text-muted-foreground">لـ {paymentPurpose === "subscriptions" ? selectedPlan?.name ?? "الاشتراك المختار" : selectedAdPackage.title} — اختر المحفظة للانتقال إلى شاشة الدفع الخاصة بها.</p></div>
             </div>
-            <div className="mt-4 grid gap-3">
-              {availableWallets.length === 0 ? <div className="rounded-2xl bg-muted/50 p-5 text-center text-sm text-muted-foreground">لا توجد محافظ مفعلة لهذا الاستخدام حاليًا.</div> : availableWallets.map((item) => (
-                <button key={item.wallet} type="button" onClick={() => setWallet(item.wallet)} className={`flex min-h-[84px] w-full items-center gap-4 rounded-2xl border p-4 text-right transition-all hover:-translate-y-0.5 hover:border-primary hover:shadow-md ${wallet === item.wallet ? "border-primary bg-primary/5 shadow-sm" : "border-border bg-background"}`}>
-                  <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/10 text-primary">{item.logoUrl ? <img src={item.logoUrl} alt="" className="h-full w-full object-contain" /> : <WalletCards className="h-7 w-7" />}</span>
-                  <span className="min-w-0 flex-1"><span className="block text-base font-black">{item.displayName}</span>{item.description && <span className="mt-1 block truncate text-xs text-muted-foreground">{item.description}</span>}<span className="mt-1 block text-[11px] text-primary">متابعة الدفع</span></span>
-                  <ArrowRight className="h-5 w-5 shrink-0 text-muted-foreground" />
-                </button>
-              ))}
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {availableWallets.length === 0 ? <div className="rounded-2xl bg-muted/50 p-5 text-center text-sm text-muted-foreground">لا توجد محافظ مفعلة لهذا الاستخدام حاليًا.</div> : availableWallets.map((item) => {
+                const walletMeta = item as typeof item & { checkoutMode?: "api" | "manual" };
+                const selected = wallet === item.wallet;
+                return (
+                  <button key={item.wallet} type="button" aria-pressed={selected} onClick={() => setWallet(item.wallet)} className={`group relative flex min-h-[112px] w-full items-center gap-3 overflow-hidden rounded-[24px] border p-3 text-right transition-all duration-200 active:scale-[0.98] ${selected ? "border-primary/70 bg-primary/10 shadow-[0_14px_30px_rgba(24,45,83,0.16)] ring-2 ring-primary/20" : "border-border bg-background/80 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-muted/40 hover:shadow-[0_12px_26px_rgba(24,45,83,0.10)]"}`}>
+                    <span className={`absolute inset-y-3 right-0 w-1 rounded-full transition-colors ${selected ? "bg-primary" : "bg-transparent group-hover:bg-primary/40"}`} />
+                    <span className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[20px] border p-1.5 shadow-sm transition-transform duration-200 group-hover:scale-105 ${selected ? "border-primary/30 bg-card shadow-md" : "border-border/70 bg-card"}`}>{item.logoUrl ? <img src={item.logoUrl} alt={`شعار ${item.displayName}`} className="h-full w-full object-contain" /> : <WalletCards className="h-7 w-7 text-primary" />}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2"><span className="truncate text-base font-black text-foreground">{item.displayName}</span>{selected && <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />}</span>
+                      {item.description && <span className="mt-1 block truncate text-[11px] text-muted-foreground">{item.description}</span>}
+                      <span className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold ${walletMeta.checkoutMode === "api" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-primary/10 text-primary"}`}><span className={`h-1.5 w-1.5 rounded-full ${walletMeta.checkoutMode === "api" ? "bg-emerald-500" : "bg-primary"}`} />{walletMeta.checkoutMode === "api" ? "دفع مباشر" : "جاهزة للربط"}</span>
+                    </span>
+                    <ArrowRight className={`h-5 w-5 shrink-0 transition-transform group-hover:-translate-x-0.5 ${selected ? "text-primary" : "text-muted-foreground"}`} />
+                  </button>
+                );
+              })}
             </div>
-            {selectedWallet && <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm leading-6"><p className="font-black text-primary">تم اختيار {selectedWallet.displayName}</p><p className="mt-1 text-muted-foreground">المحفظة جاهزة للربط المباشر. بعد استلام رابط API وبيانات التاجر الرسمية سيتم فتح الدفع الإلكتروني تلقائياً، ويتوفر التحويل اليدوي مؤقتاً.</p></div>}
+            {selectedWallet && <div className="mt-4 overflow-hidden rounded-[24px] border border-primary/20 bg-primary/5 p-4 text-sm leading-6 shadow-sm"><div className="flex items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary"><CheckCircle2 className="h-5 w-5" /></span><div><div className="flex flex-wrap items-center gap-2"><p className="font-black text-primary">تم اختيار {selectedWallet.displayName}</p><span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary">جاهزة للربط</span></div><p className="mt-1 text-muted-foreground">بعد استلام رابط API وبيانات التاجر الرسمية سيتم فتح الدفع الإلكتروني تلقائياً، ويتوفر التحويل اليدوي مؤقتاً.</p></div></div></div>}
           </section>
         )}
 
