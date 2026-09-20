@@ -36,14 +36,20 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Typography
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
@@ -70,6 +76,29 @@ private val FazaahColors = lightColorScheme(
     surfaceVariant = Color(0xFFEFECE5),
     onSurfaceVariant = Color(0xFF637087),
 )
+private val FazaahFont = FontFamily(
+    Font(com.fazaah.app.R.font.noto_sans_arabic_regular, FontWeight.Normal),
+    Font(com.fazaah.app.R.font.noto_sans_arabic_bold, FontWeight.Bold),
+)
+private val FazaahTypography = Typography().let { base ->
+    base.copy(
+        displayLarge = base.displayLarge.copy(fontFamily = FazaahFont),
+        displayMedium = base.displayMedium.copy(fontFamily = FazaahFont),
+        displaySmall = base.displaySmall.copy(fontFamily = FazaahFont),
+        headlineLarge = base.headlineLarge.copy(fontFamily = FazaahFont),
+        headlineMedium = base.headlineMedium.copy(fontFamily = FazaahFont),
+        headlineSmall = base.headlineSmall.copy(fontFamily = FazaahFont),
+        titleLarge = base.titleLarge.copy(fontFamily = FazaahFont),
+        titleMedium = base.titleMedium.copy(fontFamily = FazaahFont),
+        titleSmall = base.titleSmall.copy(fontFamily = FazaahFont),
+        bodyLarge = base.bodyLarge.copy(fontFamily = FazaahFont),
+        bodyMedium = base.bodyMedium.copy(fontFamily = FazaahFont),
+        bodySmall = base.bodySmall.copy(fontFamily = FazaahFont),
+        labelLarge = base.labelLarge.copy(fontFamily = FazaahFont),
+        labelMedium = base.labelMedium.copy(fontFamily = FazaahFont),
+        labelSmall = base.labelSmall.copy(fontFamily = FazaahFont),
+    )
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,7 +106,7 @@ class MainActivity : ComponentActivity() {
         val container = AppContainer(applicationContext)
         setContent {
             androidx.compose.runtime.CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                MaterialTheme(colorScheme = FazaahColors) {
+                MaterialTheme(colorScheme = FazaahColors, typography = FazaahTypography) {
                     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                         FazaahAuthScreen(container)
                     }
@@ -91,6 +120,12 @@ class MainActivity : ComponentActivity() {
 private fun FazaahAuthScreen(container: AppContainer) {
     val viewModel: AuthViewModel = viewModel(factory = AuthViewModel.factory(container.authRepository))
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var showWelcome by rememberSaveable { mutableStateOf(true) }
+
+    if (showWelcome) {
+        WelcomeScreen(onStart = { role -> viewModel.setRole(role); showWelcome = false }, onSkip = { viewModel.setRole(UserRole.CLIENT); showWelcome = false })
+        return
+    }
 
     if (state.step == AuthStep.HOME) {
         CatalogShell(container.catalogRepository, container.authRepository, onLogout = viewModel::logout)
@@ -135,6 +170,45 @@ private fun FazaahAuthScreen(container: AppContainer) {
             Spacer(Modifier.height(16.dp))
             Text(it, color = MaterialTheme.colorScheme.error)
         }
+    }
+}
+
+@Composable
+private fun WelcomeScreen(onStart: (UserRole) -> Unit, onSkip: () -> Unit) {
+    var page by rememberSaveable { mutableStateOf(0) }
+    val title = when (page) {
+        0 -> "أهلاً وسهلاً بك في فزعة"
+        1 -> "تواصل مباشرة مع المهني المناسب"
+        else -> "اختر كيف ستستخدم فزعة؟"
+    }
+    val description = when (page) {
+        0 -> "منصة توصلك بأفضل المهنيين والفنيين لإنجاز احتياجاتك بسهولة وسرعة."
+        1 -> "اختر نوع الخدمة، وتواصل مع أفضل المهنيين المعتمدين لإنجاز احتياجك بسهولة وأمان."
+        else -> "اختر دورك للبدء والاستفادة من خدمات منصة فزعة."
+    }
+    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text("فزعة", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+            Image(painterResource(com.fazaah.app.R.drawable.fazaah_logo), contentDescription = "شعار فزعة", modifier = Modifier.height(64.dp))
+            Text("●  ●", color = MaterialTheme.colorScheme.secondary)
+        }
+        Spacer(Modifier.height(24.dp))
+        Image(painterResource(com.fazaah.app.R.drawable.fazaah_logo), contentDescription = null, modifier = Modifier.height(170.dp))
+        Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Spacer(Modifier.height(10.dp))
+        Text(description, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Spacer(Modifier.height(28.dp))
+        if (page < 2) {
+            Button(onClick = { page += 1 }, modifier = Modifier.fillMaxWidth().height(54.dp)) { Text(if (page == 0) "لنبدأ" else "التالي", fontWeight = FontWeight.Bold) }
+        } else {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Button(onClick = { onStart(UserRole.CLIENT) }, modifier = Modifier.weight(1f).height(54.dp)) { Text("أبحث عن خدمة") }
+                androidx.compose.material3.OutlinedButton(onClick = { onStart(UserRole.PROVIDER) }, modifier = Modifier.weight(1f).height(54.dp)) { Text("أقدم خدمة") }
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { repeat(3) { index -> androidx.compose.material3.Surface(modifier = Modifier.height(8.dp).width(if (index == page) 32.dp else 8.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(50), color = if (index == page) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant) {} } }
+        TextButton(onClick = onSkip) { Text("تخطي") }
     }
 }
 
