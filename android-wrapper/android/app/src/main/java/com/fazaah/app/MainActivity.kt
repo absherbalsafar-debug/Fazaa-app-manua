@@ -36,6 +36,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -45,6 +46,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.core.content.ContextCompat
@@ -54,13 +56,26 @@ import com.fazaah.app.presentation.auth.AuthViewModel
 import com.fazaah.app.presentation.auth.UserRole
 import com.fazaah.app.presentation.catalog.CatalogShell
 
+private val FazaahColors = darkColorScheme(
+    primary = Color(0xFF2E79C7),
+    onPrimary = Color.White,
+    secondary = Color(0xFFF0B046),
+    onSecondary = Color(0xFF13233A),
+    background = Color(0xFF091321),
+    onBackground = Color(0xFFEAF2FA),
+    surface = Color(0xFF111C2D),
+    onSurface = Color(0xFFEAF2FA),
+    surfaceVariant = Color(0xFF1B2A40),
+    onSurfaceVariant = Color(0xFFA9B8CA),
+)
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val container = AppContainer(applicationContext)
         setContent {
             androidx.compose.runtime.CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                MaterialTheme {
+                MaterialTheme(colorScheme = FazaahColors) {
                     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                         FazaahAuthScreen(container)
                     }
@@ -98,7 +113,7 @@ private fun FazaahAuthScreen(container: AppContainer) {
         Text("فزعة FAZAAH", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Text(
             when (state.step) {
-                AuthStep.PHONE -> "تطبيق Android أصلي بـ Kotlin"
+                AuthStep.PHONE -> "خدماتك أقرب مما تتخيل"
                 AuthStep.OTP -> "تحقق من هاتفك"
                 AuthStep.PROFILE -> "أكمل بياناتك"
                 AuthStep.HOME -> "مرحبًا بك في فزعة"
