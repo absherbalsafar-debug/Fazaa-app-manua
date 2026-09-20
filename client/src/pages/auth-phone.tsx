@@ -19,6 +19,15 @@ const roleLabels: Record<RegistrationRole, { title: string; description: string 
   provider: { title: "أقدّم خدمة", description: "ستستقبل طلبات العملاء وتدير عملك" },
 };
 
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("تعذر قراءة الملف"));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function AuthPhone() {
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
@@ -37,6 +46,8 @@ export default function AuthPhone() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const [specialtyOpen, setSpecialtyOpen] = useState(false);
   const [role, setRole] = useState<RegistrationRole>(() => getRegistrationRole(window.location.search));
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -176,10 +187,10 @@ export default function AuthPhone() {
       login(data.token, role === "provider" ? { ...data.user, role: "provider" } : data.user);
       if (role === "provider" && selfieFile && idFrontFile && idBackFile) {
         for (const [type, file] of [["selfie", selfieFile], ["id_front", idFrontFile], ["id_back", idBackFile]] as const) {
-          const upload = await apiRequest("/storage/uploads/request-url", { method: "POST", body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }) });
-          const uploadResponse = await fetch(upload.uploadURL, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
-          if (!uploadResponse.ok) throw new Error("تعذر رفع صورة الهوية");
-          await apiRequest("/providers/me/verification-documents", { method: "POST", body: JSON.stringify({ type, objectPath: upload.objectPath, originalName: file.name }) });
+          await apiRequest("/providers/me/verification-documents/base64", {
+            method: "POST",
+            body: JSON.stringify({ type, originalName: file.name, contentType: file.type || "image/jpeg", dataBase64: await fileToDataUrl(file) }),
+          });
         }
       }
       navigate(getFirstLoginPath(role));
@@ -413,22 +424,15 @@ export default function AuthPhone() {
                       </div>
                     </div>
                     <div className="relative">
-                      <select
-                        value={categoryId}
-                        onChange={(event) => { setCategoryId(event.target.value); setSpecialty(""); }}
-                        disabled={categoriesLoading}
-                        className="h-14 w-full appearance-none rounded-2xl border border-[#d4d9df] bg-[#fbfaf7] px-4 pl-10 text-sm font-bold text-primary outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-                      >
-                        <option value="">{categoriesLoading ? "جاري تحميل مجالات الخدمة..." : "اختر مجال خدمتك"}</option>
-                        {categories.map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {category.icon ? `${category.icon} ` : ""}{category.name}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8e8b82]" />
+                      <button type="button" disabled={categoriesLoading} aria-expanded={categoryOpen} onClick={() => { setCategoryOpen(open => !open); setSpecialtyOpen(false); }} className="flex h-14 w-full items-center justify-between rounded-2xl border border-[#d4d9df] bg-background px-4 text-right text-sm font-bold text-foreground outline-none transition hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60">
+                        <span>{categoriesLoading ? "جاري تحميل مجالات الخدمة..." : selectedCategory ? `${selectedCategory.icon ? `${selectedCategory.icon} ` : ""}${selectedCategory.name}` : "اختر مجال خدمتك"}</span>
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                      {categoryOpen && !categoriesLoading && <div role="listbox" className="absolute inset-x-0 top-[calc(100%+8px)] z-50 max-h-64 overflow-y-auto rounded-2xl border border-border bg-popover p-2 text-popover-foreground shadow-2xl">
+                        {categories.map((category) => <button key={category.id} type="button" role="option" aria-selected={String(category.id) === categoryId} onClick={() => { setCategoryId(String(category.id)); setSpecialty(""); setCategoryOpen(false); }} className="flex w-full items-center rounded-xl px-3 py-3 text-right text-sm font-bold transition hover:bg-accent hover:text-accent-foreground">{category.icon ? `${category.icon} ` : ""}{category.name}</button>)}
+                      </div>}
                     </div>
-                    {selectedCategory?.specialties?.length ? <div className="relative"><select value={specialty} onChange={(event) => setSpecialty(event.target.value)} className="h-14 w-full appearance-none rounded-2xl border border-[#d4d9df] bg-[#fbfaf7] px-4 pl-10 text-sm font-bold text-primary outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"><option value="">اختر تخصصك الفرعي</option>{selectedCategory.specialties.map((item) => <option key={item} value={item}>{item}</option>)}</select><ChevronDown className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8e8b82]" /></div> : null}
+                    {selectedCategory?.specialties?.length ? <div className="relative"><button type="button" aria-expanded={specialtyOpen} onClick={() => { setSpecialtyOpen(open => !open); setCategoryOpen(false); }} className="flex h-14 w-full items-center justify-between rounded-2xl border border-[#d4d9df] bg-background px-4 text-right text-sm font-bold text-foreground outline-none transition hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/10"><span>{specialty || "اختر تخصصك الفرعي"}</span><ChevronDown className="h-4 w-4 text-muted-foreground" /></button>{specialtyOpen && <div role="listbox" className="absolute inset-x-0 top-[calc(100%+8px)] z-50 max-h-64 overflow-y-auto rounded-2xl border border-border bg-popover p-2 text-popover-foreground shadow-2xl">{selectedCategory.specialties.map((item) => <button key={item} type="button" role="option" aria-selected={item === specialty} onClick={() => { setSpecialty(item); setSpecialtyOpen(false); }} className="flex w-full items-center rounded-xl px-3 py-3 text-right text-sm font-bold transition hover:bg-accent hover:text-accent-foreground">{item}</button>)}</div>}</div> : null}
                     <div className="relative">
                       <FileText className="pointer-events-none absolute right-4 top-4 h-4 w-4 text-[#b57920]" />
                       <Textarea
