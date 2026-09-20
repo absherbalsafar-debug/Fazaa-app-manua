@@ -4,4 +4,5 @@
     <string name="title_activity_main">فزعة FAZAAH</string>
     <string name="package_name">com.fazaah.app</string>
     <string name="custom_url_scheme">com.fazaah.app</string>
+    <string name="notification_channel_name">تنبيهات فزعة المهمة</string>
 </resources>

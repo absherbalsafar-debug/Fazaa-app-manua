@@ -5,6 +5,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -12,6 +13,11 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
 class FazaaFirebaseMessagingService : FirebaseMessagingService() {
+    override fun onCreate() {
+        super.onCreate()
+        ensureNotificationChannel(this)
+    }
+
     override fun onNewToken(token: String) {
         getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
@@ -26,14 +32,8 @@ class FazaaFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun showNotification(title: String, body: String) {
-        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            manager.createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, "تحديثات فزعة", NotificationManager.IMPORTANCE_HIGH).apply {
-                    description = "إشعارات قبول أو رفض اعتماد المهنيين"
-                }
-            )
-        }
+        val soundUri = android.net.Uri.parse("android.resource://$packageName/${R.raw.fazaa_notification}")
+        ensureNotificationChannel(this)
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
@@ -44,11 +44,15 @@ class FazaaFirebaseMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.ic_stat_fazaa_notification)
+            .setColor(0xFFF2B544.toInt())
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setSound(soundUri)
+            .setVibrate(longArrayOf(0, 120, 80, 180))
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
             .build()
@@ -62,6 +66,26 @@ class FazaaFirebaseMessagingService : FirebaseMessagingService() {
     companion object {
         const val PREFS = "fazaa_push"
         const val FCM_TOKEN_KEY = "fcm_token"
-        const val CHANNEL_ID = "fazaa_updates"
+        const val CHANNEL_ID = "fazaa_notifications_v2"
+
+        fun ensureNotificationChannel(context: Context) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+            val soundUri = android.net.Uri.parse("android.resource://${context.packageName}/${R.raw.fazaa_notification}")
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(
+                NotificationChannel(CHANNEL_ID, context.getString(R.string.notification_channel_name), NotificationManager.IMPORTANCE_HIGH).apply {
+                    description = "إشعارات قبول أو رفض اعتماد المهنيين"
+                    setSound(
+                        soundUri,
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build(),
+                    )
+                    enableVibration(true)
+                    vibrationPattern = longArrayOf(0, 120, 80, 180)
+                },
+            )
+        }
     }
 }

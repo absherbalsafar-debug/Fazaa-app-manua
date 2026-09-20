@@ -73,8 +73,8 @@ export async function sendPushToUser(userId: number, payload: PushPayload) {
     android: {
       priority: "high",
       notification: {
-        channelId: "fazaa_updates",
-        sound: "default",
+        channelId: "fazaa_notifications_v2",
+        sound: "fazaa_notification",
       },
     },
   });

@@ -72,6 +72,7 @@ class MainActivity : ComponentActivity() {
         clearWebSessionOnFirstInstall()
         setupWebView()
         setContentView(webView)
+        FazaaFirebaseMessagingService.ensureNotificationChannel(this)
         requestNotificationPermission()
         initializePushNotifications()
         checkForAppUpdate()
