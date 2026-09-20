@@ -36,7 +36,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -47,6 +47,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.core.content.ContextCompat
@@ -56,17 +58,17 @@ import com.fazaah.app.presentation.auth.AuthViewModel
 import com.fazaah.app.presentation.auth.UserRole
 import com.fazaah.app.presentation.catalog.CatalogShell
 
-private val FazaahColors = darkColorScheme(
-    primary = Color(0xFF2E79C7),
+private val FazaahColors = lightColorScheme(
+    primary = Color(0xFF182D53),
     onPrimary = Color.White,
     secondary = Color(0xFFF0B046),
-    onSecondary = Color(0xFF13233A),
-    background = Color(0xFF091321),
-    onBackground = Color(0xFFEAF2FA),
-    surface = Color(0xFF111C2D),
-    onSurface = Color(0xFFEAF2FA),
-    surfaceVariant = Color(0xFF1B2A40),
-    onSurfaceVariant = Color(0xFFA9B8CA),
+    onSecondary = Color(0xFF182D53),
+    background = Color(0xFFF5F3EE),
+    onBackground = Color(0xFF182D53),
+    surface = Color.White,
+    onSurface = Color(0xFF182D53),
+    surfaceVariant = Color(0xFFEFECE5),
+    onSurfaceVariant = Color(0xFF637087),
 )
 
 class MainActivity : ComponentActivity() {
@@ -108,9 +110,9 @@ private fun FazaahAuthScreen(container: AppContainer) {
             }
         }
 
-        Icon(Icons.Default.Phone, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.height(16.dp))
-        Text("فزعة FAZAAH", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Image(painterResource(com.fazaah.app.R.drawable.fazaah_logo), contentDescription = "شعار فزعة", modifier = Modifier.height(106.dp))
+        Spacer(Modifier.height(10.dp))
+        Text("أهلاً وسهلاً بك في فزعة", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Text(
             when (state.step) {
                 AuthStep.PHONE -> "خدماتك أقرب مما تتخيل"
