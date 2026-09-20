@@ -106,6 +106,16 @@ export default function Profile() {
 
   const menuItems = isProvider ? providerMenu : clientMenu;
 
+  function handleLogout() {
+    const nativeBridge = window as unknown as { FazaaNativeLogout?: { requestLogout: () => void } };
+    if (nativeBridge.FazaaNativeLogout) {
+      nativeBridge.FazaaNativeLogout.requestLogout();
+      return;
+    }
+    logout();
+    navigate('/welcome');
+  }
+
   return (
     <div className="pb-28 bg-background min-h-[100dvh]" dir="rtl">
       {/* ── Hero Header ── */}
@@ -355,7 +365,7 @@ export default function Profile() {
 
         {/* ── Logout ── */}
         <button
-          onClick={() => { logout(); navigate('/welcome'); }}
+          onClick={handleLogout}
           className="w-full h-12 rounded-2xl border border-red-200 text-red-500 bg-white hover:bg-red-50 transition-colors font-semibold text-sm flex items-center justify-center gap-2"
         >
           <LogOut className="w-4 h-4" />

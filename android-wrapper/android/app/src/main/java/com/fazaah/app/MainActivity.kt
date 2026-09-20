@@ -198,6 +198,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private inner class NativeLogoutBridge {
+        @JavascriptInterface
+        fun requestLogout() {
+            runOnUiThread { showLogoutDialog() }
+        }
+    }
+
     private fun requestNativeLocation() {
         if (!hasLocationPermission()) {
             pendingNativeLocation = true
@@ -272,6 +279,7 @@ class MainActivity : ComponentActivity() {
             CookieManager.getInstance().setAcceptCookie(true)
             CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
             addJavascriptInterface(NativeLocationBridge(), "FazaaNativeLocation")
+            addJavascriptInterface(NativeLogoutBridge(), "FazaaNativeLogout")
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean = shouldOpenExternal(request.url)
 

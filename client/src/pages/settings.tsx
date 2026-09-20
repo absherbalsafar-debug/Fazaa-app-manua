@@ -13,6 +13,11 @@ export default function Settings() {
   const [, navigate] = useLocation();
 
   function handleLogout() {
+    const nativeBridge = window as unknown as { FazaaNativeLogout?: { requestLogout: () => void } };
+    if (nativeBridge.FazaaNativeLogout) {
+      nativeBridge.FazaaNativeLogout.requestLogout();
+      return;
+    }
     logout();
     navigate('/welcome');
     toast({ title: "تم تسجيل الخروج" });
