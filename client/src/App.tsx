@@ -1,5 +1,5 @@
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
-import { Component, lazy, Suspense, type ErrorInfo, type ReactNode } from "react";
+import { Component, lazy, Suspense, useEffect, type ErrorInfo, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -125,6 +125,22 @@ function AppShell({ children, showNav = true }: { children: React.ReactNode; sho
 function RoleHome() {
   const { user } = useAuth();
   return user?.role === "provider" ? <ProviderDashboard /> : <Home />;
+}
+
+function NativeLogoutBridge() {
+  const { logout } = useAuth();
+
+  useEffect(() => {
+    const handleNativeLogout = () => {
+      void Promise.resolve(logout()).finally(() => {
+        window.location.replace("/welcome");
+      });
+    };
+    window.addEventListener("native-logout", handleNativeLogout);
+    return () => window.removeEventListener("native-logout", handleNativeLogout);
+  }, [logout]);
+
+  return null;
 }
 
 function Router() {
@@ -300,6 +316,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="system" storageKey="fazaah-theme">
         <AuthProvider>
+          <NativeLogoutBridge />
           <TooltipProvider>
             <div dir="rtl" className="min-h-[100dvh] bg-background text-foreground font-sans">
               <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
