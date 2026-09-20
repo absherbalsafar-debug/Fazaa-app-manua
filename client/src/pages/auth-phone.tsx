@@ -376,7 +376,7 @@ export default function AuthPhone() {
                     {barcodeRead && <p className="text-[10px] text-amber-700">تمت قراءة صورة البطاقة: {barcodeRead} — راجع الرقم المدخل.</p>}
                     <div className="flex h-12 items-center gap-2 rounded-xl border border-[#d4d9df] bg-[#fbfaf7] px-3 focus-within:border-[#25d366] focus-within:ring-2 focus-within:ring-[#25d366]/15">
                       <MessageCircle className="h-5 w-5 shrink-0 text-[#25d366]" aria-hidden="true" />
-                      <Input inputMode="numeric" maxLength={9} placeholder="أدخل رقم واتسابك اليمني" value={whatsapp} onChange={e => setWhatsapp(e.target.value.replace(/\D/g, ""))} className="h-10 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0" dir="ltr" aria-label="رقم واتساب اليمني" />
+                      <Input inputMode="numeric" maxLength={9} placeholder="أدخل رقم الواتس اب" value={whatsapp} onChange={e => setWhatsapp(e.target.value.replace(/\D/g, ""))} className="h-10 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0" dir="ltr" aria-label="رقم الواتس اب" />
                     </div>
                   </div>
                 )}
