@@ -71,12 +71,20 @@ import com.fazaah.app.data.repository.AuthRepository
 import com.fazaah.app.presentation.auth.AuthViewModel
 import com.fazaah.app.presentation.navigation.Routes
 import com.fazaah.app.presentation.profile.ProfileViewModel
+import com.fazaah.app.presentation.requests.RequestViewModel
+import com.fazaah.app.presentation.requests.RequestsScreen
+import com.fazaah.app.presentation.requests.RequestDetailScreen
+import com.fazaah.app.presentation.requests.NewRequestScreen
+import com.fazaah.app.presentation.notifications.NotificationsViewModel
+import com.fazaah.app.presentation.notifications.NotificationsScreen
 
 @Composable
 fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepository, onLogout: () -> Unit) {
     val navController = rememberNavController()
     val catalogViewModel: CatalogViewModel = viewModel(factory = CatalogViewModel.factory(catalogRepository))
     val state by catalogViewModel.uiState.collectAsStateWithLifecycle()
+    val requestViewModel: RequestViewModel = viewModel(factory = RequestViewModel.factory(catalogRepository))
+    val notificationsViewModel: NotificationsViewModel = viewModel(factory = NotificationsViewModel.factory(catalogRepository))
 
     Scaffold(
         bottomBar = { CatalogBottomBar(navController) },
@@ -96,6 +104,10 @@ fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepos
                 ProviderDetailsScreen(catalogRepository, entry.arguments?.getInt("providerId") ?: 0, navController)
             }
             composable(Routes.Profile) { ProfileScreen(authRepository, onLogout) }
+            composable(Routes.Requests) { RequestsScreen(requestViewModel, authRepository, navController) }
+            composable("${Routes.RequestDetail}/{requestId}", arguments = listOf(navArgument("requestId") { type = NavType.IntType })) { entry -> RequestDetailScreen(requestViewModel, entry.arguments?.getInt("requestId") ?: 0) }
+            composable("${Routes.NewRequest}/{providerId}", arguments = listOf(navArgument("providerId") { type = NavType.IntType })) { entry -> NewRequestScreen(requestViewModel, entry.arguments?.getInt("providerId") ?: 0) }
+            composable(Routes.Notifications) { NotificationsScreen(notificationsViewModel) }
         }
     }
 }
@@ -112,16 +124,16 @@ private fun CatalogBottomBar(navController: NavHostController) {
             label = { Text("الرئيسية") },
         )
         NavigationBarItem(
-            selected = currentRoute == Routes.Discover,
-            onClick = { navController.navigateSingleTop(Routes.Discover) },
-            icon = { Icon(Icons.Default.Tune, contentDescription = null) },
-            label = { Text("الخدمات") },
-        )
-        NavigationBarItem(
-            selected = currentRoute == Routes.Providers || currentRoute?.startsWith("${Routes.Providers}/") == true,
+            selected = currentRoute == Routes.Providers,
             onClick = { navController.navigateSingleTop(Routes.Providers) },
             icon = { Icon(Icons.Default.Search, contentDescription = null) },
-            label = { Text("المهنيون") },
+            label = { Text("استعرض") },
+        )
+        NavigationBarItem(
+            selected = currentRoute == Routes.Requests || currentRoute?.startsWith("${Routes.RequestDetail}/") == true,
+            onClick = { navController.navigateSingleTop(Routes.Requests) },
+            icon = { Icon(Icons.Default.Refresh, contentDescription = null) },
+            label = { Text("طلباتي") },
         )
         NavigationBarItem(
             selected = currentRoute == Routes.Profile,

@@ -3,6 +3,10 @@ package com.fazaah.app.data.repository
 import com.fazaah.app.data.api.FazaaApi
 import com.fazaah.app.domain.model.Category
 import com.fazaah.app.domain.model.ProvidersPage
+import com.fazaah.app.domain.model.ServiceRequest
+import com.fazaah.app.domain.model.ServiceRequestInput
+import com.fazaah.app.domain.model.ServiceRequestUpdate
+import com.fazaah.app.domain.model.AppNotification
 
 class CatalogRepository(private val api: FazaaApi) {
     suspend fun categories(): List<Category> = api.categories()
@@ -15,4 +19,11 @@ class CatalogRepository(private val api: FazaaApi) {
     ): ProvidersPage = api.providers(categoryId, search, specialty, city)
 
     suspend fun provider(id: Int) = api.provider(id)
+
+    suspend fun requests(role: String): List<ServiceRequest> = api.requests(role)
+    suspend fun createRequest(request: ServiceRequestInput): ServiceRequest = api.createRequest(request)
+    suspend fun request(id: Int): ServiceRequest = api.request(id)
+    suspend fun updateRequest(id: Int, request: ServiceRequestUpdate): ServiceRequest = api.updateRequest(id, request)
+    suspend fun notifications(): List<AppNotification> = api.notifications()
+    suspend fun markAllNotificationsRead() = api.markAllNotificationsRead()
 }

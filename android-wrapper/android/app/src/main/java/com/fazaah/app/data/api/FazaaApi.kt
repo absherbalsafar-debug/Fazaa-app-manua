@@ -10,6 +10,11 @@ import com.fazaah.app.domain.model.VerifyOtpRequest
 import com.fazaah.app.domain.model.VerifyOtpResponse
 import com.fazaah.app.domain.model.UpdateProfileRequest
 import com.fazaah.app.domain.model.VerificationDocumentRequest
+import com.fazaah.app.domain.model.ServiceRequest
+import com.fazaah.app.domain.model.ServiceRequestInput
+import com.fazaah.app.domain.model.ServiceRequestUpdate
+import com.fazaah.app.domain.model.AppNotification
+import com.fazaah.app.domain.model.SuccessResult
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -51,4 +56,22 @@ interface FazaaApi {
 
     @GET("providers/{id}")
     suspend fun provider(@Path("id") id: Int): ProviderSummary
+
+    @GET("requests")
+    suspend fun requests(@Query("role") role: String): List<ServiceRequest>
+
+    @POST("requests")
+    suspend fun createRequest(@Body request: ServiceRequestInput): ServiceRequest
+
+    @GET("requests/{id}")
+    suspend fun request(@Path("id") id: Int): ServiceRequest
+
+    @PATCH("requests/{id}")
+    suspend fun updateRequest(@Path("id") id: Int, @Body request: ServiceRequestUpdate): ServiceRequest
+
+    @GET("notifications")
+    suspend fun notifications(): List<AppNotification>
+
+    @PATCH("notifications")
+    suspend fun markAllNotificationsRead(): SuccessResult
 }

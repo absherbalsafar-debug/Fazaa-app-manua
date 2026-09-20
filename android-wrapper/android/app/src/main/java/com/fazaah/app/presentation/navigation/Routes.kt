@@ -8,5 +8,8 @@ object Routes {
     const val Discover = "discover"
     const val Providers = "providers"
     const val Requests = "requests"
+    const val RequestDetail = "requests/detail"
+    const val NewRequest = "requests/new"
+    const val Notifications = "notifications"
     const val Profile = "profile"
 }
