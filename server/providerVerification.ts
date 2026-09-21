@@ -6,12 +6,9 @@ import {
   phoneUsers,
   providerVerificationDocuments,
   providerVerificationRequests,
-  notifications,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
-import { sdk } from "./_core/sdk";
 import { storagePut } from "./storage";
-import { sendPushToUser } from "./pushNotifications";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const allowedTypes = new Set(["selfie", "id_front", "id_back", "portfolio", "certificate"]);
@@ -77,15 +74,6 @@ async function currentUser(req: Request): Promise<AuthenticatedPhoneUser | null>
   return (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, session.phone)).limit(1))[0] ?? null;
 }
 
-async function currentAdmin(req: Request) {
-  try {
-    const user = await sdk.authenticateRequest(req);
-    return user?.role === "admin" ? user : null;
-  } catch {
-    return null;
-  }
-}
-
 function storageConfig() {
   if (!ENV.forgeApiUrl || !ENV.forgeApiKey) throw new Error("Storage is not configured");
   return { url: ENV.forgeApiUrl.replace(/\/+$/, ""), key: ENV.forgeApiKey };
@@ -105,54 +93,6 @@ async function createUploadUrl(name: string) {
 }
 
 export function registerProviderVerificationRoutes(app: Express) {
-  app.get("/api/admin/provider-verifications", async (req, res) => {
-    if (!(await currentAdmin(req))) return jsonError(res, 403, "صلاحية الإدارة مطلوبة");
-    const db = await getDb();
-    if (!db) return jsonError(res, 503, "قاعدة البيانات غير متاحة حالياً");
-    const rows = await db.select({ request: providerVerificationRequests, provider: phoneUsers })
-      .from(providerVerificationRequests)
-      .innerJoin(phoneUsers, eq(providerVerificationRequests.providerId, phoneUsers.id))
-      .orderBy(desc(providerVerificationRequests.createdAt));
-    const items = await Promise.all(rows.map(async ({ request, provider }) => {
-      const documents = await db.select({ type: providerVerificationDocuments.type, objectPath: providerVerificationDocuments.objectPath, originalName: providerVerificationDocuments.originalName })
-        .from(providerVerificationDocuments)
-        .where(eq(providerVerificationDocuments.requestId, request.id));
-      return {
-        id: request.id,
-        status: request.status,
-        submittedAt: request.submittedAt,
-        reviewedAt: request.reviewedAt,
-        provider: { id: provider.id, name: provider.name, phone: provider.phone, city: provider.city, categoryId: provider.categoryId, specialty: provider.specialty, bio: provider.bio, yearsExperience: provider.yearsExperience },
-        documents: documents.map(document => ({ ...document, url: `/manus-storage/${document.objectPath}` })),
-      };
-    }));
-    return res.json({ requests: items });
-  });
-
-  app.patch("/api/admin/provider-verifications/:id", async (req, res) => {
-    if (!(await currentAdmin(req))) return jsonError(res, 403, "صلاحية الإدارة مطلوبة");
-    const status = readBody(req).status;
-    if (status !== "approved" && status !== "rejected" && status !== "pending") return jsonError(res, 400, "حالة التوثيق غير صالحة");
-    const db = await getDb();
-    if (!db) return jsonError(res, 503, "قاعدة البيانات غير متاحة حالياً");
-    const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) return jsonError(res, 400, "رقم الطلب غير صالح");
-    const request = (await db.select({ providerId: providerVerificationRequests.providerId }).from(providerVerificationRequests).where(eq(providerVerificationRequests.id, id)).limit(1))[0];
-    if (!request) return jsonError(res, 404, "طلب الاعتماد غير موجود");
-    await db.update(providerVerificationRequests).set({ status, reviewedAt: status === "pending" ? null : new Date(), updatedAt: new Date() }).where(eq(providerVerificationRequests.id, id));
-    await db.update(phoneUsers).set({ providerAccountStatus: status === "approved" ? "approved" : "pending" }).where(eq(phoneUsers.id, request.providerId));
-    if (status === "approved" || status === "rejected") {
-      const title = status === "approved" ? "تم قبول طلب اعتمادك" : "تم رفض طلب اعتمادك";
-      const body = status === "approved"
-        ? "تهانينا، تمت الموافقة على اعتماد حسابك المهني ويمكنك الآن استقبال الطلبات."
-        : "تمت مراجعة طلب اعتمادك ولم تتم الموافقة عليه. افتح التطبيق لمعرفة التفاصيل.";
-      await db.insert(notifications).values({ userId: request.providerId, type: `provider_verification_${status}`, title, body, relatedId: id });
-      void sendPushToUser(request.providerId, { title, body, type: `provider_verification_${status}`, relatedId: id })
-        .catch(error => console.error("[Push] provider verification notification failed", error));
-    }
-    return res.json({ success: true, status });
-  });
-
   app.get("/api/providers/me/verification-status", async (req, res) => {
     const user = await currentUser(req);
     if (!user) return jsonError(res, 401, "تحتاج إلى تسجيل الدخول");

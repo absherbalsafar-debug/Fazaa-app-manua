@@ -6,10 +6,12 @@ import {
   providerVerificationDocuments,
   providerVerificationRequests,
   providerVerificationReviewHistory,
+  notifications,
   users,
 } from "../drizzle/schema";
 import { storageGetSignedUrl } from "./storage";
 import { sdk } from "./_core/sdk";
+import { sendPushToUser } from "./pushNotifications";
 
 async function currentAdmin(req: Request) {
   try {
@@ -178,6 +180,15 @@ export function registerAdminRoutes(app: Express) {
       await tx.update(phoneUsers).set({ providerAccountStatus: status === "approved" ? "approved" : "pending", updatedAt: new Date() })
         .where(eq(phoneUsers.id, request.providerId));
     });
+    if (status === "approved" || status === "rejected") {
+      const title = status === "approved" ? "تم قبول طلب اعتمادك" : "تم رفض طلب اعتمادك";
+      const body = status === "approved"
+        ? "تهانينا، تمت الموافقة على اعتماد حسابك المهني ويمكنك الآن استقبال الطلبات."
+        : `تمت مراجعة طلب اعتمادك ولم تتم الموافقة عليه.${rejectionReason ? ` السبب: ${rejectionReason}` : " افتح التطبيق لمعرفة التفاصيل."}`;
+      await db.insert(notifications).values({ userId: request.providerId, type: `provider_verification_${status}`, title, body, relatedId: id });
+      void sendPushToUser(request.providerId, { title, body, type: `provider_verification_${status}`, relatedId: id })
+        .catch(error => console.error("[Push] provider verification notification failed", error));
+    }
     return res.json({ success: true, status });
   });
 }
