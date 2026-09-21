@@ -25,7 +25,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, '') + '/api';
+const API_BASE = `${(import.meta.env.VITE_API_BASE_URL || 'https://fazaaweb-gbk3efhf.manus.space').replace(/\/$/, '')}/api`;
 const TOKEN_KEY = 'fazaah_token';
 
 export async function apiRequest(path: string, options: RequestInit = {}) {
