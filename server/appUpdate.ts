@@ -5,7 +5,7 @@ const DEFAULT_UPDATE = {
   versionName: "1.5.0",
   downloadUrl: "https://github.com/absherbalsafar-debug/Fazaa-app-manua/releases/download/v1.5.0/FAZAAH-v1.5.0-provider-ux-fix.apk",
   forceUpdate: false,
-  title: "تحديث جديد في تطبيق فزعة",
+  title: "هناك تحديث جديد في التطبيق",
   message: "تحديث 1.5.0 يحسن تسجيل المهني والوضع الليلي ويصلح شاشة الاشتراك والإعلانات.",
   releaseNotes: [
     "إخفاء نموذج البيانات بعد إرسال طلب اعتماد المهني بنجاح",
