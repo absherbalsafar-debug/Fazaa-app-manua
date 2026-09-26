@@ -1,14 +1,17 @@
 import type { Express } from "express";
 
 const DEFAULT_UPDATE = {
-  versionCode: 10,
-  versionName: "1.5.0",
-  downloadUrl: "https://github.com/absherbalsafar-debug/Fazaa-app-manua/releases/download/v1.5.0/FAZAAH-v1.5.0-provider-ux-fix.apk",
+  versionCode: 12,
+  versionName: "1.6.1",
+  downloadUrl: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663972124676/VbqkDkAOvqUNmbqG.apk",
   forceUpdate: false,
-  title: "هناك تحديث جديد في التطبيق",
-  message: "تحديث 1.5.0 يحسن تسجيل المهني والوضع الليلي ويصلح شاشة الاشتراك والإعلانات.",
+  title: "تحديث جديد في تطبيق فزعة",
+  message: "تحديث 1.6.1 يضيف حركة بدء احترافية ويحسن حالات التحميل.",
   releaseNotes: [
-    "إخفاء نموذج البيانات بعد إرسال طلب اعتماد المهني بنجاح",
+    "إضافة حركة دخول سلسة لشعار شاشة البدء",
+    "تحسين عرض حالة التحميل أثناء تجهيز التطبيق",
+    "الحفاظ على كاش WebView لتسريع التشغيل بعد تسجيل الخروج",
+    "تحميل الخريطة عند الحاجة فقط وتقليل طلبات الخطوط",
     "تحسين ترتيب وتباين شاشة الترحيب واللوحة في الوضع الليلي",
     "إصلاح تحميل شاشة الاشتراك والإعلانات ومساراتها الخلفية",
     "تفعيل الإشعارات الفورية الحقيقية عبر Firebase Cloud Messaging",
@@ -19,19 +22,16 @@ const DEFAULT_UPDATE = {
   ],
 };
 
-function readVersionCode() {
-  const value = Number(process.env.ANDROID_LATEST_VERSION_CODE);
-  return Number.isInteger(value) && value > 0 ? value : DEFAULT_UPDATE.versionCode;
-}
-
 export function registerAppUpdateRoutes(app: Express) {
   app.get("/api/app-version", (_req, res) => {
+    const configuredVersionCode = Number(process.env.ANDROID_LATEST_VERSION_CODE);
+    const useEnvironmentRelease = Number.isInteger(configuredVersionCode) && configuredVersionCode >= DEFAULT_UPDATE.versionCode;
     res.setHeader("Cache-Control", "no-store");
     return res.json({
       ...DEFAULT_UPDATE,
-      versionCode: readVersionCode(),
-      versionName: process.env.ANDROID_LATEST_VERSION_NAME || DEFAULT_UPDATE.versionName,
-      downloadUrl: process.env.ANDROID_DOWNLOAD_URL || DEFAULT_UPDATE.downloadUrl,
+      versionCode: useEnvironmentRelease ? configuredVersionCode : DEFAULT_UPDATE.versionCode,
+      versionName: useEnvironmentRelease ? (process.env.ANDROID_LATEST_VERSION_NAME || DEFAULT_UPDATE.versionName) : DEFAULT_UPDATE.versionName,
+      downloadUrl: useEnvironmentRelease ? (process.env.ANDROID_DOWNLOAD_URL || DEFAULT_UPDATE.downloadUrl) : DEFAULT_UPDATE.downloadUrl,
       forceUpdate: process.env.ANDROID_FORCE_UPDATE === "true",
     });
   });

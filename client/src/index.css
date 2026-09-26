@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700;800;900&family=Cairo:wght@300;400;500;600;700;800;900&family=IBM+Plex+Arabic:wght@300;400;500;600;700&display=swap');
+/* Keep a single Arabic family in the critical path; this avoids loading three font families on first launch. */
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -40,7 +40,7 @@
   --color-destructive-foreground: hsl(var(--destructive-foreground));
   --color-destructive-border: var(--destructive-border);
 
-  --font-sans: 'Alexandria', 'Cairo', 'IBM Plex Arabic', sans-serif;
+  --font-sans: 'Noto Sans Arabic', sans-serif;
   --radius: 0.875rem;
 }
 

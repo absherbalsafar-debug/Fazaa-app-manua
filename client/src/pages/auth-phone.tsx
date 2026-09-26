@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, BriefcaseBusiness, Camera, Check, CheckCircle2, ChevronDown, FileText, ImagePlus, Loader2, MessageCircle, Phone, ShieldCheck, Upload, UserRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { LocationPicker, type CustomerLocation } from "@/components/LocationPicker";
+import type { CustomerLocation } from "@/components/LocationPicker";
 import { useAuth, apiRequest } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { getFirstLoginPath, getRegistrationRole, type RegistrationRole } from "@/lib/registration";
@@ -13,6 +13,8 @@ import { BrandLogo } from "@/components/brand-logo";
 
 type Step = "phone" | "otp" | "name";
 type Category = { id: number; name: string; icon?: string | null; specialties?: string[] };
+
+const LocationPicker = lazy(() => import("@/components/LocationPicker"));
 
 const roleLabels: Record<RegistrationRole, { title: string; description: string }> = {
   client: { title: "أبحث عن خدمة", description: "ستظهر لك أفضل الخدمات والمهنيين" },
@@ -524,12 +526,14 @@ export default function AuthPhone() {
                     />
                   </div>
                 )}
-                <LocationPicker
-                  value={customerLocation}
-                  onChange={setCustomerLocation}
-                  title={role === "provider" ? "حدد موقع عملك بدقة" : "حدد موقعك"}
-                  description={role === "provider" ? "اسمح للتطبيق بالوصول إلى موقعك الحالي ليتم تحديد منطقة عملك بدقة." : "نحتاج موقعك لعرض أقرب المهنيين والخدمات المتاحة حولك."}
-                />
+                <Suspense fallback={<div className="flex min-h-64 items-center justify-center rounded-[28px] border border-primary/10 bg-white text-sm font-bold text-primary" role="status">جاري تجهيز الخريطة...</div>}>
+                  <LocationPicker
+                    value={customerLocation}
+                    onChange={setCustomerLocation}
+                    title={role === "provider" ? "حدد موقع عملك بدقة" : "حدد موقعك"}
+                    description={role === "provider" ? "اسمح للتطبيق بالوصول إلى موقعك الحالي ليتم تحديد منطقة عملك بدقة." : "نحتاج موقعك لعرض أقرب المهنيين والخدمات المتاحة حولك."}
+                  />
+                </Suspense>
                 {role === "provider" && <div className="rounded-[26px] border border-[#e5dcc5] bg-gradient-to-br from-[#fffdf7] to-[#f8f4e9] p-4 shadow-[0_12px_28px_rgba(14,47,98,0.05)]"><div className="flex items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f0b046]/20 text-[#a8731d]"><ShieldCheck className="h-5 w-5" /></div><div className="min-w-0 flex-1"><p className="text-sm font-black text-primary">إقرار وتعهد المهني</p><p className="mt-1 text-[11px] leading-5 text-[#737066]">نحتاج موافقتك على صحة البيانات والمستندات قبل إرسال طلب الاعتماد.</p></div></div><label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border border-[#e6dfd0] bg-white/80 p-3 text-xs leading-6 text-[#596273]"><input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-[#182d53]" /><span>أقر بأن بياناتي ومستنداتي صحيحة، وأوافق على مراجعتها وفق شروط منصة فزعة. <button type="button" className="font-black text-[#a8731d] underline underline-offset-4" onClick={() => setTermsOpen(true)}>قراءة نص التعهد</button></span></label></div>}
                 {termsOpen && <div className="fixed inset-0 z-50 flex items-end justify-center bg-primary/40 p-4 backdrop-blur-sm sm:items-center"><div role="dialog" aria-modal="true" aria-labelledby="terms-title" className="w-full max-w-md rounded-[28px] bg-white p-5 shadow-2xl"><div className="flex items-center justify-between"><div className="flex items-center gap-2"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/20 text-[#a8731d]"><ShieldCheck className="h-5 w-5" /></div><h2 id="terms-title" className="text-base font-black text-primary">نص الإقرار والتعهد</h2></div><button type="button" onClick={() => setTermsOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f3ee] text-[#667085]" aria-label="إغلاق"><X className="h-4 w-4" /></button></div><p className="mt-4 rounded-2xl bg-[#fbfaf7] p-4 text-sm leading-7 text-[#596273]">أتعهد بأن جميع البيانات والمستندات التي أقدمها صحيحة ومملوكة لي، وأوافق على قيام منصة فزعة بمراجعتها والتحقق منها وفق شروط الاستخدام وسياسة الخصوصية. وأتحمل مسؤولية أي معلومات غير صحيحة.</p><Button type="button" onClick={() => { setTermsAccepted(true); setTermsOpen(false); }} className="mt-4 h-12 w-full rounded-2xl bg-primary font-extrabold">أوافق وأغلق</Button></div></div>}
                 {role === "provider" && loading && uploadStage && <div className="rounded-[24px] border border-primary/10 bg-[#182d53] p-4 text-white shadow-[0_14px_30px_rgba(14,47,98,0.16)]" role="status" aria-live="polite"><div className="flex items-center justify-between gap-3"><div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f0b046]/20 text-[#f0b046]"><Loader2 className="h-5 w-5 animate-spin" /></div><div className="min-w-0"><p className="text-sm font-black">رفع مستندات الاعتماد</p><p className="mt-1 truncate text-[11px] text-white/70">{uploadStage}</p></div></div><span className="shrink-0 text-lg font-black text-[#f0b046]">{uploadProgress}%</span></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-white/15"><div className="h-full rounded-full bg-gradient-to-l from-[#f0b046] to-[#ffd978] transition-all duration-500" style={{ width: `${Math.max(uploadProgress, 7)}%` }} /></div><div className="mt-3 flex justify-between text-[10px] text-white/55"><span className={uploadProgress >= 33 ? "text-[#f0b046]" : ""}>الصورة الشخصية</span><span className={uploadProgress >= 66 ? "text-[#f0b046]" : ""}>الهوية الأمامية</span><span className={uploadProgress >= 100 ? "text-[#f0b046]" : ""}>الهوية الخلفية</span></div></div>}

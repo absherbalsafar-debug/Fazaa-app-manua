@@ -4,6 +4,8 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Dialog
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color as AndroidColor
@@ -23,6 +25,8 @@ import java.net.HttpURLConnection
 import java.net.URL
 import android.view.View
 import android.view.Gravity
+import android.view.animation.DecelerateInterpolator
+import android.view.animation.LinearInterpolator
 import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
 import android.webkit.JavascriptInterface
@@ -38,6 +42,8 @@ import android.webkit.WebViewClient
 import android.widget.TextView
 import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -56,6 +62,8 @@ class MainActivity : ComponentActivity() {
     private var fcmToken: String? = null
     private var pendingWebPermissionRequest: PermissionRequest? = null
     private var pendingWebPermissionResources: Array<String> = emptyArray()
+    private var startupOverlay: View? = null
+    private var startupPulse: ObjectAnimator? = null
     private var backPressedOnce = false
     private val backHandler = Handler(Looper.getMainLooper())
     private val fileChooserRequestCode = 4101
@@ -88,7 +96,8 @@ class MainActivity : ComponentActivity() {
         window.navigationBarColor = AndroidColor.rgb(8, 11, 18)
         clearWebSessionOnFirstInstall()
         setupWebView()
-        setContentView(webView)
+        setContentView(createStartupRoot())
+        webView.loadUrl(BuildConfig.WEB_APP_URL)
         FazaaFirebaseMessagingService.ensureNotificationChannel(this)
         requestNotificationPermission()
         initializePushNotifications()
@@ -286,6 +295,7 @@ class MainActivity : ComponentActivity() {
                 loadsImagesAutomatically = true
                 javaScriptCanOpenWindowsAutomatically = true
                 mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+                cacheMode = WebSettings.LOAD_DEFAULT
                 userAgentString = "$userAgentString FAZAAH-Android-WebView/1.0"
             }
             CookieManager.getInstance().setAcceptCookie(true)
@@ -299,7 +309,10 @@ class MainActivity : ComponentActivity() {
                 override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean = shouldOpenExternal(Uri.parse(url))
 
                 override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
-                    if (request.isForMainFrame) view.loadUrl(BuildConfig.WEB_APP_URL)
+                    if (request.isForMainFrame) {
+                        hideStartupOverlay()
+                        view.loadUrl(BuildConfig.WEB_APP_URL)
+                    }
                 }
 
                 override fun onPageFinished(view: WebView, url: String) {
@@ -326,6 +339,7 @@ class MainActivity : ComponentActivity() {
                           if (localStorage.getItem('fazaah_token') && window.FazaaNativePushToken) window.FazaaRegisterPushToken(window.FazaaNativePushToken);
                         })();
                     """.trimIndent(), null)
+                    hideStartupOverlay()
                 }
             }
             webChromeClient = object : WebChromeClient() {
@@ -385,9 +399,110 @@ class MainActivity : ComponentActivity() {
                 clearCache(true)
                 cachePrefs.edit().putInt("app_version_code", BuildConfig.VERSION_CODE).apply()
             }
-            loadUrl(BuildConfig.WEB_APP_URL)
         }
     }
+
+    private fun createStartupRoot(): View {
+        val root = FrameLayout(this).apply { setBackgroundColor(AndroidColor.rgb(8, 11, 18)) }
+        root.addView(webView, FrameLayout.LayoutParams(-1, -1))
+        val overlay = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            setBackgroundColor(AndroidColor.rgb(8, 11, 18))
+        }
+        val logo = ImageView(this).apply {
+            setImageResource(R.drawable.fazaah_logo)
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
+            alpha = 0f
+            scaleX = 0.82f
+            scaleY = 0.82f
+        }
+        val title = TextView(this).apply {
+            text = "أهلاً بك في فزعة"
+            textSize = 14f
+            gravity = Gravity.CENTER
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setTextColor(AndroidColor.WHITE)
+            alpha = 0f
+            translationY = dp(10).toFloat()
+            setPadding(0, dp(10), 0, 0)
+        }
+        val status = TextView(this).apply {
+            text = "جارٍ تجهيز تجربتك"
+            textSize = 12f
+            gravity = Gravity.CENTER
+            setTextColor(AndroidColor.rgb(178, 190, 209))
+            alpha = 0f
+            setPadding(0, dp(18), 0, 0)
+        }
+        val progress = android.widget.ProgressBar(this).apply {
+            isIndeterminate = true
+            indeterminateTintList = android.content.res.ColorStateList.valueOf(AndroidColor.rgb(242, 181, 68))
+            alpha = 0f
+        }
+        overlay.addView(logo, LinearLayout.LayoutParams(dp(112), dp(112)))
+        overlay.addView(title, LinearLayout.LayoutParams(-1, -2))
+        overlay.addView(status, LinearLayout.LayoutParams(-1, -2))
+        overlay.addView(progress, LinearLayout.LayoutParams(dp(32), dp(32)).apply { topMargin = dp(18) })
+        root.addView(overlay, FrameLayout.LayoutParams(-1, -1))
+        startupOverlay = overlay
+        val easing = DecelerateInterpolator(1.7f)
+        val logoEntrance = AnimatorSet().apply {
+            playTogether(
+                ObjectAnimator.ofFloat(logo, View.ALPHA, 0f, 1f),
+                ObjectAnimator.ofFloat(logo, View.SCALE_X, 0.82f, 1f),
+                ObjectAnimator.ofFloat(logo, View.SCALE_Y, 0.82f, 1f)
+            )
+            duration = 520L
+            interpolator = easing
+        }
+        val titleEntrance = AnimatorSet().apply {
+            playTogether(
+                ObjectAnimator.ofFloat(title, View.ALPHA, 0f, 1f),
+                ObjectAnimator.ofFloat(title, View.TRANSLATION_Y, dp(10).toFloat(), 0f)
+            )
+            duration = 420L
+            startDelay = 150L
+            interpolator = easing
+        }
+        val loadingEntrance = AnimatorSet().apply {
+            playTogether(
+                ObjectAnimator.ofFloat(status, View.ALPHA, 0f, 1f),
+                ObjectAnimator.ofFloat(progress, View.ALPHA, 0f, 1f)
+            )
+            duration = 360L
+            startDelay = 300L
+            interpolator = easing
+        }
+        startupPulse = ObjectAnimator.ofFloat(status, View.ALPHA, 0.55f, 1f, 0.55f).apply {
+            duration = 1200L
+            repeatCount = ObjectAnimator.INFINITE
+            interpolator = LinearInterpolator()
+            startDelay = 700L
+        }
+        logoEntrance.start()
+        titleEntrance.start()
+        loadingEntrance.start()
+        startupPulse?.start()
+        Handler(Looper.getMainLooper()).postDelayed({ hideStartupOverlay() }, 12000L)
+        return root
+    }
+
+    private fun hideStartupOverlay() {
+        runOnUiThread {
+            startupPulse?.cancel()
+            startupPulse = null
+            startupOverlay?.let { overlay ->
+                overlay.animate().alpha(0f).setDuration(180L).withEndAction {
+                    (overlay.parent as? android.view.ViewGroup)?.removeView(overlay)
+                    startupOverlay = null
+                }.start()
+            }
+        }
+    }
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun shouldOpenExternal(uri: Uri): Boolean = when (uri.scheme?.lowercase()) {
         "http", "https" -> false
@@ -493,7 +608,6 @@ class MainActivity : ComponentActivity() {
         """.trimIndent(), null)
         CookieManager.getInstance().removeAllCookies(null)
         CookieManager.getInstance().flush()
-        webView.clearCache(true)
         webView.clearHistory()
         webView.evaluateJavascript("localStorage.getItem('fazaah-theme');") {
             // لا نعيد تحميل WebView إلا بعد انتهاء عملية حفظ تفضيل الثيم.
