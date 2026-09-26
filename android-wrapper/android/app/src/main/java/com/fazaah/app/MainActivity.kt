@@ -54,6 +54,8 @@ class MainActivity : ComponentActivity() {
     private var pendingNativeLocation = false
     private var nativeLocationListener: LocationListener? = null
     private var fcmToken: String? = null
+    private var pendingWebPermissionRequest: PermissionRequest? = null
+    private var pendingWebPermissionResources: Array<String> = emptyArray()
     private var backPressedOnce = false
     private val backHandler = Handler(Looper.getMainLooper())
     private val fileChooserRequestCode = 4101
@@ -69,6 +71,16 @@ class MainActivity : ComponentActivity() {
         }
     }
     private val notificationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    private val webMediaPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+        val request = pendingWebPermissionRequest
+        val resources = pendingWebPermissionResources
+        pendingWebPermissionRequest = null
+        pendingWebPermissionResources = emptyArray()
+        if (request == null) return@registerForActivityResult
+
+        val allGranted = result.values.all { it }
+        if (allGranted) request.grant(resources) else request.deny()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -340,7 +352,31 @@ class MainActivity : ComponentActivity() {
                 override fun onPermissionRequest(request: PermissionRequest) {
                     runOnUiThread {
                         val allowed = request.resources.filter { it == PermissionRequest.RESOURCE_VIDEO_CAPTURE || it == PermissionRequest.RESOURCE_AUDIO_CAPTURE }.toTypedArray()
-                        if (allowed.isEmpty()) request.deny() else request.grant(allowed)
+                        val appOrigin = Uri.parse(BuildConfig.WEB_APP_URL)
+                        val requestOrigin = request.origin
+                        val sameAppOrigin = requestOrigin.scheme == appOrigin.scheme && requestOrigin.host == appOrigin.host
+                        if (allowed.isEmpty() || !sameAppOrigin) {
+                            request.deny()
+                            return@runOnUiThread
+                        }
+
+                        val requiredPermissions = buildList {
+                            if (PermissionRequest.RESOURCE_AUDIO_CAPTURE in allowed &&
+                                ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
+                            ) add(Manifest.permission.RECORD_AUDIO)
+                            if (PermissionRequest.RESOURCE_VIDEO_CAPTURE in allowed &&
+                                ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED
+                            ) add(Manifest.permission.CAMERA)
+                        }
+
+                        if (requiredPermissions.isEmpty()) {
+                            request.grant(allowed)
+                        } else {
+                            pendingWebPermissionRequest?.deny()
+                            pendingWebPermissionRequest = request
+                            pendingWebPermissionResources = allowed
+                            webMediaPermissionLauncher.launch(requiredPermissions.toTypedArray())
+                        }
                     }
                 }
             }
