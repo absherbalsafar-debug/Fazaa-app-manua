@@ -16,8 +16,8 @@ android {
         versionCode 10
         versionName '1.5.0'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-        buildConfigField 'String', 'API_BASE_URL', '"https://fazaaweb-gbk3efhf.manus.space/api"'
-        buildConfigField 'String', 'WEB_APP_URL', '"https://fazaaweb-gbk3efhf.manus.space/"'
+        buildConfigField 'String', 'API_BASE_URL', '"https://fazaaah-yjyc4cag.manus.space/api"'
+        buildConfigField 'String', 'WEB_APP_URL', '"https://fazaaah-yjyc4cag.manus.space/"'
     }
 
     buildFeatures {
