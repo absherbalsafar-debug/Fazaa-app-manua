@@ -65,6 +65,8 @@ class MainActivity : ComponentActivity() {
     private var startupOverlay: View? = null
     private var startupPulse: ObjectAnimator? = null
     private var backPressedOnce = false
+    private var logoutInProgress = false
+    private var logoutDialogVisible = false
     private val backHandler = Handler(Looper.getMainLooper())
     private val fileChooserRequestCode = 4101
     private val locationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
@@ -97,7 +99,13 @@ class MainActivity : ComponentActivity() {
         clearWebSessionOnFirstInstall()
         setupWebView()
         setContentView(createStartupRoot())
-        webView.loadUrl(BuildConfig.WEB_APP_URL)
+        val welcomeSeen = getPreferences(MODE_PRIVATE).getBoolean("welcome_seen_v1", false)
+        val initialUrl = if (welcomeSeen) {
+            "${BuildConfig.WEB_APP_URL}/auth/phone?mode=login"
+        } else {
+            BuildConfig.WEB_APP_URL
+        }
+        webView.loadUrl(initialUrl)
         FazaaFirebaseMessagingService.ensureNotificationChannel(this)
         requestNotificationPermission()
         initializePushNotifications()
@@ -105,16 +113,24 @@ class MainActivity : ComponentActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (webView.canGoBack()) {
+                if (logoutInProgress || isPublicAuthPage(webView.url)) {
+                    finish()
+                    return
+                }
+                val history = webView.copyBackForwardList()
+                val previousUrl = history.currentIndex
+                    .takeIf { it > 0 }
+                    ?.let { history.getItemAtIndex(it - 1).url }
+                if (webView.canGoBack() && !isPublicAuthPage(previousUrl)) {
                     webView.goBack()
                     return
                 }
                 if (backPressedOnce) {
                     backPressedOnce = false
-                    showLogoutDialog()
+                    finish()
                 } else {
                     backPressedOnce = true
-                    Toast.makeText(this@MainActivity, "اضغط مرة أخرى لتسجيل الخروج", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, "اضغط مرة أخرى للخروج من التطبيق", Toast.LENGTH_SHORT).show()
                     backHandler.postDelayed({ backPressedOnce = false }, 2200L)
                 }
             }
@@ -187,16 +203,30 @@ class MainActivity : ComponentActivity() {
         if (!forceUpdate) dialog.setButton(AlertDialog.BUTTON_NEGATIVE, "لاحقاً", null as android.content.DialogInterface.OnClickListener?)
         dialog.setCancelable(!forceUpdate)
         dialog.setOnShowListener {
-            dialog.window?.setBackgroundDrawable(ColorDrawable(AndroidColor.rgb(21, 27, 41)))
+            dialog.window?.setBackgroundDrawable(roundedDialogBackground(AndroidColor.rgb(255, 253, 248), 22))
             dialog.window?.setDimAmount(0.72f)
             val titleId = resources.getIdentifier("alertTitle", "id", "android")
-            dialog.findViewById<TextView>(titleId)?.setTextColor(AndroidColor.WHITE)
-            dialog.findViewById<TextView>(android.R.id.message)?.setTextColor(AndroidColor.rgb(220, 226, 236))
-            dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(AndroidColor.rgb(155, 170, 193))
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(AndroidColor.rgb(242, 181, 68))
+            dialog.findViewById<TextView>(titleId)?.setTextColor(AndroidColor.rgb(24, 45, 83))
+            dialog.findViewById<TextView>(android.R.id.message)?.setTextColor(AndroidColor.rgb(76, 86, 101))
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(AndroidColor.rgb(24, 45, 83))
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(AndroidColor.rgb(181, 125, 20))
         }
         dialog.show()
+        // بعض إصدارات Android تعيد تطبيق خلفية الثيم بعد onShow؛ ثبّت الألوان بعد العرض أيضاً.
+        dialog.window?.setBackgroundDrawable(roundedDialogBackground(AndroidColor.rgb(255, 253, 248), 22))
+        dialog.findViewById<TextView>(resources.getIdentifier("alertTitle", "id", "android"))
+            ?.setTextColor(AndroidColor.rgb(24, 45, 83))
+        dialog.findViewById<TextView>(android.R.id.message)
+            ?.setTextColor(AndroidColor.rgb(76, 86, 101))
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(AndroidColor.rgb(24, 45, 83))
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(AndroidColor.rgb(181, 125, 20))
     }
+
+    private fun roundedDialogBackground(color: Int, radius: Int): GradientDrawable =
+        GradientDrawable().apply {
+            setColor(color)
+            cornerRadius = (radius * resources.displayMetrics.density)
+        }
 
     private fun clearWebSessionOnFirstInstall() {
         val preferences = getPreferences(MODE_PRIVATE)
@@ -223,6 +253,11 @@ class MainActivity : ComponentActivity() {
         @JavascriptInterface
         fun requestLogout() {
             runOnUiThread { showLogoutDialog() }
+        }
+
+        @JavascriptInterface
+        fun markWelcomeSeen() {
+            getPreferences(MODE_PRIVATE).edit().putBoolean("welcome_seen_v1", true).apply()
         }
     }
 
@@ -311,8 +346,12 @@ class MainActivity : ComponentActivity() {
                 override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
                     if (request.isForMainFrame) {
                         hideStartupOverlay()
-                        view.loadUrl(BuildConfig.WEB_APP_URL)
                     }
+                }
+
+                override fun onPageCommitVisible(view: WebView, url: String) {
+                    super.onPageCommitVisible(view, url)
+                    hideStartupOverlay()
                 }
 
                 override fun onPageFinished(view: WebView, url: String) {
@@ -337,6 +376,7 @@ class MainActivity : ComponentActivity() {
                             if (key === 'fazaah_token' && window.FazaaNativePushToken) window.FazaaRegisterPushToken(window.FazaaNativePushToken);
                           };
                           if (localStorage.getItem('fazaah_token') && window.FazaaNativePushToken) window.FazaaRegisterPushToken(window.FazaaNativePushToken);
+                          if (location.pathname === '/welcome') window.FazaaNativeLogout?.markWelcomeSeen?.();
                         })();
                     """.trimIndent(), null)
                     hideStartupOverlay()
@@ -447,6 +487,12 @@ class MainActivity : ComponentActivity() {
         overlay.addView(progress, LinearLayout.LayoutParams(dp(32), dp(32)).apply { topMargin = dp(18) })
         root.addView(overlay, FrameLayout.LayoutParams(-1, -1))
         startupOverlay = overlay
+        val statusMessages = listOf("جارٍ تجهيز تجربتك", "جارٍ تحميل خدمات فزعة", "لحظات ونبدأ معك")
+        statusMessages.forEachIndexed { index, message ->
+            Handler(Looper.getMainLooper()).postDelayed({
+                if (startupOverlay != null) status.text = message
+            }, (700L + index * 850L))
+        }
         val easing = DecelerateInterpolator(1.7f)
         val logoEntrance = AnimatorSet().apply {
             playTogether(
@@ -485,7 +531,8 @@ class MainActivity : ComponentActivity() {
         titleEntrance.start()
         loadingEntrance.start()
         startupPulse?.start()
-        Handler(Looper.getMainLooper()).postDelayed({ hideStartupOverlay() }, 12000L)
+        // لا نحجب الواجهة أكثر من 3.5 ثوانٍ حتى عند بطء الشبكة أو تعذر حدث onPageFinished.
+        Handler(Looper.getMainLooper()).postDelayed({ hideStartupOverlay() }, 3500L)
         return root
     }
 
@@ -510,7 +557,15 @@ class MainActivity : ComponentActivity() {
         else -> true
     }
 
+    private fun isPublicAuthPage(url: String?): Boolean {
+        val path = runCatching { Uri.parse(url ?: "").path.orEmpty() }.getOrDefault("")
+        return path == "/welcome" || path == "/welcome-back" ||
+            path == "/login" || path == "/register" || path.startsWith("/auth/")
+    }
+
     private fun showLogoutDialog() {
+        if (logoutDialogVisible || isFinishing || isDestroyed) return
+        logoutDialogVisible = true
         val dialog = Dialog(this)
         val density = resources.displayMetrics.density
         fun dp(value: Int) = (value * density).toInt()
@@ -586,6 +641,7 @@ class MainActivity : ComponentActivity() {
 
         dialog.setContentView(content)
         dialog.setCanceledOnTouchOutside(true)
+        dialog.setOnDismissListener { logoutDialogVisible = false }
         dialog.window?.setBackgroundDrawable(ColorDrawable(AndroidColor.TRANSPARENT))
         dialog.window?.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
         dialog.window?.setDimAmount(0.68f)
@@ -596,6 +652,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun logoutFromWebView() {
+        logoutInProgress = true
         // امسح بيانات الجلسة والحساب فقط، واحتفظ بتفضيل الوضع النهاري/الليلي.
         // مسح WebStorage بالكامل هنا كان يعيد التطبيق إلى الوضع الافتراضي عند الخروج.
         webView.evaluateJavascript("""
@@ -611,7 +668,9 @@ class MainActivity : ComponentActivity() {
         webView.clearHistory()
         webView.evaluateJavascript("localStorage.getItem('fazaah-theme');") {
             // لا نعيد تحميل WebView إلا بعد انتهاء عملية حفظ تفضيل الثيم.
-            webView.loadUrl(BuildConfig.WEB_APP_URL)
+            webView.clearHistory()
+            logoutInProgress = false
+            webView.loadUrl("${BuildConfig.WEB_APP_URL}/auth/phone?mode=login&loggedOut=1")
             Toast.makeText(this, "تم تسجيل الخروج", Toast.LENGTH_SHORT).show()
         }
     }

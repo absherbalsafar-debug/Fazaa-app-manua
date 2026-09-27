@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "@/lib/auth";
+import { apiRequest, useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { useLocation } from "wouter";
 import {
   LogOut, ShieldCheck, MapPin, ChevronLeft, Settings, Bell,
   Heart, ClipboardList, CheckCircle2, Phone, Mail, Award,
-  TrendingUp, Wallet, Star, Briefcase, Camera, Edit3
+  TrendingUp, Wallet, Star, Briefcase, Camera, Edit3, Save, X
 } from "lucide-react";
   import { useUpdateProvider, useGetMyProvider } from "@/lib/api-client-react";
 import { useToast } from "@/hooks/use-toast";
@@ -27,6 +27,46 @@ export default function Profile() {
   const [contactEditorOpen, setContactEditorOpen] = useState(false);
   const [phone, setPhone] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [profileEditorOpen, setProfileEditorOpen] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileName, setProfileName] = useState("");
+  const [profileCity, setProfileCity] = useState("");
+  const [profileGovernorate, setProfileGovernorate] = useState("");
+  const [profileDistrict, setProfileDistrict] = useState("");
+  const [profileWhatsapp, setProfileWhatsapp] = useState("");
+
+  useEffect(() => {
+    if (!user) return;
+    setProfileName(user.name ?? "");
+    setProfileCity(user.city ?? "");
+  }, [user]);
+
+  function openProfileEditor() {
+    setProfileName(user?.name ?? "");
+    setProfileCity(user?.city ?? "");
+    setProfileGovernorate("");
+    setProfileDistrict("");
+    setProfileWhatsapp("");
+    setProfileEditorOpen(true);
+  }
+
+  async function saveProfile() {
+    if (profileName.trim().length < 3) {
+      toast({ title: "أدخل الاسم الكامل", description: "يجب أن يتكون الاسم من 3 أحرف على الأقل", variant: "destructive" });
+      return;
+    }
+    setProfileSaving(true);
+    try {
+      const updated = await apiRequest("/auth/me", { method: "PATCH", body: JSON.stringify({ name: profileName.trim(), city: profileCity.trim(), governorate: profileGovernorate.trim(), district: profileDistrict.trim(), whatsapp: profileWhatsapp.trim() }) });
+      updateUser(updated);
+      setProfileEditorOpen(false);
+      toast({ title: "تم تحديث ملفك الشخصي", description: "حُفظت بياناتك الجديدة بنجاح" });
+    } catch (error) {
+      toast({ title: "تعذر حفظ البيانات", description: error instanceof Error ? error.message : "حاول مرة أخرى", variant: "destructive" });
+    } finally {
+      setProfileSaving(false);
+    }
+  }
 
   useEffect(() => {
     if (!providerDetails) return;
@@ -126,7 +166,7 @@ export default function Profile() {
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-bold text-white">حسابي</h1>
             <button
-              onClick={() => navigate('/settings')}
+              onClick={openProfileEditor}
               className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
             >
               <Settings className="w-4.5 h-4.5 text-white" />
@@ -194,13 +234,35 @@ export default function Profile() {
             </div>
 
             <button
-              onClick={() => navigate('/settings')}
+              onClick={openProfileEditor}
               className="shrink-0 w-8 h-8 rounded-xl bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"
             >
               <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
           </div>
         </motion.div>
+
+        {profileEditorOpen && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-primary/10 bg-card p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-black text-foreground">تعديل الملف الشخصي</h2>
+                <p className="mt-1 text-xs text-muted-foreground">حدّث بياناتك بسهولة متى شئت</p>
+              </div>
+              <button type="button" onClick={() => setProfileEditorOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground" aria-label="إغلاق"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="grid gap-3">
+              <label className="space-y-1.5"><span className="text-xs font-bold">الاسم الكامل</span><Input value={profileName} onChange={e => setProfileName(e.target.value)} placeholder="اكتب اسمك الكامل" /></label>
+              <label className="space-y-1.5"><span className="text-xs font-bold">المدينة</span><Input value={profileCity} onChange={e => setProfileCity(e.target.value)} placeholder="مثال: صنعاء" /></label>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="space-y-1.5"><span className="text-xs font-bold">المحافظة</span><Input value={profileGovernorate} onChange={e => setProfileGovernorate(e.target.value)} placeholder="المحافظة" /></label>
+                <label className="space-y-1.5"><span className="text-xs font-bold">الحي</span><Input value={profileDistrict} onChange={e => setProfileDistrict(e.target.value)} placeholder="الحي" /></label>
+              </div>
+              <label className="space-y-1.5"><span className="text-xs font-bold">رقم واتساب</span><Input value={profileWhatsapp} onChange={e => setProfileWhatsapp(e.target.value)} inputMode="tel" dir="ltr" placeholder="777000000" /></label>
+              <Button type="button" onClick={saveProfile} disabled={profileSaving} className="h-11 rounded-xl bg-primary font-bold"><Save className="ml-2 h-4 w-4" />{profileSaving ? "جارٍ الحفظ..." : "حفظ التعديلات"}</Button>
+            </div>
+          </motion.div>
+        )}
 
         {/* ── Provider Stats / Client Stats ── */}
         {isProvider && providerDetails ? (

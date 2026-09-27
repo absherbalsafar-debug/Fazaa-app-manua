@@ -149,7 +149,7 @@ export default function Settings() {
         </Section>
 
         <Section title="الدعم والمساعدة">
-          <Item icon={HelpCircle} label="الأسئلة الشائعة" onClick={() => toast({ title: "قريباً" })} />
+          <Item icon={HelpCircle} label="الأسئلة الشائعة والدعم" sub="إجابات وتواصل مباشر مع فريق فزعة" onClick={() => navigate('/help-support')} />
           <Item icon={Info} label="من نحن" onClick={() => toast({ title: "فزعة — منصة الخدمات المهنية في اليمن" })} />
         </Section>
 

@@ -16,6 +16,10 @@ import com.fazaah.app.domain.model.ServiceRequestInput
 import com.fazaah.app.domain.model.ServiceRequestUpdate
 import com.fazaah.app.domain.model.AppNotification
 import com.fazaah.app.domain.model.SuccessResult
+import com.fazaah.app.domain.model.SubscriptionCheckoutRequest
+import com.fazaah.app.domain.model.SubscriptionCheckoutResponse
+import com.fazaah.app.domain.model.SubscriptionPlansResponse
+import com.fazaah.app.domain.model.ProviderSubscriptionStatus
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -91,4 +95,13 @@ interface FazaaApi {
 
     @PATCH("notifications")
     suspend fun markAllNotificationsRead(): SuccessResult
+
+    @GET("subscription-plans")
+    suspend fun subscriptionPlans(): SubscriptionPlansResponse
+
+    @GET("providers/me/subscription")
+    suspend fun providerSubscription(): ProviderSubscriptionStatus
+
+    @POST("subscriptions/checkout")
+    suspend fun subscriptionCheckout(@Body request: SubscriptionCheckoutRequest): SubscriptionCheckoutResponse
 }

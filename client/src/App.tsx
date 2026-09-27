@@ -47,6 +47,7 @@ const Earnings = lazy(() => import("@/pages/earnings"));
 const Wallet = lazy(() => import("@/pages/wallet"));
 const Privacy = lazy(() => import("@/pages/privacy"));
 const Terms = lazy(() => import("@/pages/terms"));
+const HelpSupport = lazy(() => import("@/pages/help-support"));
 const SponsoredPreview = lazy(() => import("@/pages/sponsored-preview"));
 
 class RuntimeErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -257,6 +258,9 @@ function Router() {
       </Route>
       <Route path="/terms">
         <AppShell showNav={false}><Terms /></AppShell>
+      </Route>
+      <Route path="/help-support">
+        <ProtectedRoute><AppShell showNav={false}><HelpSupport /></AppShell></ProtectedRoute>
       </Route>
       <Route path="/verify">
         <ProtectedRoute allowedRoles={['provider']}>
