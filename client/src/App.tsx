@@ -32,7 +32,6 @@ const Settings = lazy(() => import("@/pages/settings"));
 const Emergency = lazy(() => import("@/pages/emergency"));
 const ProviderVerify = lazy(() => import("@/pages/provider-verify"));
 const ProviderSubscription = lazy(() => import("@/pages/provider-subscription"));
-const NotFound = lazy(() => import("@/pages/not-found"));
 
 // Admin Pages
 const AdminDashboard = lazy(() => import("@/control-center/pages/dashboard"));
@@ -273,7 +272,8 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
-      <Route><NotFound /></Route>
+      {/* لا نعرض صفحة الخطأ الإنجليزية للمستخدم؛ أي رابط قديم يعيد إلى الدخول الآمن. */}
+      <Route><Redirect to="/welcome" /></Route>
     </Switch>
   );
 }

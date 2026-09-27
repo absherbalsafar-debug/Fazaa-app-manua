@@ -98,7 +98,8 @@ class MainActivity : ComponentActivity() {
         window.navigationBarColor = AndroidColor.rgb(8, 11, 18)
         clearWebSessionOnFirstInstall()
         setupWebView()
-        setContentView(createStartupRoot())
+        // يعرض WebView الموقع مباشرة؛ لا نضيف طبقة Splash ثانية فوق شاشة الموقع.
+        setContentView(webView)
         val welcomeSeen = getPreferences(MODE_PRIVATE).getBoolean("welcome_seen_v1", false)
         val initialUrl = if (welcomeSeen) {
             "${BuildConfig.WEB_APP_URL}/auth/phone?mode=login"

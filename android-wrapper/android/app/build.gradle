@@ -13,11 +13,11 @@ android {
         applicationId 'com.fazaah.app'
         minSdk 23
         targetSdk 35
-        versionCode 12
-        versionName '1.6.1'
+        versionCode 13
+        versionName '1.6.2'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-        buildConfigField 'String', 'API_BASE_URL', '"https://fazaaah-yjyc4cag.manus.space/api"'
-        buildConfigField 'String', 'WEB_APP_URL', '"https://fazaaah-yjyc4cag.manus.space/"'
+        buildConfigField 'String', 'API_BASE_URL', '"https://fazaaweb-gbk3efhf.manus.space/api"'
+        buildConfigField 'String', 'WEB_APP_URL', '"https://fazaaweb-gbk3efhf.manus.space/"'
     }
 
     buildFeatures {
