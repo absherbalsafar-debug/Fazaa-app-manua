@@ -44,10 +44,12 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       values.lastSignedIn = user.lastSignedIn;
       updateSet.lastSignedIn = user.lastSignedIn;
     }
+    const isConfiguredAdmin = typeof user.email === "string"
+      && ENV.adminEmails.includes(user.email.trim().toLowerCase());
     if (user.role !== undefined) {
       values.role = user.role;
       updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
+    } else if (user.openId === ENV.ownerOpenId || isConfiguredAdmin) {
       values.role = "admin";
       updateSet.role = "admin";
     }
