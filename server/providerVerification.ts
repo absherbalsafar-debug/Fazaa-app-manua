@@ -4,6 +4,7 @@ import { getDb } from "./db";
 import {
   phoneAuthSessions,
   phoneUsers,
+  providerVerificationDecisions,
   providerVerificationDocuments,
   providerVerificationRequests,
 } from "../drizzle/schema";
@@ -75,6 +76,10 @@ export function registerProviderVerificationRoutes(app: Express) {
       const documents = await db.select({ type: providerVerificationDocuments.type, objectPath: providerVerificationDocuments.objectPath, originalName: providerVerificationDocuments.originalName })
         .from(providerVerificationDocuments)
         .where(eq(providerVerificationDocuments.requestId, request.id));
+      const decisions = await db.select()
+        .from(providerVerificationDecisions)
+        .where(eq(providerVerificationDecisions.requestId, request.id))
+        .orderBy(desc(providerVerificationDecisions.createdAt));
       return {
         id: request.id,
         status: request.status,
@@ -82,14 +87,17 @@ export function registerProviderVerificationRoutes(app: Express) {
         reviewedAt: request.reviewedAt,
         provider: { id: provider.id, name: provider.name, phone: provider.phone, city: provider.city, categoryId: provider.categoryId, specialty: provider.specialty, bio: provider.bio, yearsExperience: provider.yearsExperience },
         documents: documents.map(document => ({ ...document, url: `/manus-storage/${document.objectPath}` })),
+        decisions,
       };
     }));
     return res.json({ requests: items });
   });
 
   app.patch("/api/admin/provider-verifications/:id", async (req, res) => {
-    if (!(await currentAdmin(req))) return jsonError(res, 403, "صلاحية الإدارة مطلوبة");
-    const status = readBody(req).status;
+    const admin = await currentAdmin(req);
+    if (!admin) return jsonError(res, 403, "صلاحية الإدارة مطلوبة");
+    const body = readBody(req);
+    const status = body.status;
     if (status !== "approved" && status !== "rejected" && status !== "pending") return jsonError(res, 400, "حالة التوثيق غير صالحة");
     const db = await getDb();
     if (!db) return jsonError(res, 503, "قاعدة البيانات غير متاحة حالياً");
@@ -97,7 +105,11 @@ export function registerProviderVerificationRoutes(app: Express) {
     if (!Number.isInteger(id) || id <= 0) return jsonError(res, 400, "رقم الطلب غير صالح");
     const request = (await db.select({ providerId: providerVerificationRequests.providerId }).from(providerVerificationRequests).where(eq(providerVerificationRequests.id, id)).limit(1))[0];
     if (!request) return jsonError(res, 404, "طلب الاعتماد غير موجود");
-    await db.update(providerVerificationRequests).set({ status, reviewedAt: status === "pending" ? null : new Date(), updatedAt: new Date() }).where(eq(providerVerificationRequests.id, id));
+    const note = typeof body.note === "string" ? body.note.trim().slice(0, 1000) : null;
+    await db.update(providerVerificationRequests).set({ status, rejectionReason: status === "rejected" ? note : null, reviewedAt: status === "pending" ? null : new Date(), updatedAt: new Date() }).where(eq(providerVerificationRequests.id, id));
+    if ((status === "approved" || status === "rejected") && admin.openId) {
+      await db.insert(providerVerificationDecisions).values({ requestId: id, adminOpenId: admin.openId, status, note });
+    }
     await db.update(phoneUsers).set({ providerAccountStatus: status === "approved" ? "approved" : "pending" }).where(eq(phoneUsers.id, request.providerId));
     return res.json({ success: true, status });
   });

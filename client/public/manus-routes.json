@@ -1,0 +1,12 @@
+{
+  "routes": [
+    { "path": "/", "title": "تسجيل دخول مركز الإدارة" },
+    { "path": "/control-center/login", "title": "تسجيل دخول مركز الإدارة" },
+    { "path": "/control-center", "title": "نظرة عامة" },
+    { "path": "/control-center/users", "title": "المستخدمون" },
+    { "path": "/control-center/providers", "title": "اعتماد المهنيين" },
+    { "path": "/control-center/business", "title": "الاشتراكات والإعلانات" },
+    { "path": "/control-center/complaints", "title": "الشكاوى والنزاعات" },
+    { "path": "/control-center/taxonomy", "title": "التخصصات والخدمات" }
+  ]
+}

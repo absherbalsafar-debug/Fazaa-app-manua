@@ -5,15 +5,18 @@ import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
+function getPostgresConnectionString() {
+  const neonUrl = process.env.NEON_DATABASE_URL;
+  if (neonUrl) return neonUrl;
+  const fallback = process.env.DATABASE_URL ?? "";
+  return /^(postgres|postgresql):\/\//.test(fallback) ? fallback : "";
+}
+
 export async function getDb() {
-  const connectionString = process.env.NEON_DATABASE_URL ?? process.env.DATABASE_URL;
+  const connectionString = getPostgresConnectionString();
   if (!_db && connectionString) {
-    try {
-      _db = drizzle(connectionString);
-    } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
-    }
+    try { _db = drizzle(connectionString); }
+    catch (error) { console.warn("[Database] Failed to connect:", error); _db = null; }
   }
   return _db;
 }
@@ -21,11 +24,7 @@ export async function getDb() {
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) throw new Error("User openId is required for upsert");
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
-  }
-
+  if (!db) { console.warn("[Database] Cannot upsert user: database not available"); return; }
   try {
     const values: InsertUser = { openId: user.openId };
     const updateSet: Record<string, unknown> = {};
@@ -39,39 +38,19 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       updateSet[field] = normalized;
     };
     textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
-    const isConfiguredAdmin = typeof user.email === "string"
-      && ENV.adminEmails.includes(user.email.trim().toLowerCase());
-    if (user.role !== undefined) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId || isConfiguredAdmin) {
-      values.role = "admin";
-      updateSet.role = "admin";
-    }
+    if (user.lastSignedIn !== undefined) { values.lastSignedIn = user.lastSignedIn; updateSet.lastSignedIn = user.lastSignedIn; }
+    const isConfiguredAdmin = typeof user.email === "string" && ENV.adminEmails.includes(user.email.trim().toLowerCase());
+    if (user.role !== undefined) { values.role = user.role; updateSet.role = user.role; }
+    else if (user.openId === ENV.ownerOpenId || isConfiguredAdmin) { values.role = "admin"; updateSet.role = "admin"; }
     if (!values.lastSignedIn) values.lastSignedIn = new Date();
     if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
-
-    await db.insert(users).values(values).onConflictDoUpdate({
-      target: users.openId,
-      set: updateSet,
-    });
-  } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
-    throw error;
-  }
+    await db.insert(users).values(values).onConflictDoUpdate({ target: users.openId, set: updateSet });
+  } catch (error) { console.error("[Database] Failed to upsert user:", error); throw error; }
 }
 
 export async function getUserByOpenId(openId: string) {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
+  if (!db) { console.warn("[Database] Cannot get user: database not available"); return undefined; }
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
   return result.length > 0 ? result[0] : undefined;
 }

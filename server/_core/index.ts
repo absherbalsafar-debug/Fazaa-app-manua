@@ -5,6 +5,7 @@ import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
+import { registerAdminSessionRoutes } from "../adminSession";
 import { registerPhoneAuthRoutes } from "../phoneAuth";
 import { registerProviderCatalogRoutes } from "../providerCatalog";
 import { registerProviderVerificationRoutes } from "../providerVerification";
@@ -35,16 +36,17 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
-  // Configure body parser with larger size limit for file uploads
+  app.disable("x-powered-by");
+  app.get("/healthz", (_req, res) => res.status(200).json({ ok: true, service: "fazaah-control-center" }));
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
+  registerAdminSessionRoutes(app);
+  registerOAuthRoutes(app);
   registerPhoneAuthRoutes(app);
   registerProviderCatalogRoutes(app);
   registerProviderVerificationRoutes(app);
   registerProviderSubscriptionRoutes(app);
-  registerOAuthRoutes(app);
-  // tRPC API
   app.use(
     "/api/trpc",
     createExpressMiddleware({
@@ -52,23 +54,25 @@ async function startServer() {
       createContext,
     })
   );
-  // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  const preferredPort = parseInt(process.env.PORT || "3000");
+  const preferredPort = parseInt(process.env.PORT || "3000", 10);
   const port = await findAvailablePort(preferredPort);
 
   if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
-  server.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}/`);
+  server.listen(port, "0.0.0.0", () => {
+    console.log(`Server running on http://0.0.0.0:${port}/`);
   });
 }
 
-startServer().catch(console.error);
+startServer().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});
