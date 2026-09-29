@@ -1,7 +1,9 @@
-import { COOKIE_NAME, ONE_YEAR_MS, OAUTH_STATE_COOKIE, decodeOAuthState } from "@shared/const";
+import { COOKIE_NAME, ONE_YEAR_MS, OAUTH_STATE_COOKIE, decodeOAuthState, encodeOAuthState } from "@shared/const";
 import { parse as parseCookieHeader } from "cookie";
 import type { Express, Request, Response } from "express";
+import { randomUUID } from "node:crypto";
 import * as db from "../db";
+import { ENV } from "./env";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
 
@@ -11,6 +13,25 @@ function getQueryParam(req: Request, key: string): string | undefined {
 }
 
 export function registerOAuthRoutes(app: Express) {
+  app.get("/api/oauth/start", (req: Request, res: Response) => {
+    const returnTo = typeof req.query.returnTo === "string" ? req.query.returnTo : "/";
+    const hostOrigin = `${req.protocol}://${req.get("host")}`;
+    let safeReturnTo = "/";
+    try {
+      const parsed = new URL(returnTo, hostOrigin);
+      if (parsed.origin === hostOrigin) safeReturnTo = parsed.toString();
+    } catch {}
+    const nonce = randomUUID();
+    const redirectUri = `${hostOrigin}/api/oauth/callback`;
+    const state = encodeOAuthState({ redirectUri, nonce });
+    res.cookie(OAUTH_STATE_COOKIE, nonce, { path: "/", maxAge: 10 * 60 * 1000, secure: true, sameSite: "none" });
+    const portal = new URL(`${(ENV.oAuthServerUrl || "https://api.manus.ai").replace(/\/$/, "")}/app-auth`);
+    portal.searchParams.set("appId", ENV.appId || "GbK3EfHffbqNVFFBAmhEtg");
+    portal.searchParams.set("redirectUri", redirectUri);
+    portal.searchParams.set("state", state);
+    portal.searchParams.set("type", "signIn");
+    return res.redirect(302, portal.toString());
+  });
   app.get("/api/oauth/callback", async (req: Request, res: Response) => {
     const code = getQueryParam(req, "code");
     const state = getQueryParam(req, "state");
