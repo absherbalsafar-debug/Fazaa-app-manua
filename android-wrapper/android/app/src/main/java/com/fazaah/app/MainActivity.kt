@@ -64,7 +64,9 @@ class MainActivity : ComponentActivity() {
     private var pendingWebPermissionResources: Array<String> = emptyArray()
     private var startupOverlay: View? = null
     private var startupPulse: ObjectAnimator? = null
-    private var backPressedOnce = false
+    private var backHandlingPending = false
+    private var exitDialogVisible = false
+    private var historyResetTargetPath: String? = null
     private var logoutInProgress = false
     private var logoutDialogVisible = false
     private val backHandler = Handler(Looper.getMainLooper())
@@ -102,9 +104,9 @@ class MainActivity : ComponentActivity() {
         setContentView(webView)
         val welcomeSeen = getPreferences(MODE_PRIVATE).getBoolean("welcome_seen_v1", false)
         val initialUrl = if (welcomeSeen) {
-            "${BuildConfig.WEB_APP_URL}/auth/phone?mode=login"
+            buildAppUrl("auth/phone?mode=login")
         } else {
-            BuildConfig.WEB_APP_URL
+            buildAppUrl("")
         }
         webView.loadUrl(initialUrl)
         FazaaFirebaseMessagingService.ensureNotificationChannel(this)
@@ -114,28 +116,50 @@ class MainActivity : ComponentActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (logoutInProgress || isPublicAuthPage(webView.url)) {
-                    finish()
-                    return
-                }
-                val history = webView.copyBackForwardList()
-                val previousUrl = history.currentIndex
-                    .takeIf { it > 0 }
-                    ?.let { history.getItemAtIndex(it - 1).url }
-                if (webView.canGoBack() && !isPublicAuthPage(previousUrl)) {
-                    webView.goBack()
-                    return
-                }
-                if (backPressedOnce) {
-                    backPressedOnce = false
-                    finish()
-                } else {
-                    backPressedOnce = true
-                    Toast.makeText(this@MainActivity, "اضغط مرة أخرى للخروج من التطبيق", Toast.LENGTH_SHORT).show()
-                    backHandler.postDelayed({ backPressedOnce = false }, 2200L)
-                }
+                handleHardwareBackPress()
             }
         })
+    }
+
+    private fun handleHardwareBackPress() {
+        if (logoutInProgress || backHandlingPending || isFinishing || isDestroyed) return
+        backHandlingPending = true
+        webView.evaluateJavascript("Boolean(localStorage.getItem('fazaah_token'))") { result ->
+            backHandlingPending = false
+            val isAuthenticated = result == "true"
+            val currentPath = runCatching { Uri.parse(webView.url ?: "").path }.getOrNull()
+            when (BackNavigationPolicy.action(currentPath, isAuthenticated)) {
+                BackNavigationAction.SHOW_EXIT_CONFIRMATION -> showExitConfirmation()
+                BackNavigationAction.GO_HOME -> navigateAndClearHistory("/")
+                BackNavigationAction.GO_WELCOME -> navigateAndClearHistory("/welcome")
+            }
+        }
+    }
+
+    private fun navigateAndClearHistory(path: String) {
+        val targetPath = BackNavigationPolicy.normalizePath(path)
+        historyResetTargetPath = targetPath
+        webView.loadUrl(buildAppUrl(targetPath))
+    }
+
+    private fun buildAppUrl(path: String): String {
+        return BackNavigationPolicy.appUrl(BuildConfig.WEB_APP_URL, path)
+    }
+
+    private fun showExitConfirmation() {
+        if (exitDialogVisible || isFinishing || isDestroyed) return
+        exitDialogVisible = true
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("الخروج من التطبيق")
+            .setMessage("هل تريد الخروج من التطبيق؟")
+            .setNegativeButton("إلغاء", null)
+            .setPositiveButton("خروج") { _, _ -> finish() }
+            .create()
+        dialog.setOnDismissListener { exitDialogVisible = false }
+        dialog.setOnShowListener {
+            dialog.window?.decorView?.layoutDirection = View.LAYOUT_DIRECTION_RTL
+        }
+        dialog.show()
     }
 
     private fun requestNotificationPermission() {
@@ -357,6 +381,12 @@ class MainActivity : ComponentActivity() {
 
                 override fun onPageFinished(view: WebView, url: String) {
                     super.onPageFinished(view, url)
+                    val expectedPath = historyResetTargetPath
+                    val finishedPath = BackNavigationPolicy.normalizePath(runCatching { Uri.parse(url).path }.getOrNull())
+                    if (expectedPath != null && finishedPath == expectedPath) {
+                        view.clearHistory()
+                        historyResetTargetPath = null
+                    }
                     val storedPushToken = fcmToken
                         ?: getSharedPreferences(FazaaFirebaseMessagingService.PREFS, MODE_PRIVATE).getString(FazaaFirebaseMessagingService.FCM_TOKEN_KEY, null)
                     val pushTokenScript = storedPushToken?.let { "window.FazaaNativePushToken=${JSONObject.quote(it)};" } ?: ""
@@ -558,12 +588,6 @@ class MainActivity : ComponentActivity() {
         else -> true
     }
 
-    private fun isPublicAuthPage(url: String?): Boolean {
-        val path = runCatching { Uri.parse(url ?: "").path.orEmpty() }.getOrDefault("")
-        return path == "/welcome" || path == "/welcome-back" ||
-            path == "/login" || path == "/register" || path.startsWith("/auth/")
-    }
-
     private fun showLogoutDialog() {
         if (logoutDialogVisible || isFinishing || isDestroyed) return
         logoutDialogVisible = true
@@ -671,7 +695,7 @@ class MainActivity : ComponentActivity() {
             // لا نعيد تحميل WebView إلا بعد انتهاء عملية حفظ تفضيل الثيم.
             webView.clearHistory()
             logoutInProgress = false
-            webView.loadUrl("${BuildConfig.WEB_APP_URL}/auth/phone?mode=login&loggedOut=1")
+            webView.loadUrl(buildAppUrl("auth/phone?mode=login&loggedOut=1"))
             Toast.makeText(this, "تم تسجيل الخروج", Toast.LENGTH_SHORT).show()
         }
     }

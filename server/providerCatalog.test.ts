@@ -37,4 +37,15 @@ describe("provider catalog routes", () => {
     expect(body.limit).toBe(10);
     expect(typeof body.total).toBe("number");
   });
+
+  it("requires authentication before exposing or modifying the professional's private profile", async () => {
+    const profile = await fetch(`${baseUrl}/api/providers/me`);
+    expect(profile.status).toBe(401);
+    const update = await fetch(`${baseUrl}/api/providers/me/profile`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ city: "صنعاء", categoryId: 1, specialty: "تمديدات مياه" }),
+    });
+    expect(update.status).toBe(401);
+  });
 });

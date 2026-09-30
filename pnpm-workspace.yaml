@@ -1,0 +1,7 @@
+packages:
+  - .
+allowBuilds:
+  'esbuild@0.25.10': true
+  '@tailwindcss/oxide@4.1.14': true
+  '@firebase/util@1.15.3': true
+  'protobufjs@7.6.6': false

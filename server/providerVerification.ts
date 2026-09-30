@@ -108,6 +108,8 @@ export function registerProviderVerificationRoutes(app: Express) {
     return res.json({
       submitted: true,
       status: request.status,
+      rejectionReason: request.rejectionReason,
+      submittedAt: request.submittedAt,
       documents: documents.map(({ objectPath, type, originalName }) => ({ objectPath, type, originalName })),
     });
   });

@@ -3,6 +3,7 @@ import { and, desc, eq, ilike, or } from "drizzle-orm";
 import { getDb } from "./db";
 import {
   phoneUsers,
+  providerCategoryChangeRequests,
   providerVerificationDocuments,
   providerVerificationRequests,
   providerVerificationReviewHistory,
@@ -12,6 +13,7 @@ import {
 import { storageGetSignedUrl } from "./storage";
 import { sdk } from "./_core/sdk";
 import { sendPushToUser } from "./pushNotifications";
+import { categories } from "./providerCatalog";
 
 async function currentAdmin(req: Request) {
   try {
@@ -189,6 +191,81 @@ export function registerAdminRoutes(app: Express) {
       void sendPushToUser(request.providerId, { title, body, type: `provider_verification_${status}`, relatedId: id })
         .catch(error => console.error("[Push] provider verification notification failed", error));
     }
+    return res.json({ success: true, status });
+  });
+
+  app.get("/api/admin/provider-category-changes", async (req, res) => {
+    if (!(await currentAdmin(req))) return deny(res);
+    const db = await getDb();
+    if (!db) return dbUnavailable(res);
+    const rows = await db.select({ request: providerCategoryChangeRequests, provider: phoneUsers })
+      .from(providerCategoryChangeRequests)
+      .innerJoin(phoneUsers, eq(providerCategoryChangeRequests.providerId, phoneUsers.id))
+      .where(eq(providerCategoryChangeRequests.status, "pending"))
+      .orderBy(desc(providerCategoryChangeRequests.createdAt));
+    return res.json({ requests: rows.map(({ request, provider }) => ({
+      id: request.id,
+      status: request.status,
+      submittedAt: request.submittedAt,
+      currentCategoryId: request.currentCategoryId,
+      currentCategoryName: categories.find(item => item.id === request.currentCategoryId)?.name ?? "غير محدد",
+      currentSpecialty: request.currentSpecialty,
+      requestedCategoryId: request.requestedCategoryId,
+      requestedCategoryName: categories.find(item => item.id === request.requestedCategoryId)?.name ?? "غير معروف",
+      requestedSpecialty: request.requestedSpecialty,
+      provider: { id: provider.id, name: provider.name, phone: provider.phone, city: provider.city, district: provider.district },
+    })) });
+  });
+
+  app.patch("/api/admin/provider-category-changes/:id", async (req, res) => {
+    const admin = await currentAdmin(req);
+    if (!admin) return deny(res);
+    const body = req.body && typeof req.body === "object" ? req.body as Record<string, unknown> : {};
+    const status = body.status;
+    const rejectionReason = typeof body.rejectionReason === "string" ? body.rejectionReason.trim().slice(0, 2000) : "";
+    if (status !== "approved" && status !== "rejected") return res.status(400).json({ error: "قرار طلب التخصص غير صالح" });
+    if (status === "rejected" && rejectionReason.length < 5) return res.status(400).json({ error: "أدخل سبباً واضحاً لرفض الطلب" });
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "رقم الطلب غير صالح" });
+    const db = await getDb();
+    if (!db) return dbUnavailable(res);
+    const request = (await db.select().from(providerCategoryChangeRequests).where(eq(providerCategoryChangeRequests.id, id)).limit(1))[0];
+    if (!request) return res.status(404).json({ error: "طلب تغيير التخصص غير موجود" });
+    if (request.status !== "pending") return res.status(409).json({ error: "تمت مراجعة هذا الطلب مسبقاً" });
+    const reviewedAt = new Date();
+    try {
+      await db.transaction(async tx => {
+        const changed = await tx.update(providerCategoryChangeRequests).set({
+          status,
+          rejectionReason: status === "rejected" ? rejectionReason : null,
+          adminOpenId: admin.openId,
+          adminName: admin.name ?? null,
+          reviewedAt,
+          updatedAt: reviewedAt,
+        }).where(and(eq(providerCategoryChangeRequests.id, id), eq(providerCategoryChangeRequests.status, "pending"))).returning({ id: providerCategoryChangeRequests.id });
+        if (!changed.length) throw new Error("CATEGORY_CHANGE_ALREADY_REVIEWED");
+        if (status === "approved") {
+          await tx.update(phoneUsers).set({
+            categoryId: request.requestedCategoryId,
+            specialty: request.requestedSpecialty,
+            updatedAt: reviewedAt,
+          }).where(eq(phoneUsers.id, request.providerId));
+        }
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message === "CATEGORY_CHANGE_ALREADY_REVIEWED") {
+        return res.status(409).json({ error: "تمت مراجعة هذا الطلب مسبقاً" });
+      }
+      console.error("[Admin] provider category-change review failed", error);
+      return res.status(500).json({ error: "تعذر حفظ قرار المراجعة" });
+    }
+    const title = status === "approved" ? "تمت الموافقة على تغيير تخصصك" : "طلب تغيير تخصصك يحتاج إلى تعديل";
+    const bodyText = status === "approved"
+      ? `تم اعتماد المجال ${categories.find(item => item.id === request.requestedCategoryId)?.name ?? "الجديد"} والتخصص ${request.requestedSpecialty}؛ تم تحديث ملفك الآن.`
+      : `لم تتم الموافقة على طلب تغيير التخصص.${rejectionReason ? ` السبب: ${rejectionReason}` : ""}`;
+    await db.insert(notifications).values({ userId: request.providerId, type: `provider_category_change_${status}`, title, body: bodyText, relatedId: id });
+    void sendPushToUser(request.providerId, { title, body: bodyText, type: `provider_category_change_${status}`, relatedId: id })
+      .catch(error => console.error("[Push] provider category-change notification failed", error));
     return res.json({ success: true, status });
   });
 }

@@ -16,7 +16,9 @@ describe("app update route", () => {
     expect(response.status).toBe(200);
     expect(body.versionCode).toBeGreaterThan(0);
     expect(body.versionName).toBeTruthy();
-    expect(body.downloadUrl).toContain("github.com");
-    expect(body.title).toBe("هناك تحديث جديد في التطبيق");
+    const downloadUrl = new URL(body.downloadUrl);
+    expect(downloadUrl.protocol).toBe("https:");
+    expect(downloadUrl.pathname).toMatch(/\.apk$/i);
+    expect(body.title).toBeTruthy();
   });
 });

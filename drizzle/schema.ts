@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { boolean, index, integer, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/pg-core";
 
 export const userRole = pgEnum("user_role", ["user", "admin"]);
@@ -112,6 +113,29 @@ export const providerVerificationReviewHistory = pgTable("provider_verification_
   createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
 }, table => ({ requestIndex: index("provider_verification_history_request_idx").on(table.requestId) }));
 
+export const providerCategoryChangeRequests = pgTable("provider_category_change_requests", {
+  id: serial("id").primaryKey(),
+  providerId: integer("providerId").notNull(),
+  currentCategoryId: integer("currentCategoryId"),
+  requestedCategoryId: integer("requestedCategoryId").notNull(),
+  currentSpecialty: varchar("currentSpecialty", { length: 160 }),
+  requestedSpecialty: varchar("requestedSpecialty", { length: 160 }).notNull(),
+  status: verificationStatus("status").default("pending").notNull(),
+  rejectionReason: text("rejectionReason"),
+  adminOpenId: varchar("adminOpenId", { length: 64 }),
+  adminName: varchar("adminName", { length: 160 }),
+  submittedAt: timestamp("submittedAt", { withTimezone: true }).defaultNow().notNull(),
+  reviewedAt: timestamp("reviewedAt", { withTimezone: true }),
+  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow().notNull(),
+}, table => ({
+  providerStatusIndex: index("provider_category_change_provider_status_idx").on(table.providerId, table.status),
+  statusCreatedIndex: index("provider_category_change_status_created_idx").on(table.status, table.createdAt),
+  onePendingRequestPerProvider: uniqueIndex("provider_category_change_one_pending_idx")
+    .on(table.providerId)
+    .where(sql`${table.status} = 'pending'`),
+}));
+
 export const providerSubscriptionPayments = pgTable("provider_subscription_payments", {
   id: serial("id").primaryKey(),
   providerId: integer("providerId").notNull(),
@@ -200,6 +224,7 @@ export const providerFavorites = pgTable("provider_favorites", {
 export type ProviderVerificationRequest = typeof providerVerificationRequests.$inferSelect;
 export type ProviderVerificationDocument = typeof providerVerificationDocuments.$inferSelect;
 export type ProviderVerificationReviewHistory = typeof providerVerificationReviewHistory.$inferSelect;
+export type ProviderCategoryChangeRequest = typeof providerCategoryChangeRequests.$inferSelect;
 export type ProviderSubscriptionPayment = typeof providerSubscriptionPayments.$inferSelect;
 export type ServiceRequest = typeof serviceRequests.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;

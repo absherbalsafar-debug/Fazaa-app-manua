@@ -157,12 +157,13 @@ export function registerPhoneAuthRoutes(app: Express) {
       return jsonError(res, 503, "خدمة قاعدة البيانات غير متاحة حالياً");
     }
 
+    const exposeOtpForDevelopment = process.env.NODE_ENV !== "production"
+      || process.env.PHONE_AUTH_EXPOSE_OTP === "true";
     return res.json({
       success: true,
       phone,
       expiresInSeconds: OTP_TTL_MS / 1000,
-      // Replace with a real SMS provider before production launch.
-      otp: code,
+      ...(exposeOtpForDevelopment ? { otp: code } : {}),
     });
   });
 
@@ -363,6 +364,9 @@ export function registerPhoneAuthRoutes(app: Express) {
       if (!session || session.expiresAt.getTime() <= Date.now()) return jsonError(res, 401, "تحتاج إلى تسجيل الدخول");
       const current = (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, session.phone)).limit(1))[0];
       if (!current) return jsonError(res, 404, "المستخدم غير موجود");
+      if (current.role === "provider" && Object.prototype.hasOwnProperty.call(body, "name")) {
+        return jsonError(res, 403, "لا يمكن تعديل اسم الحساب المهني");
+      }
       const updated = (await db.update(phoneUsers).set({
         ...(nextName ? { name: nextName } : {}),
         ...(typeof body.city === "string" ? { city: body.city.trim() || null } : {}),
@@ -375,6 +379,9 @@ export function registerPhoneAuthRoutes(app: Express) {
     }
     const session = localSessions.get(token);
     if (!session || session.expiresAt <= Date.now()) return jsonError(res, 401, "تحتاج إلى تسجيل الدخول");
+    if (session.user.role === "provider" && Object.prototype.hasOwnProperty.call(body, "name")) {
+      return jsonError(res, 403, "لا يمكن تعديل اسم الحساب المهني");
+    }
     const updated = { ...session.user,
       ...(nextName ? { name: nextName } : {}),
       ...(typeof body.city === "string" ? { city: body.city.trim() || null } : {}),

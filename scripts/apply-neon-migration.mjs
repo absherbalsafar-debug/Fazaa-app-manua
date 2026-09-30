@@ -9,15 +9,17 @@ try {
   const providerSql = await readFile(new URL("../drizzle/0005_provider_onboarding.sql", import.meta.url), "utf8");
   const appFlowsSql = await readFile(new URL("../drizzle/0006_core_app_flows.sql", import.meta.url), "utf8");
   const pushNotificationsSql = await readFile(new URL("../drizzle/0007_push_notifications.sql", import.meta.url), "utf8");
+  const providerCategoryChangeSql = await readFile(new URL("../drizzle/0011_provider_category_change_requests.sql", import.meta.url), "utf8");
   await pool.query(baseSql);
   await pool.query(providerSql);
   await pool.query(appFlowsSql);
   await pool.query(pushNotificationsSql);
+  await pool.query(providerCategoryChangeSql);
   const result = await pool.query(`
     SELECT table_name
     FROM information_schema.tables
     WHERE table_schema = 'public'
-      AND table_name IN ('users','phone_users','phone_otp_codes','phone_auth_sessions','provider_verification_requests','provider_verification_documents','service_requests','notifications','provider_favorites','push_tokens')
+      AND table_name IN ('users','phone_users','phone_otp_codes','phone_auth_sessions','provider_verification_requests','provider_verification_documents','service_requests','notifications','provider_favorites','push_tokens','provider_category_change_requests')
     ORDER BY table_name
   `);
   console.log(`Neon migration applied; verified ${result.rows.length} tables: ${result.rows.map(row => row.table_name).join(", ")}`);

@@ -111,7 +111,7 @@ describe("phone authentication", () => {
     expect((await response.json()).error).toBe("هذا الرقم مسجل ومفعل حسابه على حساب العملاء، لا يمكنك التسجيل به");
   });
 
-  it("creates a provider account when the provider role is selected", async () => {
+  it("creates a provider account and locks its registered name against profile API changes", async () => {
     const phone = "712345681";
     const sent = await fetch(`${baseUrl}/api/auth/send-otp`, {
       method: "POST",
@@ -125,8 +125,17 @@ describe("phone authentication", () => {
       body: JSON.stringify({ phone, code: otp, name: "علي محمد سالم الشظبي", role: "provider", categoryId: 1, specialty: "تمديدات", nationalId: "12345678901", whatsapp: "771234567", termsAccepted: true, bio: "فني اختبار يقدم خدمات موثوقة وآمنة للعملاء مع خبرة واسعة في تنفيذ أعمال الصيانة المنزلية باحترافية", latitude: 15.3694, longitude: 44.191 }),
     });
     expect(response.status).toBe(200);
-    const body = await response.json() as { user: { role: string } };
+    const body = await response.json() as { token: string; user: { role: string; name: string } };
     expect(body.user.role).toBe("provider");
+    const attempt = await fetch(`${baseUrl}/api/auth/me`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json", Authorization: `Bearer ${body.token}` },
+      body: JSON.stringify({ name: "اسم مهني مختلف" }),
+    });
+    expect(attempt.status).toBe(403);
+    expect((await attempt.json()).error).toBe("لا يمكن تعديل اسم الحساب المهني");
+    const unchanged = await fetch(`${baseUrl}/api/auth/me`, { headers: { Authorization: `Bearer ${body.token}` } });
+    expect((await unchanged.json()).name).toBe(body.user.name);
   });
 
   it("requires an explicit role for a new phone account", async () => {

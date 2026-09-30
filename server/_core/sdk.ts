@@ -220,6 +220,11 @@ class SDKServer {
         return null;
       }
 
+      if (appId !== ENV.appId) {
+        console.warn("[Auth] Session project mismatch");
+        return null;
+      }
+
       return {
         openId,
         appId,

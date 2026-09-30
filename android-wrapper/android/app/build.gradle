@@ -16,8 +16,8 @@ android {
         versionCode 13
         versionName '1.6.2'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-        buildConfigField 'String', 'API_BASE_URL', '"https://fazaaweb-gbk3efhf.manus.space/api"'
-        buildConfigField 'String', 'WEB_APP_URL', '"https://fazaaweb-gbk3efhf.manus.space/"'
+        buildConfigField 'String', 'API_BASE_URL', '"https://fazaapublish-7nu8vaaq.manus.space/api"'
+        buildConfigField 'String', 'WEB_APP_URL', '"https://fazaapublish-7nu8vaaq.manus.space"'
     }
 
     buildFeatures {

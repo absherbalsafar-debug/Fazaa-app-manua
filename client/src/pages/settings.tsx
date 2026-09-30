@@ -23,6 +23,22 @@ export default function Settings() {
     toast({ title: "تم تسجيل الخروج" });
   }
 
+  function handlePhoneVerification() {
+    if (user?.phoneVerified) {
+      toast({
+        title: "رقم الهاتف موثق بالفعل",
+        description: "تم التحقق من رقمك عند إنشاء الحساب. لا حاجة لإعادة تسجيل الدخول أو التسجيل.",
+      });
+      return;
+    }
+
+    toast({
+      title: "توثيق الهاتف غير متاح حالياً",
+      description: "لم يتم ربط مزود SMS بعد. ستبقى جلستك محفوظة ولن نخرجك من التطبيق.",
+      variant: "destructive",
+    });
+  }
+
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <div className="mb-6">
       <p className="mb-2 px-4 text-[10px] font-bold uppercase tracking-[0.16em] text-[#b57920]">{title}</p>
@@ -143,7 +159,7 @@ export default function Settings() {
 
         <Section title="الأمان والخصوصية">
           <Item icon={Lock} label="تغيير كلمة المرور" onClick={() => navigate('/auth/forgot-password')} />
-          <Item icon={Shield} label="توثيق رقم الهاتف" sub={user?.phoneVerified ? "موثق ✓" : "غير موثق"} onClick={() => navigate('/auth/phone')} />
+          <Item icon={Shield} label="توثيق رقم الهاتف" sub={user?.phoneVerified ? "موثق ✓" : "غير موثق"} onClick={handlePhoneVerification} />
           <Item icon={FileText} label="سياسة الخصوصية" sub="كيف نحمي بياناتك ونستخدمها" onClick={() => navigate('/privacy')} />
           <Item icon={ScrollText} label="شروط الاستخدام" sub="القواعد المنظمة لاستخدام فزعة" onClick={() => navigate('/terms')} />
         </Section>

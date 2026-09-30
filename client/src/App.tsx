@@ -1,5 +1,5 @@
-import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
-import { Component, lazy, Suspense, useEffect, type ErrorInfo, type ReactNode } from "react";
+import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
+import { Component, lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type ErrorInfo, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,6 +9,7 @@ import { BottomNav } from "@/components/layout/bottom-nav";
 import { ProtectedRoute } from "@/components/layout/protected-route";
 import { PageTransition } from "@/components/layout/page-transition";
 import { ControlCenterLayout } from "@/control-center/ControlCenterLayout";
+import { BrandLoadingScreen } from "@/components/brand-loader";
 
 // Auth Pages
 const Welcome = lazy(() => import("@/pages/welcome"));
@@ -84,6 +85,23 @@ const queryClient = new QueryClient({
   },
 });
 
+function NavigationTransition() {
+  const [location] = useLocation();
+  const currentPath = location.split(/[?#]/, 1)[0] || "/";
+  const previousPath = useRef(currentPath);
+  const [visible, setVisible] = useState(false);
+
+  useLayoutEffect(() => {
+    if (previousPath.current === currentPath) return;
+    previousPath.current = currentPath;
+    setVisible(true);
+    const timer = window.setTimeout(() => setVisible(false), 360);
+    return () => window.clearTimeout(timer);
+  }, [currentPath]);
+
+  return visible ? <BrandLoadingScreen overlay message="جارٍ الانتقال..." /> : null;
+}
+
 function AppShell({ children, showNav = true }: { children: React.ReactNode; showNav?: boolean }) {
   return (
     <>
@@ -120,16 +138,7 @@ function Router() {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-        <div className="min-h-[100dvh] flex items-center justify-center bg-primary">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 bg-accent rounded-2xl flex items-center justify-center animate-pulse">
-            <span className="text-2xl font-extrabold text-primary">ف</span>
-          </div>
-          <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    );
+    return <BrandLoadingScreen message="جارٍ التحقق من حسابك..." />;
   }
 
   return (
@@ -287,7 +296,8 @@ function App() {
           <TooltipProvider>
             <div dir="rtl" className="min-h-[100dvh] bg-background text-foreground font-sans">
               <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-                <Suspense fallback={<div className="flex min-h-[100dvh] items-center justify-center bg-background"><div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>}>
+                <NavigationTransition />
+                <Suspense fallback={<BrandLoadingScreen message="جارٍ تحميل الصفحة..." />}>
                   <Router />
                 </Suspense>
               </WouterRouter>

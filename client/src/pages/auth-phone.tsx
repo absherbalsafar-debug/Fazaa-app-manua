@@ -133,9 +133,12 @@ export default function AuthPhone() {
         method: 'POST',
         body: JSON.stringify({ phone: phone.trim(), role, mode }),
       });
-      if (data.otp) setDevOtp(data.otp);
+      const developmentCode = typeof data.otp === "string" ? data.otp : null;
+      setDevOtp(developmentCode);
       setOtpSent(true);
-      toast({ title: "تم الإرسال", description: "تم إرسال رمز التحقق إلى هاتفك" });
+      toast(developmentCode
+        ? { title: "رمز الاختبار جاهز", description: "الرمز ظاهر على هذه الشاشة؛ لم يتم إرسال رسالة SMS." }
+        : { title: "خدمة SMS غير مهيأة", description: "لم يتم ربط مزود SMS بعد، لذلك لن تصل رسالة تحقق حالياً." });
     } catch (err: any) {
       const message = err?.message || "تعذر إرسال رمز التحقق";
       toast({ title: message.includes("هذا الرقم") ? "لا يمكن استخدام هذا الرقم" : "خطأ", description: message, variant: "destructive" });
@@ -303,8 +306,8 @@ export default function AuthPhone() {
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#b57920]">التحقق الآمن</p>
               <h1 className="mt-3 text-[32px] font-black leading-tight tracking-[-0.04em]">{stepTitle}</h1>
               <p className="mt-3 text-sm leading-7 text-[#77766f]">
-                {step === "phone" && "سنرسل رمزاً قصيراً إلى رقمك لتبدأ تجربتك بأمان."}
-                {step === "otp" && "أدخل الرمز الذي وصل إلى هاتفك لإكمال الدخول."}
+                {step === "phone" && "حالياً يظهر رمز التحقق التجريبي على الشاشة؛ سنرسل SMS بعد ربط المزود."}
+                {step === "otp" && (devOtp ? "أدخل رمز الاختبار الظاهر على الشاشة لإكمال الدخول." : "أدخل الرمز الذي وصل إلى هاتفك لإكمال الدخول.")}
                 {step === "name" && (role === "provider"
                   ? "عرّف العملاء بخدمتك حتى تصل إليك الطلبات المناسبة."
                   : "أكمل بياناتك: أدخل اسمك الحقيقي وحدد موقعك لنتمكن من عرض أفضل المهنيين والخدمات القريبة منك.")}
@@ -358,7 +361,7 @@ export default function AuthPhone() {
                       <p className="mb-2 text-sm text-[#77766f]">أدخل رمز التأكيد هنا لإكمال الدخول</p>
                       {devOtp && (
                         <p className="mb-3 rounded-xl border border-accent/30 bg-accent/10 px-3 py-2 text-xs text-[#8a6925]">
-                          رمز التأكيد: <span className="font-mono text-base font-bold tracking-widest">{devOtp}</span>
+                          رمز التطوير (للاختبار فقط): <span className="font-mono text-base font-bold tracking-widest">{devOtp}</span>
                         </p>
                       )}
                       <Input
@@ -402,11 +405,13 @@ export default function AuthPhone() {
                 </div>
                 <div>
                   <p className="mb-3 text-sm text-[#77766f]">
-                    أرسلنا الرمز إلى <span className="font-bold text-primary" dir="ltr">{phone}</span>
+                    {devOtp
+                      ? <>لم يتم إرسال SMS؛ استخدم رمز التطوير الظاهر أدناه للاختبار مع <span className="font-bold text-primary" dir="ltr">{phone}</span>.</>
+                      : <>لم يتم ربط مزود SMS بعد، ولن يصل رمز إلى <span className="font-bold text-primary" dir="ltr">{phone}</span>.</>}
                   </p>
                   {devOtp && (
                     <p className="mb-3 rounded-xl border border-accent/30 bg-accent/10 px-3 py-2 text-xs text-[#8a6925]">
-                      رمز التطوير: <span className="font-mono font-bold">{devOtp}</span>
+                      رمز التطوير (للاختبار فقط): <span className="font-mono font-bold">{devOtp}</span>
                     </p>
                   )}
                   <Input

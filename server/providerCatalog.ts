@@ -1,9 +1,9 @@
 import type { Express } from "express";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "./db";
-import { phoneAuthSessions, phoneUsers, providerVerificationDocuments, providerVerificationRequests } from "../drizzle/schema";
+import { notifications, phoneAuthSessions, phoneUsers, providerCategoryChangeRequests, providerVerificationDocuments, providerVerificationRequests } from "../drizzle/schema";
 
-const categories = [
+export const categories = [
   { id: 1, name: "سباكة", icon: "🔧", providerCount: 0, specialties: ["تمديدات مياه", "إصلاح تسربات", "تركيب مضخات", "صيانة سخانات"] },
   { id: 2, name: "كهرباء", icon: "⚡", providerCount: 0, specialties: ["تمديدات كهربائية", "لوحات كهرباء", "طاقة شمسية", "صيانة أعطال"] },
   { id: 3, name: "تكييف وتبريد", icon: "❄️", providerCount: 0, specialties: ["تركيب مكيفات", "صيانة مكيفات", "تنظيف مكيفات", "تبريد مركزي"] },
@@ -119,19 +119,26 @@ function toSummary(provider: ProviderRow, query: CatalogQuery, approvedIds: Set<
 async function activeProviders() {
   const db = await getDb();
   if (!db) return null;
-  const [providers, approved] = await Promise.all([
+  const [providers, verificationRequests] = await Promise.all([
     db.select().from(phoneUsers).where(and(eq(phoneUsers.role, "provider"), eq(phoneUsers.status, "active"))),
-    db.select({ providerId: providerVerificationRequests.providerId })
+    db.select({ providerId: providerVerificationRequests.providerId, status: providerVerificationRequests.status })
       .from(providerVerificationRequests)
-      .where(eq(providerVerificationRequests.status, "approved")),
+      .orderBy(desc(providerVerificationRequests.createdAt)),
   ]);
+  const latestVerificationStatus = new Map<number, "pending" | "approved" | "rejected">();
+  for (const request of verificationRequests) {
+    if (!latestVerificationStatus.has(request.providerId)) latestVerificationStatus.set(request.providerId, request.status);
+  }
   const now = Date.now();
   const eligible = providers.filter(provider =>
     provider.providerAccountStatus === "approved" &&
     provider.subscriptionExpiresAt !== null &&
     provider.subscriptionExpiresAt.getTime() > now,
   );
-  return { providers: eligible, approvedIds: new Set(approved.map(row => row.providerId)) };
+  const approvedIds = new Set(eligible
+    .filter(provider => provider.providerAccountStatus === "approved" && latestVerificationStatus.get(provider.id) === "approved")
+    .map(provider => provider.id));
+  return { providers: eligible, approvedIds };
 }
 
 async function listProviders(query: CatalogQuery, sort: "name" | "distance" = "name") {
@@ -209,8 +216,135 @@ export function registerProviderCatalogRoutes(app: Express) {
     if (!session || session.expiresAt.getTime() <= Date.now()) return res.status(401).json({ error: "انتهت جلسة الدخول" });
     const provider = (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, session.phone)).limit(1))[0];
     if (!provider || provider.role !== "provider") return res.status(403).json({ error: "هذا المسار للمهنيين فقط" });
-    const approved = await db.select({ providerId: providerVerificationRequests.providerId }).from(providerVerificationRequests).where(and(eq(providerVerificationRequests.providerId, provider.id), eq(providerVerificationRequests.status, "approved"))).limit(1);
-    return res.json({ ...toSummary(provider, parseQuery({}), new Set(approved.map(row => row.providerId))), subscriptionPlan: provider.subscriptionPlan, subscriptionExpiresAt: provider.subscriptionExpiresAt, providerAccountStatus: provider.providerAccountStatus, nationalId: provider.nationalId, whatsapp: provider.whatsapp });
+    const [verificationRequest] = await db.select().from(providerVerificationRequests)
+      .where(eq(providerVerificationRequests.providerId, provider.id))
+      .orderBy(desc(providerVerificationRequests.createdAt)).limit(1);
+    const [categoryChangeRequest] = await db.select().from(providerCategoryChangeRequests)
+      .where(eq(providerCategoryChangeRequests.providerId, provider.id))
+      .orderBy(desc(providerCategoryChangeRequests.createdAt)).limit(1);
+    const verified = provider.providerAccountStatus === "approved" && verificationRequest?.status === "approved";
+    return res.json({
+      ...toSummary(provider, parseQuery({}), new Set(verified ? [provider.id] : [])),
+      subscriptionPlan: provider.subscriptionPlan,
+      subscriptionExpiresAt: provider.subscriptionExpiresAt,
+      providerAccountStatus: provider.providerAccountStatus,
+      verificationStatus: verificationRequest?.status ?? null,
+      verificationRejectionReason: verificationRequest?.rejectionReason ?? null,
+      verificationSubmittedAt: verificationRequest?.submittedAt ?? null,
+      nationalId: provider.nationalId,
+      email: provider.email,
+      country: provider.country,
+      governorate: provider.governorate,
+      whatsapp: provider.whatsapp,
+      categoryChangeRequest: categoryChangeRequest ? {
+        id: categoryChangeRequest.id,
+        status: categoryChangeRequest.status,
+        currentCategoryId: categoryChangeRequest.currentCategoryId,
+        currentCategoryName: categories.find(item => item.id === categoryChangeRequest.currentCategoryId)?.name ?? "غير محدد",
+        requestedCategoryId: categoryChangeRequest.requestedCategoryId,
+        requestedCategoryName: categories.find(item => item.id === categoryChangeRequest.requestedCategoryId)?.name ?? "غير معروف",
+        currentSpecialty: categoryChangeRequest.currentSpecialty,
+        requestedSpecialty: categoryChangeRequest.requestedSpecialty,
+        rejectionReason: categoryChangeRequest.rejectionReason,
+        submittedAt: categoryChangeRequest.submittedAt,
+        reviewedAt: categoryChangeRequest.reviewedAt,
+      } : null,
+    });
+  });
+
+  app.patch("/api/providers/me/profile", async (req, res) => {
+    const token = (req.headers.authorization ?? "").replace(/^Bearer\s+/, "");
+    const db = await getDb();
+    if (!db || !token) return res.status(401).json({ error: "تحتاج إلى تسجيل الدخول" });
+    const session = (await db.select().from(phoneAuthSessions).where(eq(phoneAuthSessions.token, token)).limit(1))[0];
+    if (!session || session.expiresAt.getTime() <= Date.now()) return res.status(401).json({ error: "انتهت جلسة الدخول" });
+    const provider = (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, session.phone)).limit(1))[0];
+    if (!provider || provider.role !== "provider") return res.status(403).json({ error: "هذا المسار للمهنيين فقط" });
+
+    const body = req.body && typeof req.body === "object" ? req.body as Record<string, unknown> : {};
+    if (Object.prototype.hasOwnProperty.call(body, "name") || Object.prototype.hasOwnProperty.call(body, "phone")) {
+      return res.status(403).json({ error: "لا يمكن تغيير اسم الحساب أو رقم تسجيل الدخول من هذا النموذج" });
+    }
+
+    const profileValues: Partial<typeof phoneUsers.$inferInsert> = { updatedAt: new Date() };
+    const stringFields = [
+      ["city", 120],
+      ["governorate", 120],
+      ["district", 120],
+      ["bio", 1200],
+    ] as const;
+    for (const [field, maxLength] of stringFields) {
+      if (!(field in body)) continue;
+      if (typeof body[field] !== "string") return res.status(400).json({ error: `قيمة ${field} غير صالحة` });
+      const value = (body[field] as string).trim();
+      if (value.length > maxLength) return res.status(400).json({ error: `قيمة ${field} أطول من المسموح` });
+      profileValues[field] = value || null;
+    }
+    if ("whatsapp" in body) {
+      if (typeof body.whatsapp !== "string") return res.status(400).json({ error: "رقم واتساب غير صالح" });
+      const value = body.whatsapp.trim();
+      if (value && !/^\d{7,9}$/.test(value)) return res.status(400).json({ error: "أدخل رقم واتساب من 7 إلى 9 أرقام" });
+      profileValues.whatsapp = value || null;
+    }
+    if ("yearsExperience" in body) {
+      const years = Number(body.yearsExperience);
+      if (!Number.isInteger(years) || years < 0 || years > 60) return res.status(400).json({ error: "عدد سنوات الخبرة غير صالح" });
+      profileValues.yearsExperience = years;
+    }
+
+    let requestedCategory: (typeof categories)[number] | undefined;
+    let requestedSpecialty: string | undefined;
+    const hasCategoryInput = "categoryId" in body || "specialty" in body;
+    if (hasCategoryInput) {
+      const categoryId = Number(body.categoryId);
+      requestedCategory = categories.find(category => category.id === categoryId);
+      requestedSpecialty = typeof body.specialty === "string" ? body.specialty.trim() : "";
+      if (!requestedCategory || !requestedSpecialty || requestedSpecialty.length > 160 || !requestedCategory.specialties.includes(requestedSpecialty)) {
+        return res.status(400).json({ error: "اختر مجالاً وتخصصاً صحيحين من القائمة" });
+      }
+    }
+    const categoryChangeRequested = Boolean(requestedCategory && requestedSpecialty && (
+      requestedCategory.id !== provider.categoryId || requestedSpecialty !== (provider.specialty ?? "")
+    ));
+    if (categoryChangeRequested) {
+      const existingPending = (await db.select({ id: providerCategoryChangeRequests.id })
+        .from(providerCategoryChangeRequests)
+        .where(and(eq(providerCategoryChangeRequests.providerId, provider.id), eq(providerCategoryChangeRequests.status, "pending")))
+        .limit(1))[0];
+      if (existingPending) return res.status(409).json({ error: "لديك طلب تغيير تخصص قيد المراجعة؛ انتظر قرار الإدارة أولاً" });
+    }
+
+    try {
+      let categoryChangeRequest: typeof providerCategoryChangeRequests.$inferSelect | null = null;
+      await db.transaction(async tx => {
+        await tx.update(phoneUsers).set(profileValues).where(eq(phoneUsers.id, provider.id));
+        if (categoryChangeRequested && requestedCategory && requestedSpecialty) {
+          categoryChangeRequest = (await tx.insert(providerCategoryChangeRequests).values({
+            providerId: provider.id,
+            currentCategoryId: provider.categoryId,
+            requestedCategoryId: requestedCategory.id,
+            currentSpecialty: provider.specialty,
+            requestedSpecialty,
+            status: "pending",
+          }).returning())[0];
+          await tx.insert(notifications).values({
+            userId: provider.id,
+            type: "provider_category_change_pending",
+            title: "طلب تغيير المجال والتخصص",
+            body: "تم استلام طلبك. سيبقى تخصصك الحالي ظاهراً حتى تنتهي الإدارة من مراجعته.",
+            relatedId: categoryChangeRequest.id,
+          });
+        }
+      });
+      return res.json({ success: true, categoryChangeRequest });
+    } catch (error) {
+      const databaseError = error as { code?: string; cause?: { code?: string } };
+      if (databaseError.code === "23505" || databaseError.cause?.code === "23505") {
+        return res.status(409).json({ error: "يوجد طلب تغيير تخصص قيد المراجعة بالفعل" });
+      }
+      console.error("[ProviderProfile] profile update failed", error);
+      return res.status(500).json({ error: "تعذر حفظ الملف الشخصي حالياً" });
+    }
   });
 
   app.get("/api/providers", async (req, res) => {

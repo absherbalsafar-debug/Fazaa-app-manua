@@ -13,7 +13,7 @@ export function Header() {
       <div className="container mx-auto flex h-16 max-w-md items-center justify-between px-4">
         <div className="flex items-center gap-2.5">
           <Link href="/">
-            <BrandLogo className="h-12 w-20 cursor-pointer object-contain" />
+            <BrandLogo className="h-14 w-16 cursor-pointer object-contain" />
           </Link>
         </div>
         

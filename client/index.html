@@ -14,11 +14,34 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="فزعة FAZAAH – منصة الخدمات والمهنيين" />
     <meta name="twitter:description" content="فزعة FAZAAH – منصة موثوقة تربط العملاء بالمهنيين في اليمن." />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#f7f8fa" />
+    <link rel="preload" as="image" href="/assets/fazaah-logo.png" fetchpriority="high" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/assets/fazaah-favicon-v2-48.png" />
+    <link rel="shortcut icon" type="image/png" href="/assets/fazaah-favicon-v2-48.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/fazaah-touch-icon-v2-180.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+      html, body, #root { min-height: 100%; margin: 0; background: #f7f8fa; }
+      body { min-height: 100dvh; }
+      .fazaah-boot-screen {
+        position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 14px; padding: 24px;
+        background: #f7f8fa; color: #182d53; font: 600 14px/1.5 system-ui, sans-serif;
+      }
+      .fazaah-boot-screen img { width: 88px; height: 107px; object-fit: contain; }
+      .fazaah-boot-dots { display: flex; align-items: center; gap: 8px; }
+      .fazaah-boot-dots i {
+        width: 7px; height: 7px; border-radius: 999px; background: #182d53;
+        animation: fazaah-boot-pulse 900ms ease-in-out infinite alternate;
+      }
+      .fazaah-boot-dots i:nth-child(2) { background: #f0b046; animation-delay: 180ms; }
+      .fazaah-boot-dots i:nth-child(3) { animation-delay: 360ms; }
+      @keyframes fazaah-boot-pulse { to { opacity: .3; transform: translateY(-3px); } }
+      @media (prefers-reduced-motion: reduce) {
+        .fazaah-boot-dots i { animation: none; }
+      }
       [class*="manus-badge"], [id*="manus-badge"], [class*="made-with-manus"], [id*="made-with-manus"], a[href*="manus.im"], a[href*="manus.space"] {
         display: none !important;
         visibility: hidden !important;
@@ -41,7 +64,13 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="fazaah-boot-screen" role="status" aria-live="polite" dir="rtl">
+        <img src="/assets/fazaah-logo.png" width="88" height="107" alt="فزعة" />
+        <div class="fazaah-boot-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+        <span>جارٍ تجهيز فزعة...</span>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

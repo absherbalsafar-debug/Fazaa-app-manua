@@ -14,24 +14,45 @@ function getQueryParam(req: Request, key: string): string | undefined {
 
 export function registerOAuthRoutes(app: Express) {
   app.get("/api/oauth/start", (req: Request, res: Response) => {
+    const requestedOrigin = getQueryParam(req, "origin") ?? req.get("origin");
+    let frontendOrigin: string;
+    try {
+      const parsedOrigin = new URL(requestedOrigin ?? "");
+      const isLocalHttp = process.env.NODE_ENV !== "production"
+        && parsedOrigin.protocol === "http:"
+        && ["localhost", "127.0.0.1", "::1"].includes(parsedOrigin.hostname);
+      if (
+        parsedOrigin.username || parsedOrigin.password || parsedOrigin.pathname !== "/"
+        || parsedOrigin.search || parsedOrigin.hash
+        || (parsedOrigin.protocol !== "https:" && !isLocalHttp)
+      ) throw new Error("invalid browser origin");
+      frontendOrigin = parsedOrigin.origin;
+    } catch {
+      return res.status(400).json({ error: "browser-visible origin is required" });
+    }
+
+    if (!ENV.oAuthPortalUrl) {
+      return res.status(503).json({ error: "OAuth is not configured" });
+    }
+
     const returnTo = getQueryParam(req, "returnTo") || "/";
     const allowed = (process.env.CONTROL_CENTER_ORIGIN ?? "").split(",").map(value => value.trim()).filter(Boolean);
-    let safeReturnTo = "/";
+    let safeReturnTo = `${frontendOrigin}/`;
     try {
-      const parsed = new URL(returnTo, `${req.protocol}://${req.get("host")}`);
-      if (parsed.origin === `${req.protocol}://${req.get("host")}` || allowed.includes(parsed.origin)) safeReturnTo = parsed.toString();
+      const parsed = new URL(returnTo, frontendOrigin);
+      if (parsed.origin === frontendOrigin || allowed.includes(parsed.origin)) safeReturnTo = parsed.toString();
     } catch {
-      safeReturnTo = "/";
+      safeReturnTo = `${frontendOrigin}/`;
     }
     const nonce = randomUUID();
-    const redirectUri = `${req.protocol}://${req.get("host")}/api/oauth/callback`;
+    const redirectUri = `${frontendOrigin}/api/oauth/callback`;
     const state = encodeOAuthState({ redirectUri, nonce, returnTo: safeReturnTo });
     res.cookie(OAUTH_STATE_COOKIE, nonce, { path: "/", maxAge: 10 * 60 * 1000, secure: true, sameSite: "none" });
-    const portal = new URL(`${ENV.oAuthServerUrl.replace(/\/$/, "")}/app-auth`);
+    const portal = new URL(`${ENV.oAuthPortalUrl.replace(/\/$/, "")}/app-auth`);
     portal.searchParams.set("appId", ENV.appId);
     portal.searchParams.set("redirectUri", redirectUri);
     portal.searchParams.set("state", state);
-    portal.searchParams.set("type", "signIn");
+    portal.searchParams.set("responseType", "code");
     return res.redirect(302, portal.toString());
   });
 
