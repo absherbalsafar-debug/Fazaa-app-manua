@@ -1,7 +1,8 @@
 import type { Express } from "express";
 import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "./db";
-import { notifications, phoneAuthSessions, phoneUsers, providerCategoryChangeRequests, providerVerificationDocuments, providerVerificationRequests } from "../drizzle/schema";
+import { getAuthenticatedPhoneUser } from "./phoneSession";
+import { notifications, phoneUsers, providerCategoryChangeRequests, providerVerificationDocuments, providerVerificationRequests } from "../drizzle/schema";
 
 export const categories = [
   { id: 1, name: "سباكة", icon: "🔧", providerCount: 0, specialties: ["تمديدات مياه", "إصلاح تسربات", "تركيب مضخات", "صيانة سخانات"] },
@@ -209,12 +210,9 @@ export function registerProviderCatalogRoutes(app: Express) {
   });
 
   app.get("/api/providers/me", async (req, res) => {
-    const token = (req.headers.authorization ?? "").replace(/^Bearer\s+/, "");
     const db = await getDb();
-    if (!db || !token) return res.status(401).json({ error: "تحتاج إلى تسجيل الدخول" });
-    const session = (await db.select().from(phoneAuthSessions).where(eq(phoneAuthSessions.token, token)).limit(1))[0];
-    if (!session || session.expiresAt.getTime() <= Date.now()) return res.status(401).json({ error: "انتهت جلسة الدخول" });
-    const provider = (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, session.phone)).limit(1))[0];
+    const provider = await getAuthenticatedPhoneUser(req);
+    if (!db || !provider) return res.status(401).json({ error: "تحتاج إلى تسجيل الدخول" });
     if (!provider || provider.role !== "provider") return res.status(403).json({ error: "هذا المسار للمهنيين فقط" });
     const [verificationRequest] = await db.select().from(providerVerificationRequests)
       .where(eq(providerVerificationRequests.providerId, provider.id))
@@ -253,12 +251,9 @@ export function registerProviderCatalogRoutes(app: Express) {
   });
 
   app.patch("/api/providers/me/profile", async (req, res) => {
-    const token = (req.headers.authorization ?? "").replace(/^Bearer\s+/, "");
     const db = await getDb();
-    if (!db || !token) return res.status(401).json({ error: "تحتاج إلى تسجيل الدخول" });
-    const session = (await db.select().from(phoneAuthSessions).where(eq(phoneAuthSessions.token, token)).limit(1))[0];
-    if (!session || session.expiresAt.getTime() <= Date.now()) return res.status(401).json({ error: "انتهت جلسة الدخول" });
-    const provider = (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, session.phone)).limit(1))[0];
+    const provider = await getAuthenticatedPhoneUser(req);
+    if (!db || !provider) return res.status(401).json({ error: "تحتاج إلى تسجيل الدخول" });
     if (!provider || provider.role !== "provider") return res.status(403).json({ error: "هذا المسار للمهنيين فقط" });
 
     const body = req.body && typeof req.body === "object" ? req.body as Record<string, unknown> : {};
@@ -357,12 +352,10 @@ export function registerProviderCatalogRoutes(app: Express) {
   app.patch("/api/providers/:id", async (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "معرف المهني غير صالح" });
-    const token = (req.headers.authorization ?? "").replace(/^Bearer\s+/, "");
     const db = await getDb();
     if (!db) return res.status(503).json({ error: "قاعدة البيانات غير متاحة حالياً" });
-    const session = (await db.select().from(phoneAuthSessions).where(eq(phoneAuthSessions.token, token)).limit(1))[0];
-    if (!session || session.expiresAt.getTime() <= Date.now()) return res.status(401).json({ error: "تحتاج إلى تسجيل الدخول" });
-    const provider = (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, session.phone)).limit(1))[0];
+    const provider = await getAuthenticatedPhoneUser(req);
+    if (!provider) return res.status(401).json({ error: "تحتاج إلى تسجيل الدخول" });
     if (!provider || provider.role !== "provider" || provider.id !== id) return res.status(403).json({ error: "لا يمكنك تعديل هذا الملف" });
     if (typeof req.body?.isAvailable !== "boolean") return res.status(400).json({ error: "حالة الإتاحة غير صالحة" });
     const updated = (await db.update(phoneUsers).set({ isAvailable: req.body.isAvailable, updatedAt: new Date() }).where(eq(phoneUsers.id, id)).returning())[0];

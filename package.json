@@ -45,18 +45,18 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@react-oauth/google": "^0.13.5",
     "@tanstack/react-query": "^5.90.2",
-    "@trpc/client": "^11.6.0",
-    "@trpc/react-query": "^11.6.0",
-    "@trpc/server": "^11.6.0",
+    "@trpc/client": "^11.19.0",
+    "@trpc/react-query": "^11.19.0",
+    "@trpc/server": "^11.19.0",
     "@types/leaflet": "^1.9.20",
-    "axios": "^1.12.0",
+    "axios": "^1.20.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "cookie": "^1.0.2",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.2",
-    "drizzle-orm": "^0.44.5",
+    "drizzle-orm": "^0.45.3",
     "embla-carousel-react": "^8.6.0",
     "express": "^4.21.2",
     "firebase-admin": "^13.5.0",
@@ -66,7 +66,7 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^0.453.0",
     "mysql2": "^3.15.0",
-    "nanoid": "^5.1.5",
+    "nanoid": "^5.1.16",
     "next-themes": "^0.4.6",
     "pg": "^8.23.0",
     "react": "^19.2.1",
@@ -110,13 +110,5 @@
     "vite-plugin-manus-runtime": "0.0.59",
     "vitest": "^2.1.4"
   },
-  "packageManager": "pnpm@10.26.0",
-  "pnpm": {
-    "patchedDependencies": {
-      "wouter@3.7.1": "patches/wouter@3.7.1.patch"
-    },
-    "overrides": {
-      "tailwindcss>nanoid": "3.3.7"
-    }
-  }
+  "packageManager": "pnpm@10.26.0"
 }

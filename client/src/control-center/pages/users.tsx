@@ -103,12 +103,12 @@ export default function AdminUsers() {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      {u.status !== 'active' && (
+                      {u.phone && u.status !== 'active' && (
                         <Button size="sm" variant="outline" className="text-green-600 hover:text-green-700 hover:bg-green-50" onClick={() => handleUpdateStatus(u.id, 'active')}>
                           تنشيط
                         </Button>
                       )}
-                      {u.status !== 'banned' && u.role !== 'admin' && (
+                      {u.phone && u.status !== 'banned' && u.role !== 'admin' && (
                         <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleUpdateStatus(u.id, 'banned')}>
                           حظر
                         </Button>

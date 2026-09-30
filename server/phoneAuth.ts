@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, randomInt, randomUUID } from "node:crypto";
 import type { Express, Request, Response } from "express";
 import { eq } from "drizzle-orm";
 import { getDb } from "./db";
@@ -129,7 +129,7 @@ export function registerPhoneAuthRoutes(app: Express) {
     const phone = normalizePhone(rawPhone);
     if (!/^\+\d{8,15}$/.test(phone)) return jsonError(res, 400, "أدخل رقم هاتف صحيحاً");
 
-    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const code = String(randomInt(100000, 1000000));
     const expiresAt = new Date(Date.now() + OTP_TTL_MS);
     const codeHash = hashCode(code);
     const db = await getAuthDb();
@@ -345,6 +345,7 @@ export function registerPhoneAuthRoutes(app: Express) {
       if (!session || session.expiresAt.getTime() <= Date.now()) return jsonError(res, 401, "تحتاج إلى تسجيل الدخول");
       const user = (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, session.phone)).limit(1))[0];
       if (!user) return jsonError(res, 401, "المستخدم غير موجود");
+      if (user.status !== "active") return jsonError(res, 403, "هذا الحساب موقوف حالياً");
       return res.json(toApiUser(user));
     }
     const session = localSessions.get(token);
@@ -364,6 +365,7 @@ export function registerPhoneAuthRoutes(app: Express) {
       if (!session || session.expiresAt.getTime() <= Date.now()) return jsonError(res, 401, "تحتاج إلى تسجيل الدخول");
       const current = (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, session.phone)).limit(1))[0];
       if (!current) return jsonError(res, 404, "المستخدم غير موجود");
+      if (current.status !== "active") return jsonError(res, 403, "هذا الحساب موقوف حالياً");
       if (current.role === "provider" && Object.prototype.hasOwnProperty.call(body, "name")) {
         return jsonError(res, 403, "لا يمكن تعديل اسم الحساب المهني");
       }

@@ -3,7 +3,8 @@ import { and, eq } from "drizzle-orm";
 import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { getMessaging } from "firebase-admin/messaging";
 import { getDb } from "./db";
-import { phoneAuthSessions, phoneUsers, pushTokens } from "../drizzle/schema";
+import { getAuthenticatedPhoneUser } from "./phoneSession";
+import { phoneUsers, pushTokens } from "../drizzle/schema";
 
 type AuthenticatedPhoneUser = typeof phoneUsers.$inferSelect;
 
@@ -23,14 +24,7 @@ function readBody(req: Request) {
 }
 
 async function currentUser(req: Request): Promise<AuthenticatedPhoneUser | null> {
-  const authorization = req.headers.authorization ?? "";
-  const token = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
-  if (!token) return null;
-  const db = await getDb();
-  if (!db) return null;
-  const session = (await db.select().from(phoneAuthSessions).where(eq(phoneAuthSessions.token, token)).limit(1))[0];
-  if (!session || session.expiresAt.getTime() <= Date.now()) return null;
-  return (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, session.phone)).limit(1))[0] ?? null;
+  return getAuthenticatedPhoneUser(req);
 }
 
 function getFirebaseApp() {

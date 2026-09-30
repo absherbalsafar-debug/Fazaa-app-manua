@@ -2,13 +2,13 @@ import type { Express, Request, Response } from "express";
 import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "./db";
 import {
-  phoneAuthSessions,
   phoneUsers,
   providerVerificationDocuments,
   providerVerificationRequests,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { storagePut } from "./storage";
+import { getAuthenticatedPhoneUser } from "./phoneSession";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const allowedTypes = new Set(["selfie", "id_front", "id_back", "portfolio", "certificate"]);
@@ -37,7 +37,23 @@ function normalizeContentType(contentType: string, originalName: string): string
 }
 
 function isAllowedContentType(contentType: string | null): contentType is string {
-  return Boolean(contentType && (contentType === "application/pdf" || contentType.startsWith("image/")));
+  return Boolean(contentType && new Set([
+    "application/pdf", "image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif",
+  ]).has(contentType));
+}
+
+function hasValidFileSignature(buffer: Buffer, contentType: string): boolean {
+  if (contentType === "application/pdf") return buffer.subarray(0, 5).toString("ascii") === "%PDF-";
+  if (contentType === "image/jpeg") return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  if (contentType === "image/png") return buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  if (contentType === "image/gif") return buffer.subarray(0, 6).toString("ascii") === "GIF87a" || buffer.subarray(0, 6).toString("ascii") === "GIF89a";
+  if (contentType === "image/webp") return buffer.subarray(0, 4).toString("ascii") === "RIFF" && buffer.subarray(8, 12).toString("ascii") === "WEBP";
+  if (contentType === "image/heic" || contentType === "image/heif") return buffer.subarray(4, 12).toString("ascii").includes("ftyp");
+  return false;
+}
+
+function isStrictBase64(value: string): boolean {
+  return value.length % 4 === 0 && /^[A-Za-z0-9+/]*={0,2}$/.test(value);
 }
 
 async function storagePutWithRetry(key: string, buffer: Buffer, contentType: string) {
@@ -64,14 +80,7 @@ function readBody(req: Request) {
 }
 
 async function currentUser(req: Request): Promise<AuthenticatedPhoneUser | null> {
-  const authorization = req.headers.authorization ?? "";
-  const token = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
-  if (!token) return null;
-  const db = await getDb();
-  if (!db) return null;
-  const session = (await db.select().from(phoneAuthSessions).where(eq(phoneAuthSessions.token, token)).limit(1))[0];
-  if (!session || session.expiresAt.getTime() <= Date.now()) return null;
-  return (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, session.phone)).limit(1))[0] ?? null;
+  return getAuthenticatedPhoneUser(req);
 }
 
 function storageConfig() {
@@ -79,10 +88,10 @@ function storageConfig() {
   return { url: ENV.forgeApiUrl.replace(/\/+$/, ""), key: ENV.forgeApiKey };
 }
 
-async function createUploadUrl(name: string) {
+async function createUploadUrl(name: string, userId: number) {
   const { url, key } = storageConfig();
   const safeName = name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-120) || "document";
-  const objectPath = `provider-verification/${Date.now()}-${crypto.randomUUID()}-${safeName}`;
+  const objectPath = `provider-verification/${userId}/${Date.now()}-${crypto.randomUUID()}-${safeName}`;
   const presign = new URL("v1/storage/presign/put", `${url}/`);
   presign.searchParams.set("path", objectPath);
   const response = await fetch(presign, { headers: { Authorization: `Bearer ${key}` } });
@@ -125,7 +134,7 @@ export function registerProviderVerificationRoutes(app: Express) {
     if (!Number.isFinite(size) || size <= 0 || size > MAX_FILE_SIZE) return jsonError(res, 400, "حجم الملف يجب ألا يتجاوز 10 ميجابايت");
     if (!isAllowedContentType(contentType)) return jsonError(res, 400, "يسمح بالصور أو ملفات PDF فقط");
     try {
-      return res.json({ ...(await createUploadUrl(name)), contentType });
+      return res.json({ ...(await createUploadUrl(name, user.id)), contentType });
     } catch (cause) {
       console.error("[ProviderVerification] upload presign failed", cause);
       return jsonError(res, 503, "خدمة التخزين غير متاحة حالياً");
@@ -140,7 +149,7 @@ export function registerProviderVerificationRoutes(app: Express) {
     const type = typeof body.type === "string" ? body.type : "";
     const objectPath = typeof body.objectPath === "string" ? body.objectPath : "";
     const originalName = typeof body.originalName === "string" ? body.originalName.trim().slice(0, 255) : "";
-    if (!allowedTypes.has(type) || !objectPath.startsWith("provider-verification/") || !originalName) return jsonError(res, 400, "بيانات المستند غير صالحة");
+    if (!allowedTypes.has(type) || !objectPath.startsWith(`provider-verification/${user.id}/`) || !originalName) return jsonError(res, 400, "بيانات المستند غير صالحة");
     const db = await getDb();
     if (!db) return jsonError(res, 503, "قاعدة البيانات غير متاحة حالياً");
     const pending = (await db.select().from(providerVerificationRequests)
@@ -170,9 +179,10 @@ export function registerProviderVerificationRoutes(app: Express) {
     const originalName = typeof body.originalName === "string" ? body.originalName.trim().slice(0, 255) : "document.jpg";
     const contentType = normalizeContentType(typeof body.contentType === "string" ? body.contentType : "", originalName) ?? "image/jpeg";
     const encoded = typeof body.dataBase64 === "string" ? body.dataBase64.replace(/^data:[^;]+;base64,/, "") : "";
-    if (!allowedTypes.has(type) || !isAllowedContentType(contentType) || !encoded) return jsonError(res, 400, "بيانات المستند غير صالحة");
+    if (!allowedTypes.has(type) || !isAllowedContentType(contentType) || !encoded || !isStrictBase64(encoded)) return jsonError(res, 400, "بيانات المستند غير صالحة");
+    if (encoded.length > Math.ceil(MAX_FILE_SIZE / 3) * 4 + 4) return jsonError(res, 400, "حجم الملف يجب ألا يتجاوز 10 ميجابايت");
     const buffer = Buffer.from(encoded, "base64");
-    if (!buffer.length || buffer.length > MAX_FILE_SIZE) return jsonError(res, 400, "حجم الملف يجب ألا يتجاوز 10 ميجابايت");
+    if (!buffer.length || buffer.length > MAX_FILE_SIZE || !hasValidFileSignature(buffer, contentType)) return jsonError(res, 400, "محتوى الملف لا يطابق نوعه");
     const db = await getDb();
     if (!db) return jsonError(res, 503, "قاعدة البيانات غير متاحة حالياً");
     try {

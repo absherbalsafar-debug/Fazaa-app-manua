@@ -5,3 +5,8 @@ allowBuilds:
   '@tailwindcss/oxide@4.1.14': true
   '@firebase/util@1.15.3': true
   'protobufjs@7.6.6': false
+patchedDependencies:
+  'wouter@3.7.1': patches/wouter@3.7.1.patch
+overrides:
+  'tailwindcss>nanoid': 3.3.7
+  fast-xml-parser: 5.5.6

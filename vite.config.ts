@@ -171,6 +171,19 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return undefined;
+          if (id.includes("leaflet")) return "vendor-map";
+          if (id.includes("recharts")) return "vendor-charts";
+          if (id.includes("framer-motion")) return "vendor-motion";
+          if (id.includes("@radix-ui")) return "vendor-radix";
+          if (id.includes("react") || id.includes("react-dom") || id.includes("scheduler")) return "vendor-react";
+          return undefined;
+        },
+      },
+    },
   },
   server: {
     host: true,

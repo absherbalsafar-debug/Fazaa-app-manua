@@ -1,7 +1,8 @@
 import type { Express, Request, Response } from "express";
 import { desc, eq } from "drizzle-orm";
 import { getDb } from "./db";
-import { phoneAuthSessions, phoneUsers, providerAdvertisements, providerSubscriptionPayments, serviceRequests } from "../drizzle/schema";
+import { getAuthenticatedPhoneUser } from "./phoneSession";
+import { phoneUsers, providerAdvertisements, providerSubscriptionPayments, serviceRequests } from "../drizzle/schema";
 import { sdk } from "./_core/sdk";
 import { getPaymentGatewayDescriptors } from "./paymentGateways";
 
@@ -18,12 +19,7 @@ function body(req: Request) {
 }
 
 async function currentProvider(req: Request) {
-  const token = (req.headers.authorization ?? "").replace(/^Bearer\s+/, "");
-  const db = await getDb();
-  if (!db || !token) return null;
-  const session = (await db.select().from(phoneAuthSessions).where(eq(phoneAuthSessions.token, token)).limit(1))[0];
-  if (!session || session.expiresAt.getTime() <= Date.now()) return null;
-  const user = (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, session.phone)).limit(1))[0];
+  const user = await getAuthenticatedPhoneUser(req);
   return user?.role === "provider" ? user : null;
 }
 

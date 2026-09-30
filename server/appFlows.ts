@@ -1,9 +1,9 @@
 import type { Express, Request, Response } from "express";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { getDb } from "./db";
+import { getAuthenticatedPhoneUser } from "./phoneSession";
 import {
   notifications,
-  phoneAuthSessions,
   phoneUsers,
   providerFavorites,
   serviceRequests,
@@ -22,13 +22,7 @@ function jsonError(res: Response, status: number, error: string) {
 }
 
 async function authenticatedUser(req: Request): Promise<PhoneUserRow | null> {
-  const token = (req.headers.authorization ?? "").replace(/^Bearer\s+/, "");
-  if (!token) return null;
-  const db = await getDb();
-  if (!db) return null;
-  const session = (await db.select().from(phoneAuthSessions).where(eq(phoneAuthSessions.token, token)).limit(1))[0];
-  if (!session || session.expiresAt.getTime() <= Date.now()) return null;
-  return (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, session.phone)).limit(1))[0] ?? null;
+  return getAuthenticatedPhoneUser(req);
 }
 
 function asNumber(value: unknown) {

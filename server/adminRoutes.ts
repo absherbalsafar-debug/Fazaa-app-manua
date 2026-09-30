@@ -8,6 +8,7 @@ import {
   providerVerificationRequests,
   providerVerificationReviewHistory,
   notifications,
+  phoneAuthSessions,
   users,
 } from "../drizzle/schema";
 import { storageGetSignedUrl } from "./storage";
@@ -75,10 +76,35 @@ export function registerAdminRoutes(app: Express) {
       search ? or(ilike(phoneUsers.name, `%${search}%`), ilike(phoneUsers.phone, `%${search}%`)) : undefined,
     )).orderBy(desc(phoneUsers.createdAt));
     const result = [
-      ...oauthRows.map(user => ({ id: user.id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt, lastSignedIn: user.lastSignedIn })),
-      ...phoneRows.map(user => ({ id: user.id + 1_000_000, name: user.name, email: null, role: user.role, createdAt: user.createdAt, lastSignedIn: user.updatedAt })),
+      ...oauthRows.map(user => ({ id: user.id, name: user.name ?? "", phone: "", email: user.email, role: user.role, status: "active" as const, createdAt: user.createdAt, lastSignedIn: user.lastSignedIn })),
+      ...phoneRows.map(user => ({ id: user.id + 1_000_000, name: user.name, phone: user.phone, email: user.email, role: user.role, status: user.status === "suspended" ? "banned" as const : "active" as const, createdAt: user.createdAt, lastSignedIn: user.updatedAt })),
     ];
     return res.json({ users: result, total: result.length });
+  });
+
+  app.patch("/api/admin/users/:id/status", async (req, res) => {
+    const admin = await currentAdmin(req);
+    if (!admin) return deny(res);
+    const status = req.body?.status;
+    if (status !== "active" && status !== "banned") {
+      return res.status(400).json({ error: "حالة المستخدم غير صالحة" });
+    }
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 1_000_000) return res.status(400).json({ error: "رقم المستخدم غير صالح" });
+    const db = await getDb();
+    if (!db) return dbUnavailable(res);
+    const phoneUserId = id - 1_000_000;
+    const target = (await db.select({ id: phoneUsers.id, phone: phoneUsers.phone })
+      .from(phoneUsers).where(eq(phoneUsers.id, phoneUserId)).limit(1))[0];
+    if (!target) return res.status(404).json({ error: "المستخدم غير موجود" });
+    await db.update(phoneUsers).set({
+      status: status === "banned" ? "suspended" : "active",
+      updatedAt: new Date(),
+    }).where(eq(phoneUsers.id, phoneUserId));
+    if (status === "banned") {
+      await db.delete(phoneAuthSessions).where(eq(phoneAuthSessions.phone, target.phone));
+    }
+    return res.json({ success: true, status });
   });
 
   app.get("/api/admin/service-stats", async (req, res) => {
