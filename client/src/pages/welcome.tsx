@@ -95,8 +95,8 @@ function GoogleButton({ role }: { role: RegistrationRole }) {
 
 function ProgressDots({ active }: { active: number }) {
   return (
-    <div className="flex items-center justify-center gap-2" aria-label={`المرحلة ${active + 1} من 3`}>
-      {[0, 1, 2].map((dot) => (
+    <div className="flex items-center justify-center gap-2" aria-label={`المرحلة ${active + 1} من 2`}>
+      {[0, 1].map((dot) => (
         <span key={dot} className={`h-2 rounded-full transition-all duration-300 ${dot === active ? "w-8 bg-[#f0b046]" : "w-2 bg-[#c8d3e1]"}`} />
       ))}
     </div>
@@ -162,12 +162,11 @@ export default function Welcome() {
   const [isLaunchingAuth, setIsLaunchingAuth] = useState(false);
 
   useEffect(() => {
-    const completed = localStorage.getItem(ONBOARDING_COMPLETED_KEY) === "true";
-    const savedRole = localStorage.getItem(ONBOARDING_ROLE_KEY) === "provider" ? "provider" : "client";
-    if (completed) {
-      navigate(`/auth/phone?mode=login&role=${savedRole}`, { replace: true });
-    }
-  }, [navigate]);
+    // Keep the public entry point welcoming on every visit. Returning users can
+    // still choose the login action from the role screen instead of being
+    // redirected before seeing the product introduction.
+    localStorage.removeItem(ONBOARDING_COMPLETED_KEY);
+  }, []);
 
   function completeOnboarding(role: Role = selectedRole) {
     localStorage.setItem(ONBOARDING_COMPLETED_KEY, "true");
@@ -176,7 +175,7 @@ export default function Welcome() {
 
   const authPath = (type: "phone" | "email") => {
     completeOnboarding();
-    return type === "phone" ? `/auth/phone?mode=register&role=${selectedRole}` : `/auth/email?role=${selectedRole}`;
+    return type === "phone" ? `/auth/phone?mode=register&role=${selectedRole}` : `/auth/email?mode=register&role=${selectedRole}`;
   };
   const launchAuth = (type: "phone" | "email") => {
     const destination = authPath(type);
@@ -185,7 +184,7 @@ export default function Welcome() {
   };
   const goToRoleSelection = () => {
     completeOnboarding();
-    setStep(2);
+    setStep(1);
   };
   const skipOnboarding = () => {
     completeOnboarding("client");
@@ -217,36 +216,18 @@ export default function Welcome() {
         )}
 
         {step === 1 && (
-          <motion.section key="discover" initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -28 }} transition={{ duration: 0.35 }} className="relative min-h-[100dvh] bg-[#f7f8fa]">
-            <div className="onboarding-wave absolute inset-x-0 bottom-0 h-[27%] overflow-hidden bg-[#182d53]"><span className="onboarding-wave-gold" /></div>
-            <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 pb-5 pt-7 sm:max-w-lg sm:px-9">
-              <header className="flex items-center justify-between"><button type="button" onClick={() => setStep(0)} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#ddd8ce] bg-white text-[#182d53]" aria-label="العودة"><ArrowRight className="h-4 w-4" /></button><BrandLogo className="h-20 w-24 object-contain" /><span className="text-[10px] font-bold text-[#182d53]">9:41</span></header>
-              <div className="flex flex-1 flex-col items-center text-center">
-                <h2 className="mt-5 text-[31px] font-black leading-[1.3] tracking-[-0.04em]">تواصل مباشرة مع <span className="block text-[#b57920]">المهني المناسب</span></h2>
-                <p className="mt-3 max-w-[20rem] text-sm leading-7 text-[#637087]">اختر نوع الخدمة، وتواصل مع أفضل المهنيين المعتمدين لإنجاز احتياجك بسهولة وأمان.</p>
-                <div className="mt-5 w-full"><PhonePreview detailed /></div><FeatureBenefits />
-              </div>
-              <div className="relative z-10 mt-5 space-y-4">
-                <Button type="button" onClick={goToRoleSelection} className="group h-14 w-full justify-between rounded-2xl bg-[#f0b046] px-5 text-base font-black text-[#182d53] shadow-[0_14px_28px_rgba(245,185,22,0.24)] hover:bg-[#ffca3a]"><span>التالي</span><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#182d53]/10"><ChevronLeft className="h-5 w-5" /></span></Button>
-                <ProgressDots active={1} />
-                <button type="button" onClick={skipOnboarding} className="block w-full text-center text-xs font-semibold text-white/70 hover:text-white">تخطي</button>
-              </div>
-            </div>
-          </motion.section>
-        )}
-
-        {step === 2 && (
           <motion.section key="role" initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -28 }} transition={{ duration: 0.35 }} className="min-h-[100dvh] bg-[#f7f8fa]">
             <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 pb-7 pt-7 sm:max-w-lg sm:px-9">
-              <header className="flex items-center justify-between"><button type="button" onClick={() => setStep(1)} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#ddd8ce] bg-white text-[#182d53]" aria-label="العودة"><ArrowRight className="h-4 w-4" /></button><BrandLogo className="h-20 w-24 object-contain" /><span className="text-[10px] font-bold text-[#182d53]">9:41</span></header>
+              <header className="flex items-center justify-between"><button type="button" onClick={() => setStep(0)} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#ddd8ce] bg-white text-[#182d53]" aria-label="العودة"><ArrowRight className="h-4 w-4" /></button><BrandLogo className="h-20 w-24 object-contain" /><span className="text-[10px] font-bold text-[#182d53]">9:41</span></header>
               <div className="flex flex-1 flex-col pt-7">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#b57920]">الخطوة الأخيرة</p>
-                <h2 className="mt-3 text-[32px] font-black leading-[1.25] tracking-[-0.04em]">اختر تجربتك،<span className="block text-[#b57920]">ونبدأ معاً.</span></h2>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#b57920]">الخطوة الثانية</p>
+                <h2 className="mt-3 text-[32px] font-black leading-[1.25] tracking-[-0.04em]">اختر نوع حسابك<span className="block text-[#b57920]">ونبدأ معاً.</span></h2>
                 <p className="mt-4 max-w-[19rem] text-sm leading-7 text-[#777f8c]">أخبرنا كيف ستستخدم فزعة لنجهز لك رحلة تناسب احتياجك من أول خطوة.</p>
                 <div className="mt-7 space-y-3">{(Object.entries(roleCopy) as [Role, (typeof roleCopy)[Role]][]).map(([role, item]) => { const Icon = role === "provider" ? BriefcaseBusiness : UserRound; const selected = selectedRole === role; return <motion.button key={role} type="button" whileTap={{ scale: 0.985 }} onClick={() => setSelectedRole(role)} className={`relative flex w-full items-center gap-4 overflow-hidden rounded-[24px] border p-4 text-right transition-all ${selected ? "border-[#182d53] bg-[#182d53] text-white shadow-[0_16px_32px_rgba(14,47,98,0.16)]" : "border-[#dedad1] bg-white text-[#182d53] hover:border-[#c9b77c]"}`}><span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${selected ? "bg-[#f0b046] text-[#182d53]" : "bg-[#fff4d2] text-[#b57920]"}`}><Icon className="h-6 w-6" /></span><span className="min-w-0 flex-1"><b className="block text-[15px]">{item.title}</b><small className={`mt-1 block text-xs ${selected ? "text-white/70" : "text-[#77766f]"}`}>{item.description}</small><small className={`mt-2 block text-[10px] ${selected ? "text-[#f0b046]" : "text-[#b57920]"}`}>{item.detail}</small></span><span className={`flex h-6 w-6 items-center justify-center rounded-full border ${selected ? "border-[#f0b046] bg-[#f0b046] text-[#182d53]" : "border-[#d4d0c6] text-transparent"}`}><Check className="h-3.5 w-3.5" /></span></motion.button>; })}</div>
-                <div className="mt-auto pt-7"><p className="mb-3 text-center text-[11px] font-semibold text-[#8b98a8]">ابدأ بطريقتك المفضلة</p><Button type="button" onClick={() => launchAuth("phone")} className="h-14 w-full rounded-2xl bg-[#182d53] text-[15px] font-extrabold text-white shadow-[0_14px_28px_rgba(14,47,98,0.16)] hover:bg-[#182d53]"><Phone className="ml-2 h-5 w-5 text-[#f0b046]" />التسجيل برقم الهاتف<ArrowLeft className="mr-auto h-4 w-4" /></Button>{selectedRole === "client" && <><div className="my-3 flex items-center gap-3"><div className="h-px flex-1 bg-[#dedad1]" /><span className="text-[10px] font-bold text-[#9a978e]">أو</span><div className="h-px flex-1 bg-[#dedad1]" /></div><GoogleButton role="client" /></>}<Button type="button" variant="outline" onClick={() => launchAuth("email")} className="mt-3 h-12 w-full rounded-2xl border-[#d9e1ea] bg-transparent text-sm font-bold text-[#3a4a48] hover:bg-white"><Mail className="ml-2 h-4 w-4 text-[#b57920]" />التسجيل بالبريد الإلكتروني</Button><button type="button" onClick={() => navigate(`/auth/phone?mode=login&role=${selectedRole}`)} className="mt-5 block w-full text-center text-xs text-[#8b98a8]">لديك حساب بالفعل؟ <span className="font-extrabold text-[#b57920]">تسجيل الدخول برقم الهاتف</span></button></div>
+                <div className="mt-auto pt-7"><p className="mb-3 text-center text-[11px] font-semibold text-[#8b98a8]">{selectedRole === "provider" ? "ابدأ تسجيل مهنتك برقم الجوال" : "اختر طريقة التسجيل المناسبة لك"}</p><Button type="button" onClick={() => launchAuth("phone")} className="h-14 w-full rounded-2xl bg-[#182d53] text-[15px] font-extrabold text-white shadow-[0_14px_28px_rgba(14,47,98,0.16)] hover:bg-[#182d53]"><Phone className="ml-2 h-5 w-5 text-[#f0b046]" />{selectedRole === "provider" ? "بدء تسجيل المهني" : "التسجيل برقم الهاتف"}<ArrowLeft className="mr-auto h-4 w-4" /></Button>{selectedRole === "client" && <><div className="my-3 flex items-center gap-3"><div className="h-px flex-1 bg-[#dedad1]" /><span className="text-[10px] font-bold text-[#9a978e]">أو</span><div className="h-px flex-1 bg-[#dedad1]" /></div><GoogleButton role="client" /><Button type="button" variant="outline" onClick={() => launchAuth("email")} className="mt-3 h-12 w-full rounded-2xl border-[#d9e1ea] bg-transparent text-sm font-bold text-[#3a4a48] hover:bg-white"><Mail className="ml-2 h-4 w-4 text-[#b57920]" />التسجيل بالبريد الإلكتروني</Button></>}</div>
+                <button type="button" onClick={() => navigate(`/auth/phone?mode=login&role=${selectedRole}`)} className="mt-5 block w-full text-center text-xs text-[#8b98a8]">لديك حساب بالفعل؟ <span className="font-extrabold text-[#b57920]">تسجيل الدخول برقم الهاتف</span></button>
               </div>
-              <div className="mt-5"><ProgressDots active={2} /><p className="mt-3 text-center text-[10px] leading-5 text-[#9a978e]">بالاستمرار توافق على شروط الاستخدام وسياسة الخصوصية</p></div>
+              <div className="mt-5"><ProgressDots active={1} /><p className="mt-3 text-center text-[10px] leading-5 text-[#9a978e]">بالاستمرار توافق على شروط الاستخدام وسياسة الخصوصية</p></div>
             </div>
           </motion.section>
         )}

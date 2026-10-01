@@ -24,8 +24,8 @@ export function BottomNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-primary/10 bg-background/90 pb-safe backdrop-blur-2xl"
-      style={{ boxShadow: '0 -10px 32px rgba(14,47,98,0.1)' }}
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-primary/10 bg-card/95 pb-safe backdrop-blur-2xl"
+      style={{ boxShadow: '0 -10px 32px rgba(14,47,98,0.12)' }}
     >
       <div className="mx-auto flex h-[68px] max-w-lg items-center justify-around px-2">
         {items.map((item) => {
@@ -36,15 +36,19 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-col items-center justify-center flex-1 h-full gap-0.5 relative"
+              aria-current={isActive ? "page" : undefined}
+              className="relative flex h-full flex-1 flex-col items-center justify-center gap-0.5"
             >
               <div className="relative flex flex-col items-center gap-0.5 px-3 py-1">
                 {isActive && (
-                  <motion.div
-                    layoutId="nav-active"
-                    className="absolute inset-0 rounded-2xl bg-primary/8"
-                    transition={{ type: "spring", stiffness: 500, damping: 35 }}
-                  />
+                  <>
+                    <motion.div
+                      layoutId="nav-active"
+                      className="absolute inset-0 rounded-2xl bg-primary/10"
+                      transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                    />
+                    <span className="absolute -top-1 h-1 w-5 rounded-full bg-accent" aria-hidden="true" />
+                  </>
                 )}
                 <Icon
                   className={cn(

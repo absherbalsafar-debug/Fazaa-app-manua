@@ -14,7 +14,7 @@ type Mode = "login" | "register";
 type Category = { id: number; name: string; icon?: string | null };
 
 export default function AuthEmail() {
-  const [mode, setMode] = useState<Mode>("login");
+  const [mode, setMode] = useState<Mode>(() => new URLSearchParams(window.location.search).get("mode") === "register" ? "register" : "login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

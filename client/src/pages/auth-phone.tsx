@@ -10,6 +10,7 @@ import { useAuth, apiRequest } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { getFirstLoginPath, getRegistrationRole, type RegistrationRole } from "@/lib/registration";
 import { BrandLogo } from "@/components/brand-logo";
+import { BrowserMultiFormatReader } from "@zxing/browser";
 
 type Step = "phone" | "otp" | "name";
 type Category = { id: number; name: string; icon?: string | null; specialties?: string[] };
@@ -91,7 +92,6 @@ export default function AuthPhone() {
   const [uploadStage, setUploadStage] = useState("");
   const [verificationSuccess, setVerificationSuccess] = useState<{ requestId: number; reviewTime: string } | null>(null);
   const [devOtp, setDevOtp] = useState<string | null>(null);
-  const [otpSent, setOtpSent] = useState(false);
   const [providerSessionReady, setProviderSessionReady] = useState(false);
   const { login } = useAuth();
   const { toast } = useToast();
@@ -135,7 +135,7 @@ export default function AuthPhone() {
       });
       const developmentCode = typeof data.otp === "string" ? data.otp : null;
       setDevOtp(developmentCode);
-      setOtpSent(true);
+      setStep("otp");
       toast(developmentCode
         ? { title: "رمز الاختبار جاهز", description: "الرمز ظاهر على هذه الشاشة؛ لم يتم إرسال رسالة SMS." }
         : { title: "خدمة SMS غير مهيأة", description: "لم يتم ربط مزود SMS بعد، لذلك لن تصل رسالة تحقق حالياً." });
@@ -273,6 +273,37 @@ export default function AuthPhone() {
     }
   }
 
+  async function handleIdentityCamera(event: React.ChangeEvent<HTMLInputElement>) {
+    const selected = event.target.files?.[0];
+    if (!selected) return;
+    if (!selected.type.startsWith("image/")) {
+      toast({ title: "صورة الهوية مطلوبة", description: "استخدم الكاميرا لالتقاط صورة واضحة للهوية.", variant: "destructive" });
+      return;
+    }
+    if (selected.size > 10 * 1024 * 1024) {
+      toast({ title: "الملف كبير", description: "يجب ألا يتجاوز حجم الصورة 10 ميجابايت", variant: "destructive" });
+      return;
+    }
+    setIdFrontFile(selected);
+    const imageUrl = URL.createObjectURL(selected);
+    try {
+      const reader = new BrowserMultiFormatReader();
+      const result = await reader.decodeFromImageUrl(imageUrl);
+      const rawValue = result.getText().replace(/[٠-٩]/g, digit => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)));
+      const nationalIdMatch = rawValue.match(/\d{11}/);
+      if (nationalIdMatch) {
+        setNationalId(nationalIdMatch[0]);
+        toast({ title: "تمت قراءة باركود الهوية", description: `تم إدخال الرقم الوطني تلقائيًا: ${nationalIdMatch[0]}` });
+      } else {
+        toast({ title: "تم التقاط الصورة", description: "لم نستخرج 11 رقمًا من الباركود؛ راجع الرقم الوطني واكتبه يدويًا." });
+      }
+    } catch {
+      toast({ title: "تم التقاط الصورة", description: "قرّب الباركود واجعله واضحًا ثم حاول التصوير مرة أخرى، أو اكتب الرقم الوطني يدويًا." });
+    } finally {
+      URL.revokeObjectURL(imageUrl);
+    }
+  }
+
   const stepNumber = step === "phone" ? "٠١" : step === "otp" ? "٠٢" : "٠٣";
   const stepTitle = step === "phone" ? "أدخل رقم هاتفك" : step === "otp" ? "تحقق من هاتفك" : "أكمل بياناتك";
 
@@ -319,28 +350,10 @@ export default function AuthPhone() {
                 <div className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-primary/10 text-primary shadow-[0_12px_28px_rgba(14,47,98,0.08)]">
                   <Phone className="h-9 w-9" />
                 </div>
-                <div className="space-y-3">
-                  <p className="text-sm font-extrabold text-primary">كيف ستستخدم فزعة؟</p>
-                  <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="نوع الحساب">
-                    {(Object.entries(roleLabels) as [RegistrationRole, (typeof roleLabels)[RegistrationRole]][]).map(([option, copy]) => {
-                      const OptionIcon = option === "provider" ? BriefcaseBusiness : UserRound;
-                      const isSelected = role === option;
-                      return (
-                        <button
-                          key={option}
-                          type="button"
-                          role="radio"
-                          aria-checked={isSelected}
-                          onClick={() => setRole(option)}
-                          className={`rounded-2xl border p-3 text-right transition-colors ${isSelected ? "border-primary bg-primary text-white" : "border-[#d4d9df] bg-white text-primary hover:border-primary/40"}`}
-                        >
-                          <OptionIcon className={`mb-2 h-5 w-5 ${isSelected ? "text-accent" : "text-[#b57920]"}`} />
-                          <span className="block text-xs font-extrabold">{copy.title}</span>
-                          <span className={`mt-1 block text-[10px] leading-4 ${isSelected ? "text-white/75" : "text-[#77766f]"}`}>{copy.description}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                <div className="flex items-center gap-3 rounded-2xl border border-primary/10 bg-white p-3 shadow-sm">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary"><RoleIcon className="h-5 w-5" /></div>
+                  <div className="min-w-0 flex-1"><p className="text-[11px] font-bold text-[#8b897f]">نوع الحساب</p><p className="mt-0.5 text-sm font-extrabold text-primary">{selectedRole.title}</p></div>
+                  <Check className="h-5 w-5 text-[#b57920]" />
                 </div>
                 <Input
                   type="tel"
@@ -353,48 +366,8 @@ export default function AuthPhone() {
                   onKeyDown={e => e.key === "Enter" && sendOtp()}
                 />
                 <Button onClick={sendOtp} disabled={loading} className="h-14 w-full rounded-2xl bg-primary text-base font-extrabold text-primary-foreground shadow-[0_12px_26px_rgba(14,47,98,0.16)] hover:bg-primary/90">
-                  {loading ? <><Loader2 className="ml-2 h-5 w-5 animate-spin" /> جاري إرسال الرمز...</> : <>{otpSent ? "إعادة إرسال الرمز" : "إرسال رمز التحقق"}<ArrowLeft className="mr-2 h-4 w-4" /></>}
+                  {loading ? <><Loader2 className="ml-2 h-5 w-5 animate-spin" /> جاري إرسال الرمز...</> : <>إرسال رمز التحقق<ArrowLeft className="mr-2 h-4 w-4" /></>}
                 </Button>
-                {otpSent && (
-                  <div className="space-y-4 rounded-[26px] border border-primary/10 bg-white p-4 shadow-[0_12px_28px_rgba(14,47,98,0.06)]">
-                    <div>
-                      <p className="mb-2 text-sm text-[#77766f]">أدخل رمز التأكيد هنا لإكمال الدخول</p>
-                      {devOtp && (
-                        <p className="mb-3 rounded-xl border border-accent/30 bg-accent/10 px-3 py-2 text-xs text-[#8a6925]">
-                          رمز التطوير (للاختبار فقط): <span className="font-mono text-base font-bold tracking-widest">{devOtp}</span>
-                        </p>
-                      )}
-                      <Input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="000000"
-                        maxLength={6}
-                        value={otp}
-                        onChange={e => setOtp(e.target.value.replace(/\D/g, ""))}
-                        className="h-14 rounded-2xl border-[#d4d9df] bg-white text-center font-mono text-2xl tracking-[0.5em] shadow-sm focus-visible:ring-primary"
-                        dir="ltr"
-                        disabled={loading}
-                        autoFocus
-                        onKeyDown={e => e.key === "Enter" && verifyOtp()}
-                      />
-                    </div>
-                    <Button onClick={verifyOtp} disabled={loading || otp.length !== 6} className="h-14 w-full rounded-2xl bg-primary text-base font-extrabold text-primary-foreground shadow-[0_12px_26px_rgba(14,47,98,0.16)] hover:bg-primary/90">
-                      {loading ? <><Loader2 className="ml-2 h-5 w-5 animate-spin" /> جاري التحقق...</> : <>تأكيد الدخول<Check className="mr-2 h-4 w-4" /></>}
-                    </Button>
-                    {loading && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center justify-center gap-2 text-xs font-bold text-[#b57920]"
-                        role="status"
-                        aria-live="polite"
-                      >
-                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#b57920]" />
-                        نتحقق من الرمز ونجهز حسابك...
-                      </motion.div>
-                    )}
-                  </div>
-                )}
               </>
             )}
 
@@ -469,7 +442,15 @@ export default function AuthPhone() {
                 {role === "provider" && (
                   <div className="space-y-3 rounded-[26px] border border-primary/10 bg-white p-4 shadow-[0_12px_28px_rgba(14,47,98,0.06)]">
                     <p className="text-sm font-extrabold text-primary">التحقق من الهوية والتواصل</p>
-                    <div className="flex gap-2"><Input inputMode="numeric" maxLength={11} placeholder="الرقم الوطني — 11 رقمًا" value={nationalId} onChange={e => setNationalId(e.target.value.replace(/\D/g, ""))} className="h-12 rounded-xl" dir="ltr" /><div className="flex h-12 shrink-0 items-center gap-1 rounded-xl bg-primary px-3 text-xs font-bold text-white"><Camera className="h-4 w-4 text-accent" /> الرقم الوطني</div></div>
+                    <div className="flex gap-2">
+                      <Input inputMode="numeric" maxLength={11} placeholder="الرقم الوطني — 11 رقمًا" value={nationalId} onChange={e => setNationalId(e.target.value.replace(/\D/g, ""))} className="h-12 rounded-xl" dir="ltr" aria-label="الرقم الوطني" />
+                      <label className="relative flex h-12 shrink-0 cursor-pointer items-center gap-1 rounded-xl bg-primary px-3 text-xs font-bold text-white transition hover:bg-primary/90 active:scale-[.98]" title="تصوير الهوية بالكاميرا">
+                        <Camera className="h-4 w-4 text-accent" />
+                        تصوير الهوية
+                        <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={handleIdentityCamera} aria-label="تصوير الهوية بالكاميرا" />
+                      </label>
+                    </div>
+                    <p className="text-[10px] leading-5 text-[#8b897f]">زر تصوير الهوية يفتح كاميرا الهاتف. إذا ظهرت رسالة إذن الموقع، فهي تخص تحديد موقع العمل وليست الكاميرا.</p>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                       {([['selfie', 'الصورة الشخصية', selfieFile, setSelfieFile], ['front', 'صورة الهوية — الأمام', idFrontFile, setIdFrontFile], ['back', 'صورة الهوية — الخلف', idBackFile, setIdBackFile]] as const).map(([side, label, file, setter]) => (
                         <label key={side} className="group flex min-h-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-[#cfd5dd] bg-[#fbfaf7] px-3 py-3 text-center transition hover:border-primary/50 hover:bg-primary/[0.03]">

@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Star, MapPin, CheckCircle2, Heart, ArrowRight, ShieldCheck, Briefcase, Clock, CalendarDays, MessageCircle, Phone } from "lucide-react";
+import { Star, MapPin, CheckCircle2, Heart, ArrowRight, ShieldCheck, Briefcase, Clock, CalendarDays, MessageCircle, Phone, Loader2, ImageIcon } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { maskPhone, toTelHref, toWhatsAppHref } from "@/lib/contact";
@@ -45,22 +45,46 @@ export default function ProviderDetail() {
   };
 
   if (isLoading) {
-    return <div className="p-8 text-center">جاري التحميل...</div>;
+    return (
+      <div className="min-h-[100dvh] bg-background pb-24" dir="rtl">
+        <div className="h-16 bg-primary/95" />
+        <div className="mx-auto max-w-md space-y-5 px-4 pt-8">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-28 w-28 animate-pulse rounded-full bg-muted" />
+            <div className="h-5 w-40 animate-pulse rounded-full bg-muted" />
+            <div className="h-4 w-56 animate-pulse rounded-full bg-muted" />
+          </div>
+          <div className="grid grid-cols-3 gap-3">{[1, 2, 3].map((item) => <div key={item} className="h-24 animate-pulse rounded-2xl bg-muted" />)}</div>
+          <div className="flex items-center justify-center gap-2 pt-5 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin text-primary" /> جارٍ تجهيز ملف المهني...</div>
+        </div>
+      </div>
+    );
   }
 
-  if (!provider) return <div className="p-8 text-center">لم يتم العثور على المهني</div>;
+  if (!provider) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-background px-6 text-center" dir="rtl">
+        <div className="surface-card max-w-sm p-7">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary"><Briefcase className="h-7 w-7" /></div>
+          <h1 className="text-lg font-black">لم نتمكن من العثور على هذا المهني</h1>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">قد يكون الملف غير متاح مؤقتًا. استعرض بقية المهنيين للعثور على خيار مناسب.</p>
+          <Link href="/providers"><Button className="mt-5 w-full rounded-xl">استعراض المهنيين</Button></Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pb-24 bg-background">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border p-4 flex items-center justify-between">
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-primary/10 bg-primary/95 p-4 text-white shadow-sm backdrop-blur-md">
         <Link href="/providers">
-          <Button variant="ghost" size="icon" className="rounded-full">
+          <Button variant="ghost" size="icon" className="rounded-full text-white hover:bg-white/10 hover:text-white">
             <ArrowRight className="w-5 h-5" />
           </Button>
         </Link>
-        <h1 className="font-bold">الملف الشخصي</h1>
-        <Button variant="ghost" size="icon" className="rounded-full" onClick={toggleFavorite}>
+        <h1 className="font-bold">ملف المهني</h1>
+        <Button variant="ghost" size="icon" className="rounded-full text-white hover:bg-white/10 hover:text-white" onClick={toggleFavorite} aria-label={provider.isFavorited ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}>
           <Heart className={`w-5 h-5 ${provider.isFavorited ? "fill-destructive text-destructive" : ""}`} />
         </Button>
       </div>
@@ -217,7 +241,7 @@ export default function ProviderDetail() {
               <div className="grid grid-cols-3 gap-2">
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="aspect-square rounded-2xl bg-muted/50 border-2 border-dashed border-border flex items-center justify-center">
-                    <span className="text-2xl opacity-20">🖼</span>
+                    <ImageIcon className="h-7 w-7 text-muted-foreground/25" />
                   </div>
                 ))}
               </div>

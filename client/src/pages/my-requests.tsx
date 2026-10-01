@@ -1,10 +1,11 @@
+import { useState } from "react";
 import { useListRequests } from "@/lib/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock, Calendar, CheckCircle2, XCircle, AlertCircle, PlayCircle, Loader2 } from "lucide-react";
+import { Clock, Calendar, CheckCircle2, XCircle, AlertCircle, PlayCircle, Loader2, ListFilter } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 
@@ -19,10 +20,18 @@ const statusConfig = {
 
 export default function MyRequests() {
   const { user } = useAuth();
+  const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
   
   const { data: requests, isLoading } = useListRequests({
     role: user?.role === 'provider' ? 'provider' : 'client'
   }, { query: { queryKey: ['requests', user?.role] } });
+
+  const safeRequests = Array.isArray(requests) ? requests : [];
+  const visibleRequests = safeRequests.filter((request) => {
+    if (filter === "completed") return request.status === "completed";
+    if (filter === "active") return ["pending", "accepted", "in_progress"].includes(request.status);
+    return true;
+  });
 
   return (
     <div className="pb-24 bg-background min-h-screen">
@@ -36,11 +45,27 @@ export default function MyRequests() {
       </div>
 
       <div className="max-w-md mx-auto px-4 mt-6">
+        {!isLoading && safeRequests.length > 0 && (
+          <div className="mb-5 rounded-2xl border border-border bg-card p-2 shadow-sm">
+            <div className="mb-2 flex items-center gap-2 px-2 text-xs font-bold text-muted-foreground"><ListFilter className="h-3.5 w-3.5 text-primary" /> تصفية الطلبات</div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {([
+                ["all", "الكل"],
+                ["active", "النشطة"],
+                ["completed", "المكتملة"],
+              ] as const).map(([value, label]) => (
+                <button key={value} type="button" onClick={() => setFilter(value)} className={`rounded-xl px-2 py-2 text-xs font-bold transition-colors ${filter === value ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
-        ) : !requests || requests.length === 0 ? (
+        ) : safeRequests.length === 0 ? (
           <div className="text-center py-16 flex flex-col items-center">
             <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-4">
               <Calendar className="w-10 h-10 text-muted-foreground opacity-50" />
@@ -50,9 +75,15 @@ export default function MyRequests() {
               {user?.role === 'provider' ? 'لم تتلقى أي طلبات عمل بعد.' : 'لم تقم بطلب أي خدمة بعد.'}
             </p>
           </div>
+        ) : visibleRequests.length === 0 ? (
+          <div className="surface-card px-5 py-12 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground"><Calendar className="h-7 w-7" /></div>
+            <h3 className="font-bold text-lg">لا توجد طلبات في هذا التصنيف</h3>
+            <p className="mt-2 text-sm text-muted-foreground">غيّر التصفية لرؤية بقية طلباتك.</p>
+          </div>
         ) : (
           <div className="space-y-4">
-            {requests.map((request) => {
+            {visibleRequests.map((request) => {
               const config = statusConfig[request.status as keyof typeof statusConfig] ?? statusConfig.pending;
               const StatusIcon = config.icon;
               const isProvider = user?.role === 'provider';

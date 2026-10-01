@@ -1,6 +1,6 @@
 import { ProviderSummary, useTrackProviderContactClick } from "@/lib/api-client-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, MapPin, CheckCircle2, Briefcase } from "lucide-react";
+import { Star, MapPin, CheckCircle2, Briefcase, Zap } from "lucide-react";
 import { MessageCircle, Phone } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
@@ -124,13 +124,13 @@ export function ProviderCard({ provider, compact = false }: ProviderCardProps) {
               </span>
             )}
             {provider.isAvailable && (
-              <span className="text-[10px] font-bold bg-green-50 text-green-700 border border-green-100 px-2 py-0.5 rounded-full">
-                ⚡ متاح الآن
+              <span className="flex items-center gap-1 rounded-full border border-green-100 bg-green-50 px-2 py-0.5 text-[10px] font-bold text-green-700">
+                <Zap className="h-2.5 w-2.5 fill-current" /> متاح الآن
               </span>
             )}
             {provider.distanceKm != null && (
-              <span className="text-[10px] text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
-                📍 {provider.distanceKm.toFixed(1)} كم
+              <span className="flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
+                <MapPin className="h-2.5 w-2.5" /> {provider.distanceKm.toFixed(1)} كم
               </span>
             )}
           </div>
