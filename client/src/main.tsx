@@ -3,7 +3,7 @@ import { setAuthTokenGetter, setBaseUrl } from "@/lib/api-client-react";
 import App from "./App";
 import "./index.css";
 
-setAuthTokenGetter(null);
-setBaseUrl(import.meta.env.VITE_API_BASE_URL || null);
+setAuthTokenGetter(() => localStorage.getItem("fazaah_token"));
+setBaseUrl(import.meta.env.VITE_API_BASE_URL || "https://fazaaadmin-vevsc3us.manus.space");
 
 createRoot(document.getElementById("root")!).render(<App />);
