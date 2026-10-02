@@ -1,37 +1,48 @@
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { TrendingUp, Star, Sparkles, Tag, ChevronLeft, Award } from "lucide-react";
+import { TrendingUp, Star, Sparkles, Tag, ChevronLeft, Award, Zap, Gift, ShieldCheck, Clock3, CheckCircle2 } from "lucide-react";
 import { useListProviders, useListCategories } from "@/lib/api-client-react";
 import { ProviderCard } from "@/components/provider-card";
 
 const OFFERS = [
-  { id: 1, title: "خصم ٢٠٪ على خدمات الكهرباء", sub: "صالح حتى نهاية الشهر", color: "from-yellow-500 to-amber-600", icon: "⚡" },
-  { id: 2, title: "أول طلب مجاناً للمستخدمين الجدد", sub: "للمستخدمين الجدد فقط", color: "from-emerald-600 to-green-700", icon: "🎁" },
-  { id: 3, title: "خدمة تنظيف شاملة بسعر مميز", sub: "احجز الآن واحصل على خصم", color: "from-blue-500 to-blue-700", icon: "🧹" },
+  { id: 1, title: "خصم ٢٠٪ على خدمات الكهرباء", sub: "صالح حتى نهاية الشهر", color: "from-[#f0b046] to-[#c9851d]", icon: Zap },
+  { id: 2, title: "أول طلب مجاناً للمستخدمين الجدد", sub: "للمستخدمين الجدد فقط", color: "from-[#167d68] to-[#0b5a4d]", icon: Gift },
+  { id: 3, title: "خدمة تنظيف شاملة بسعر مميز", sub: "احجز الآن واحصل على عرض خاص", color: "from-[#355e91] to-[#182d53]", icon: Sparkles },
 ];
 
 const BADGES = [
-  { icon: "🏆", label: "الأعلى تقييماً", color: "bg-amber-100 text-amber-800 border-amber-200" },
-  { icon: "⚡", label: "الأسرع استجابة", color: "bg-blue-100 text-blue-800 border-blue-200" },
-  { icon: "✅", label: "موثق رسمياً", color: "bg-green-100 text-green-800 border-green-200" },
-  { icon: "🆕", label: "جديد على المنصة", color: "bg-purple-100 text-purple-800 border-purple-200" },
+  { icon: Award, label: "الأعلى تقييماً", color: "bg-amber-50 text-amber-800 border-amber-200" },
+  { icon: Clock3, label: "الأسرع استجابة", color: "bg-blue-50 text-blue-800 border-blue-200" },
+  { icon: ShieldCheck, label: "موثق رسمياً", color: "bg-green-50 text-green-800 border-green-200" },
+  { icon: CheckCircle2, label: "تجارب موثوقة", color: "bg-purple-50 text-purple-800 border-purple-200" },
 ];
 
 export default function Discover() {
   const { data: categories } = useListCategories();
-  const { data: topRated } = useListProviders({ limit: 6 }, { query: { queryKey: ['discover-top'] } });
-  const { data: newest } = useListProviders({ limit: 4, sortBy: 'experience' }, { query: { queryKey: ['discover-new'] } });
+  const providerRefreshOptions = {
+    refetchInterval: 15000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  } as const;
+  const { data: topRated } = useListProviders({ limit: 6 }, { query: { queryKey: ['discover-top'], ...providerRefreshOptions } });
+  const { data: newest } = useListProviders({ limit: 4, sortBy: 'experience' }, { query: { queryKey: ['discover-new'], ...providerRefreshOptions } });
 
   return (
     <div className="pb-24" dir="rtl">
       {/* Header */}
-      <div className="bg-primary px-4 pt-6 pb-8 rounded-b-[2.5rem]">
-        <div className="max-w-md mx-auto">
-          <div className="flex items-center gap-2 mb-1">
-            <Sparkles className="w-5 h-5 text-accent" />
-            <h1 className="text-xl font-bold text-white">اكتشف</h1>
+      <div className="relative overflow-hidden rounded-b-[2.5rem] bg-primary px-4 pb-9 pt-7 text-white shadow-[0_14px_30px_rgba(24,45,83,0.16)]">
+        <div className="pointer-events-none absolute -left-12 -top-16 h-44 w-44 rounded-full bg-white/5" />
+        <div className="pointer-events-none absolute -bottom-16 -right-8 h-36 w-36 rounded-full bg-accent/15" />
+        <div className="relative mx-auto max-w-md">
+          <div className="mb-1 flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-2xl bg-accent text-primary"><Sparkles className="h-4 w-4" /></span>
+            <div>
+              <p className="text-[10px] font-bold text-white/55">مساحتك لاكتشاف الأفضل</p>
+              <h1 className="text-xl font-black">اكتشف</h1>
+            </div>
           </div>
-          <p className="text-white/60 text-sm">أفضل المهنيين والخدمات في منطقتك</p>
+          <p className="mt-4 max-w-[280px] text-sm leading-6 text-white/70">أفضل المهنيين والخدمات القريبة منك، مرتبة لتصل إلى قرارك بثقة.</p>
         </div>
       </div>
 
@@ -45,16 +56,20 @@ export default function Discover() {
             </h2>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-            {OFFERS.map((offer) => (
+            {OFFERS.map((offer) => {
+              const OfferIcon = offer.icon;
+              return (
               <div
                 key={offer.id}
-                className={`min-w-[220px] rounded-2xl bg-gradient-to-br ${offer.color} p-4 text-white shrink-0`}
+                className={`relative min-w-[228px] shrink-0 overflow-hidden rounded-[22px] bg-gradient-to-br ${offer.color} p-4 text-white shadow-[0_10px_20px_rgba(14,47,98,0.12)]`}
               >
-                <div className="text-3xl mb-2">{offer.icon}</div>
-                <p className="font-bold text-sm leading-tight mb-1">{offer.title}</p>
-                <p className="text-white/70 text-xs">{offer.sub}</p>
+                <div className="absolute -left-4 -top-7 h-24 w-24 rounded-full bg-white/10" />
+                <div className="relative mb-4 flex h-9 w-9 items-center justify-center rounded-2xl bg-white/15"><OfferIcon className="h-5 w-5" /></div>
+                <p className="relative mb-1 text-sm font-black leading-tight">{offer.title}</p>
+                <p className="relative text-xs text-white/70">{offer.sub}</p>
               </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
@@ -65,12 +80,15 @@ export default function Discover() {
             شارات التميز
           </h2>
           <div className="grid grid-cols-2 gap-2">
-            {BADGES.map((b) => (
-              <div key={b.label} className={`flex items-center gap-2 rounded-xl px-3 py-2.5 border text-sm font-medium ${b.color}`}>
-                <span>{b.icon}</span>
+            {BADGES.map((b) => {
+              const BadgeIcon = b.icon;
+              return (
+              <div key={b.label} className={`flex items-center gap-2 rounded-2xl border px-3 py-3 text-xs font-extrabold ${b.color}`}>
+                <BadgeIcon className="h-4 w-4" />
                 {b.label}
               </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
