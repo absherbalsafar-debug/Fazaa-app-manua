@@ -19,8 +19,14 @@ const BADGES = [
 
 export default function Discover() {
   const { data: categories } = useListCategories();
-  const { data: topRated } = useListProviders({ limit: 6 }, { query: { queryKey: ['discover-top'] } });
-  const { data: newest } = useListProviders({ limit: 4, sortBy: 'experience' }, { query: { queryKey: ['discover-new'] } });
+  const providerRefreshOptions = {
+    refetchInterval: 15000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  } as const;
+  const { data: topRated } = useListProviders({ limit: 6 }, { query: { queryKey: ['discover-top'], ...providerRefreshOptions } });
+  const { data: newest } = useListProviders({ limit: 4, sortBy: 'experience' }, { query: { queryKey: ['discover-new'], ...providerRefreshOptions } });
 
   return (
     <div className="pb-24" dir="rtl">

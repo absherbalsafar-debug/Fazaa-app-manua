@@ -27,7 +27,14 @@ export default function Providers() {
     search: search || undefined,
     specialty: filterSpecialty || undefined,
     city: filterCity || undefined,
-  }, { query: { queryKey: ['providers', activeCategory, search, filterSpecialty, filterCity, filterAvailable] } });
+  }, { query: {
+    queryKey: ['providers', activeCategory, search, filterSpecialty, filterCity, filterAvailable, filterVerified],
+    // تحديث دوري خفيف حتى يظهر اعتماد لوحة التحكم للعملاء دون إعادة فتح التطبيق.
+    refetchInterval: 15000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  } });
 
   const providers = providersPage?.providers ?? [];
   const filtered = providers
