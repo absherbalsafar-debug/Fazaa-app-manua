@@ -4,7 +4,7 @@ import { getDb } from "./db";
 import {
   phoneAuthSessions,
   phoneUsers,
-  providerVerificationDecisions,
+  providerVerificationReviewHistory,
   providerVerificationDocuments,
   providerVerificationRequests,
 } from "../drizzle/schema";
@@ -77,9 +77,9 @@ export function registerProviderVerificationRoutes(app: Express) {
         .from(providerVerificationDocuments)
         .where(eq(providerVerificationDocuments.requestId, request.id));
       const decisions = await db.select()
-        .from(providerVerificationDecisions)
-        .where(eq(providerVerificationDecisions.requestId, request.id))
-        .orderBy(desc(providerVerificationDecisions.createdAt));
+        .from(providerVerificationReviewHistory)
+        .where(eq(providerVerificationReviewHistory.requestId, request.id))
+        .orderBy(desc(providerVerificationReviewHistory.createdAt));
       return {
         id: request.id,
         status: request.status,
@@ -107,10 +107,18 @@ export function registerProviderVerificationRoutes(app: Express) {
     if (!request) return jsonError(res, 404, "طلب الاعتماد غير موجود");
     const note = typeof body.note === "string" ? body.note.trim().slice(0, 1000) : null;
     await db.update(providerVerificationRequests).set({ status, rejectionReason: status === "rejected" ? note : null, reviewedAt: status === "pending" ? null : new Date(), updatedAt: new Date() }).where(eq(providerVerificationRequests.id, id));
-    if ((status === "approved" || status === "rejected") && admin.openId) {
-      await db.insert(providerVerificationDecisions).values({ requestId: id, adminOpenId: admin.openId, status, note });
+    if (admin.openId) {
+      await db.insert(providerVerificationReviewHistory).values({
+        requestId: id,
+        adminOpenId: admin.openId,
+        adminName: admin.name ?? null,
+        status,
+        rejectionReason: status === "rejected" ? note : null,
+      });
     }
-    await db.update(phoneUsers).set({ providerAccountStatus: status === "approved" ? "approved" : "pending" }).where(eq(phoneUsers.id, request.providerId));
+    await db.update(phoneUsers)
+      .set({ providerAccountStatus: status === "approved" ? "approved" : "pending", updatedAt: new Date() })
+      .where(eq(phoneUsers.id, request.providerId));
     return res.json({ success: true, status });
   });
 
