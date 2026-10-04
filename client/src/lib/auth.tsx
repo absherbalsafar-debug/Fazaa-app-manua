@@ -9,6 +9,7 @@ export interface AuthUser {
   status: string;
   avatarUrl: string | null;
   phoneVerified: boolean;
+  hasPin?: boolean;
   emailVerified: boolean;
   city: string | null;
   createdAt: string;

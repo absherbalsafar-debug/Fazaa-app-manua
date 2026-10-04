@@ -55,6 +55,10 @@ export const phoneUsers = pgTable("phone_users", {
   subscriptionExpiresAt: timestamp("subscriptionExpiresAt", { withTimezone: true }),
   termsAcceptedAt: timestamp("termsAcceptedAt", { withTimezone: true }),
   phoneVerified: integer("phoneVerified").default(1).notNull(),
+  pinHash: varchar("pinHash", { length: 256 }),
+  pinSetAt: timestamp("pinSetAt", { withTimezone: true }),
+  pinFailedAttempts: integer("pinFailedAttempts").default(0).notNull(),
+  pinLockedUntil: timestamp("pinLockedUntil", { withTimezone: true }),
   createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow().notNull(),
 });

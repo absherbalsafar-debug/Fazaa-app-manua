@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import type { Express, Request, Response } from "express";
 import { eq } from "drizzle-orm";
 import { getDb } from "./db";
@@ -31,6 +31,10 @@ type PhoneUser = {
   subscriptionPlan: "monthly" | "yearly" | null;
   subscriptionExpiresAt: string | null;
   termsAcceptedAt: string | null;
+  hasPin?: boolean;
+  pinHash?: string | null;
+  pinFailedAttempts?: number;
+  pinLockedUntil?: number | null;
   createdAt: string;
 };
 type OtpRecord = { codeHash: string; expiresAt: number; attempts: number };
@@ -62,6 +66,7 @@ const localSessions = new Map<string, { user: PhoneUser; expiresAt: number }>();
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const PIN_LOCK_MS = 15 * 60 * 1000;
 
 export function normalizePhone(value: string): string {
   const compact = value.trim().replace(/[\s()-]/g, "");
@@ -73,6 +78,20 @@ export function normalizePhone(value: string): string {
 
 function hashCode(code: string) {
   return createHash("sha256").update(code).digest("hex");
+}
+
+function hashPin(pin: string) {
+  const salt = randomBytes(16).toString("hex");
+  const derived = scryptSync(pin, salt, 64).toString("hex");
+  return `${salt}:${derived}`;
+}
+
+function verifyPin(pin: string, stored: string) {
+  const [salt, expectedHex] = stored.split(":");
+  if (!salt || !expectedHex || expectedHex.length !== 128) return false;
+  const actual = scryptSync(pin, salt, 64);
+  const expected = Buffer.from(expectedHex, "hex");
+  return expected.length === actual.length && timingSafeEqual(actual, expected);
 }
 
 function jsonError(res: Response, status: number, error: string) {
@@ -110,6 +129,7 @@ function toApiUser(user: typeof phoneUsers.$inferSelect): PhoneUser {
     subscriptionPlan: user.subscriptionPlan,
     subscriptionExpiresAt: user.subscriptionExpiresAt?.toISOString() ?? null,
     termsAcceptedAt: user.termsAcceptedAt?.toISOString() ?? null,
+    hasPin: Boolean(user.pinHash),
     createdAt: user.createdAt.toISOString(),
   };
 }
@@ -123,6 +143,80 @@ async function getAuthDb() {
 }
 
 export function registerPhoneAuthRoutes(app: Express) {
+  app.post("/api/auth/login-pin", async (req, res) => {
+    const body = readBody(req);
+    const phone = normalizePhone(typeof body.phone === "string" ? body.phone : "");
+    const pin = typeof body.pin === "string" ? body.pin.trim() : "";
+    const requestedRole = parseRegistrationRole(body.role);
+    if (!/^\+\d{8,15}$/.test(phone) || !/^\d{4}$/.test(pin)) return jsonError(res, 400, "أدخل رقم الهاتف والرمز السري المكون من 4 أرقام");
+    const db = await getAuthDb();
+    if (db) {
+      const existing = (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, phone)).limit(1))[0];
+      if (!existing) return jsonError(res, 401, "رقم الهاتف أو الرمز السري غير صحيح");
+      const conflict = accountConflictMessage(existing.role, requestedRole, "login");
+      if (conflict) return jsonError(res, 409, conflict);
+      if (existing.status !== "active") return jsonError(res, 403, "هذا الحساب موقوف حالياً");
+      if (existing.pinLockedUntil && existing.pinLockedUntil.getTime() > Date.now()) return jsonError(res, 429, "تم إيقاف الرمز مؤقتاً بعد محاولات خاطئة. استخدم رمز التحقق أو انتظر 15 دقيقة");
+      if (!existing.pinHash) return jsonError(res, 409, "لم يتم إعداد رمز سري لهذا الحساب. استخدم رمز التحقق لإعداده أولاً");
+      if (!verifyPin(pin, existing.pinHash)) {
+        const attempts = existing.pinFailedAttempts + 1;
+        await db.update(phoneUsers).set({ pinFailedAttempts: attempts, pinLockedUntil: attempts >= 5 ? new Date(Date.now() + PIN_LOCK_MS) : null }).where(eq(phoneUsers.phone, phone));
+        return jsonError(res, attempts >= 5 ? 429 : 401, attempts >= 5 ? "تم إيقاف الرمز مؤقتاً بعد 5 محاولات خاطئة" : "رقم الهاتف أو الرمز السري غير صحيح");
+      }
+      const token = `phone_${randomUUID()}`;
+      await db.update(phoneUsers).set({ pinFailedAttempts: 0, pinLockedUntil: null }).where(eq(phoneUsers.phone, phone));
+      await db.insert(phoneAuthSessions).values({ token, phone, expiresAt: new Date(Date.now() + SESSION_TTL_MS) });
+      return res.json({ token, user: toApiUser(existing), needsRegistration: false, loginMethod: "pin" });
+    }
+    if (!isTestFallback()) return jsonError(res, 503, "خدمة قاعدة البيانات غير متاحة حالياً");
+    const existing = localUsers.get(phone);
+    if (!existing) return jsonError(res, 401, "رقم الهاتف أو الرمز السري غير صحيح");
+    const conflict = accountConflictMessage(existing.role, requestedRole, "login");
+    if (conflict) return jsonError(res, 409, conflict);
+    if (!existing.pinHash) return jsonError(res, 409, "لم يتم إعداد رمز سري لهذا الحساب. استخدم رمز التحقق لإعداده أولاً");
+    if (existing.pinLockedUntil && existing.pinLockedUntil > Date.now()) return jsonError(res, 429, "تم إيقاف الرمز مؤقتاً بعد محاولات خاطئة");
+    if (!verifyPin(pin, existing.pinHash)) {
+      const attempts = (existing.pinFailedAttempts ?? 0) + 1;
+      existing.pinFailedAttempts = attempts;
+      if (attempts >= 5) existing.pinLockedUntil = Date.now() + PIN_LOCK_MS;
+      return jsonError(res, attempts >= 5 ? 429 : 401, "رقم الهاتف أو الرمز السري غير صحيح");
+    }
+    existing.pinFailedAttempts = 0;
+    existing.pinLockedUntil = null;
+    const token = `phone_${randomUUID()}`;
+    localSessions.set(token, { user: existing, expiresAt: Date.now() + SESSION_TTL_MS });
+    return res.json({ token, user: existing, needsRegistration: false, loginMethod: "pin" });
+  });
+
+  app.post("/api/auth/set-pin", async (req, res) => {
+    const body = readBody(req);
+    const pin = typeof body.pin === "string" ? body.pin.trim() : "";
+    const currentPin = typeof body.currentPin === "string" ? body.currentPin.trim() : "";
+    if (!/^\d{4}$/.test(pin)) return jsonError(res, 400, "يجب أن يتكون الرمز السري من 4 أرقام");
+    const token = (req.headers.authorization ?? "").startsWith("Bearer ") ? (req.headers.authorization ?? "").slice(7).trim() : "";
+    const db = await getAuthDb();
+    if (db) {
+      const session = (await db.select().from(phoneAuthSessions).where(eq(phoneAuthSessions.token, token)).limit(1))[0];
+      if (!session || session.expiresAt.getTime() <= Date.now()) return jsonError(res, 401, "تحتاج إلى تسجيل الدخول عبر رمز التحقق أولاً");
+      const current = (await db.select().from(phoneUsers).where(eq(phoneUsers.phone, session.phone)).limit(1))[0];
+      if (!current) return jsonError(res, 404, "المستخدم غير موجود");
+      if (current.pinHash && (!/^\d{4}$/.test(currentPin) || !verifyPin(currentPin, current.pinHash))) return jsonError(res, 401, "الرمز السري الحالي غير صحيح");
+      const updated = (await db.update(phoneUsers).set({ pinHash: hashPin(pin), pinSetAt: new Date(), pinFailedAttempts: 0, pinLockedUntil: null }).where(eq(phoneUsers.phone, session.phone)).returning())[0];
+      return res.json({ success: true, user: toApiUser(updated ?? current) });
+    }
+    if (!isTestFallback()) return jsonError(res, 503, "خدمة قاعدة البيانات غير متاحة حالياً");
+    const session = localSessions.get(token);
+    if (!session || session.expiresAt <= Date.now()) return jsonError(res, 401, "تحتاج إلى تسجيل الدخول عبر رمز التحقق أولاً");
+    const current = session.user;
+    if (current.pinHash && (!/^\d{4}$/.test(currentPin) || !verifyPin(currentPin, current.pinHash))) return jsonError(res, 401, "الرمز السري الحالي غير صحيح");
+    current.pinHash = hashPin(pin);
+    current.hasPin = true;
+    current.pinFailedAttempts = 0;
+    current.pinLockedUntil = null;
+    localUsers.set(current.phone, current);
+    return res.json({ success: true, user: current });
+  });
+
   app.post("/api/auth/send-otp", async (req, res) => {
     const body = readBody(req);
     const rawPhone = typeof body.phone === "string" ? body.phone : "";

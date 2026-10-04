@@ -377,7 +377,7 @@ class MainActivity : ComponentActivity() {
                             if (key === 'fazaah_token' && window.FazaaNativePushToken) window.FazaaRegisterPushToken(window.FazaaNativePushToken);
                           };
                           if (localStorage.getItem('fazaah_token') && window.FazaaNativePushToken) window.FazaaRegisterPushToken(window.FazaaNativePushToken);
-                          if (location.pathname === '/welcome') window.FazaaNativeLogout?.markWelcomeSeen?.();
+                          if (location.pathname === '/welcome' || localStorage.getItem('fazaah_onboarding_completed_v1') === 'true') window.FazaaNativeLogout?.markWelcomeSeen?.();
                         })();
                     """.trimIndent(), null)
                     hideStartupOverlay()
@@ -659,8 +659,12 @@ class MainActivity : ComponentActivity() {
         webView.evaluateJavascript("""
             (function() {
               const theme = localStorage.getItem('fazaah-theme');
+              const onboardingCompleted = localStorage.getItem('fazaah_onboarding_completed_v1');
+              const onboardingRole = localStorage.getItem('fazaah_onboarding_role_v1');
               Object.keys(localStorage).forEach((key) => localStorage.removeItem(key));
               if (theme) localStorage.setItem('fazaah-theme', theme);
+              if (onboardingCompleted) localStorage.setItem('fazaah_onboarding_completed_v1', onboardingCompleted);
+              if (onboardingRole) localStorage.setItem('fazaah_onboarding_role_v1', onboardingRole);
               sessionStorage.clear();
             })();
         """.trimIndent(), null)

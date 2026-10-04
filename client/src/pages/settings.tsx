@@ -1,16 +1,21 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
-import { ArrowRight, Moon, Sun, Bell, Lock, Trash2, LogOut, HelpCircle, Info, Shield, Globe, ChevronLeft, ShieldCheck, UserRound, Monitor, FileText, ScrollText } from "lucide-react";
-import { useAuth } from "@/lib/auth";
+import { ArrowRight, Moon, Sun, Bell, Lock, Trash2, LogOut, HelpCircle, Info, Shield, Globe, ChevronLeft, ShieldCheck, UserRound, Monitor, FileText, ScrollText, KeyRound, Loader2 } from "lucide-react";
+import { apiRequest, useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/components/theme-provider";
 
 type ThemeOption = "system" | "light" | "dark";
 
 export default function Settings() {
-  const { logout, user } = useAuth();
+  const { logout, user, updateUser } = useAuth();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const [, navigate] = useLocation();
+  const [pinOpen, setPinOpen] = useState(false);
+  const [pin, setPin] = useState("");
+  const [currentPin, setCurrentPin] = useState("");
+  const [pinLoading, setPinLoading] = useState(false);
 
   function handleLogout() {
     const nativeBridge = window as unknown as { FazaaNativeLogout?: { requestLogout: () => void } };
@@ -22,6 +27,39 @@ export default function Settings() {
     navigate('/welcome');
     toast({ title: "تم تسجيل الخروج" });
   }
+
+  function handlePhoneVerification() {
+    if (user?.phoneVerified) {
+      toast({
+        title: "رقم الهاتف موثق بالفعل",
+        description: "تم التحقق من رقمك عند إنشاء الحساب. لا حاجة لإعادة تسجيل الدخول أو التسجيل.",
+      });
+      return;
+    }
+
+    toast({
+      title: "توثيق الهاتف غير متاح حالياً",
+      description: "لم يتم ربط مزود SMS بعد. ستبقى جلستك محفوظة ولن نخرجك من التطبيق.",
+      variant: "destructive",
+    });
+  }
+
+  async function savePin() {
+    if (!/^\d{4}$/.test(pin)) {
+      toast({ title: "الرمز غير صحيح", description: "أدخل رمزاً سرياً مكوناً من 4 أرقام", variant: "destructive" });
+      return;
+    }
+    setPinLoading(true);
+    try {
+      const data = await apiRequest("/auth/set-pin", { method: "POST", body: JSON.stringify({ pin, currentPin: currentPin || undefined }) });
+      updateUser(data.user);
+      setPin(""); setCurrentPin(""); setPinOpen(false);
+      toast({ title: user?.hasPin ? "تم تغيير الرمز السري" : "تم إعداد الرمز السري", description: "يمكنك الآن الدخول برقم الهاتف والرمز المكون من 4 أرقام." });
+    } catch (error: any) {
+      toast({ title: "تعذر حفظ الرمز", description: error.message, variant: "destructive" });
+    } finally { setPinLoading(false); }
+  }
+
 
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <div className="mb-6">
@@ -142,6 +180,13 @@ export default function Settings() {
         </Section>
 
         <Section title="الأمان والخصوصية">
+          <Item icon={KeyRound} label="رمز الدخول السري" sub={user?.hasPin ? "مفعّل — يمكنك تغييره" : "إعداد رمز من 4 أرقام للدخول السريع"} onClick={() => setPinOpen(value => !value)} />
+          {pinOpen && <div className="space-y-3 border-t border-border/60 bg-muted/20 p-4">
+            {user?.hasPin && <input value={currentPin} onChange={event => setCurrentPin(event.target.value.replace(/\D/g, "").slice(0, 4))} inputMode="numeric" type="password" placeholder="الرمز الحالي" className="h-12 w-full rounded-xl border border-border bg-background px-4 text-center tracking-[0.5em]" />}
+            <input value={pin} onChange={event => setPin(event.target.value.replace(/\D/g, "").slice(0, 4))} inputMode="numeric" type="password" placeholder="الرمز الجديد من 4 أرقام" className="h-12 w-full rounded-xl border border-border bg-background px-4 text-center tracking-[0.5em]" />
+            <button type="button" disabled={pinLoading} onClick={savePin} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary font-bold text-primary-foreground">{pinLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "حفظ الرمز السري"}</button>
+            <p className="text-center text-[11px] text-muted-foreground">يمكنك استخدام رمز التحقق OTP لاستعادة الدخول إذا نسيت الرمز.</p>
+          </div>}
           <Item icon={Lock} label="تغيير كلمة المرور" onClick={() => navigate('/auth/forgot-password')} />
           <Item icon={Shield} label="توثيق رقم الهاتف" sub={user?.phoneVerified ? "موثق ✓" : "غير موثق"} onClick={() => navigate('/auth/phone')} />
           <Item icon={FileText} label="سياسة الخصوصية" sub="كيف نحمي بياناتك ونستخدمها" onClick={() => navigate('/privacy')} />

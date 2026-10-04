@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, BriefcaseBusiness, Camera, Check, CheckCircle2, ChevronDown, FileText, ImagePlus, Loader2, MessageCircle, Phone, ShieldCheck, Upload, UserRound, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, BriefcaseBusiness, Camera, Check, CheckCircle2, ChevronDown, FileText, ImagePlus, KeyRound, Loader2, MessageCircle, Phone, ShieldCheck, Upload, UserRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -67,6 +67,7 @@ async function prepareDocument(file: File): Promise<{ dataBase64: string; conten
 export default function AuthPhone() {
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
+  const [pin, setPin] = useState("");
   const [otp, setOtp] = useState("");
   const [name, setName] = useState("");
   const [customerLocation, setCustomerLocation] = useState<CustomerLocation | null>(null);
@@ -142,6 +143,21 @@ export default function AuthPhone() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function loginWithPin() {
+    if (phone.trim().length < 7 || !/^\d{4}$/.test(pin)) {
+      toast({ title: "بيانات الدخول غير مكتملة", description: "أدخل رقم الهاتف والرمز السري المكون من 4 أرقام", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const data = await apiRequest("/auth/login-pin", { method: "POST", body: JSON.stringify({ phone: phone.trim(), pin, role }) });
+      login(data.token, role === "provider" ? { ...data.user, role: "provider" } : data.user);
+      navigate(getFirstLoginPath(role));
+    } catch (err: any) {
+      toast({ title: "تعذر تسجيل الدخول", description: err.message, variant: "destructive" });
+    } finally { setLoading(false); }
   }
 
   async function verifyOtp() {
@@ -392,6 +408,13 @@ export default function AuthPhone() {
                     )}
                   </div>
                 )}
+                {mode === "login" && <div className="space-y-3 rounded-2xl border border-primary/10 bg-white p-4 shadow-sm">
+                  <div className="flex items-center gap-2 text-sm font-bold text-primary"><KeyRound className="h-4 w-4 text-[#b57920]" /> الدخول السريع بالرمز السري</div>
+                  <Input type="password" inputMode="numeric" maxLength={4} placeholder="أدخل الرمز السري من 4 أرقام" value={pin} onChange={event => setPin(event.target.value.replace(/\D/g, "").slice(0, 4))} className="h-12 rounded-xl border-[#d4d9df] bg-white text-center text-lg tracking-[0.5em]" dir="ltr" disabled={loading} onKeyDown={event => event.key === "Enter" && loginWithPin()} />
+                  <Button onClick={loginWithPin} disabled={loading} variant="outline" className="h-12 w-full rounded-xl border-primary/20 text-primary">دخول بالرمز السري</Button>
+                  <p className="text-center text-[11px] text-[#77766f]">نسيت الرمز؟ استخدم رمز التحقق ثم اضبط رمزاً جديداً من الإعدادات.</p>
+                </div>}
+
               </>
             )}
 

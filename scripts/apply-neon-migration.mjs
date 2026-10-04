@@ -9,10 +9,16 @@ try {
   const providerSql = await readFile(new URL("../drizzle/0005_provider_onboarding.sql", import.meta.url), "utf8");
   const appFlowsSql = await readFile(new URL("../drizzle/0006_core_app_flows.sql", import.meta.url), "utf8");
   const pushNotificationsSql = await readFile(new URL("../drizzle/0007_push_notifications.sql", import.meta.url), "utf8");
+  const providerCategoryChangeSql = await readFile(new URL("../drizzle/0011_provider_category_change_requests.sql", import.meta.url), "utf8");
+  const phonePinSql = await readFile(new URL("../drizzle/0012_phone_pin_login.sql", import.meta.url), "utf8");
+
   await pool.query(baseSql);
   await pool.query(providerSql);
   await pool.query(appFlowsSql);
   await pool.query(pushNotificationsSql);
+  await pool.query(providerCategoryChangeSql);
+  await pool.query(phonePinSql);
+
   const result = await pool.query(`
     SELECT table_name
     FROM information_schema.tables
