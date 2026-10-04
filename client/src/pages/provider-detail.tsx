@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Star, MapPin, CheckCircle2, Heart, ArrowRight, ShieldCheck, Briefcase, Clock, CalendarDays, MessageCircle, Phone } from "lucide-react";
+import { Star, MapPin, CheckCircle2, Heart, ArrowRight, ShieldCheck, Briefcase, Clock, MessageCircle, Phone } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { maskPhone, toTelHref, toWhatsAppHref } from "@/lib/contact";
@@ -143,12 +143,6 @@ export default function ProviderDetail() {
 
         {/* Actions */}
         <div className="flex gap-3 mt-8">
-          <Link href={`/request/new?providerId=${provider.id}`} className="flex-1">
-            <Button className="w-full h-12 text-base font-bold rounded-xl bg-accent text-primary hover:bg-accent/90">
-              <CalendarDays className="w-5 h-5 ml-2" />
-              طلب خدمة
-            </Button>
-          </Link>
           {provider.phone && (
             <a href={toTelHref(provider.phone)} onClick={() => trackContactClick.mutate({ id, data: { kind: "call" } })} className="flex-1" aria-label={`الاتصال بالمهني ${maskPhone(provider.phone)}`}>
               <Button variant="outline" className="w-full h-12 rounded-xl border-primary text-primary hover:bg-primary/5">

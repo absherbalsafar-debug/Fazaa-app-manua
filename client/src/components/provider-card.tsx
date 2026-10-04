@@ -143,11 +143,6 @@ export function ProviderCard({ provider, compact = false }: ProviderCardProps) {
         {provider.whatsapp && <span dir="ltr">{maskPhone(provider.whatsapp)}</span>}
       </div>
       <div className="flex border-t border-border divide-x divide-border rtl:divide-x-reverse">
-        <Link href={`/request/new?providerId=${provider.id}`} className="flex-1">
-          <button className="w-full py-2.5 text-xs font-bold text-primary hover:bg-primary/5 transition-colors flex items-center justify-center gap-1.5">
-            طلب خدمة
-          </button>
-        </Link>
         <a
           href={toTelHref(provider.phone)}
           className="flex-1"

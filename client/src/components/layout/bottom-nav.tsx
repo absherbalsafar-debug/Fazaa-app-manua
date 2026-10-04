@@ -19,8 +19,8 @@ export function BottomNav() {
   ] : [
     { href: "/", icon: Home, label: "الرئيسية" },
     { href: "/providers", icon: Search, label: "استعرض" },
-    { href: "/my-requests", icon: ClipboardList, label: "طلباتي" },
     { href: "/profile", icon: User, label: "حسابي" },
+    { href: "/settings", icon: Settings2, label: "الإعدادات" },
   ];
 
   return (
