@@ -25,10 +25,10 @@ export function BrandLogo({
 
   return (
     <img
-      src="/assets/fazaah-logo.png"
+      src="/assets/fazaah-logo-192.webp"
       alt={alt}
-      width={964}
-      height={1172}
+      width={192}
+      height={233}
       className={className}
       loading="eager"
       decoding="async"

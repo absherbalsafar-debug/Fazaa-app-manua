@@ -10,7 +10,6 @@ import { useAuth, apiRequest } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { getFirstLoginPath, getRegistrationRole, type RegistrationRole } from "@/lib/registration";
 import { BrandLogo } from "@/components/brand-logo";
-import { BrowserMultiFormatReader } from "@zxing/browser";
 
 type Step = "phone" | "otp" | "name";
 type Category = { id: number; name: string; icon?: string | null; specialties?: string[] };
@@ -287,6 +286,7 @@ export default function AuthPhone() {
     setIdFrontFile(selected);
     const imageUrl = URL.createObjectURL(selected);
     try {
+      const { BrowserMultiFormatReader } = await import("@zxing/browser");
       const reader = new BrowserMultiFormatReader();
       const result = await reader.decodeFromImageUrl(imageUrl);
       const rawValue = result.getText().replace(/[٠-٩]/g, digit => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)));
