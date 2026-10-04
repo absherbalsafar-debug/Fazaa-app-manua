@@ -10,11 +10,15 @@ try {
   const appFlowsSql = await readFile(new URL("../drizzle/0006_core_app_flows.sql", import.meta.url), "utf8");
   const pushNotificationsSql = await readFile(new URL("../drizzle/0007_push_notifications.sql", import.meta.url), "utf8");
   const providerCategoryChangeSql = await readFile(new URL("../drizzle/0011_provider_category_change_requests.sql", import.meta.url), "utf8");
+  const googleAuthSql = await readFile(new URL("../drizzle/0009_google_client_auth.sql", import.meta.url), "utf8");
+  const emailPasswordSql = await readFile(new URL("../drizzle/0010_email_password_auth.sql", import.meta.url), "utf8");
   await pool.query(baseSql);
   await pool.query(providerSql);
   await pool.query(appFlowsSql);
   await pool.query(pushNotificationsSql);
   await pool.query(providerCategoryChangeSql);
+  await pool.query(googleAuthSql);
+  await pool.query(emailPasswordSql);
   const result = await pool.query(`
     SELECT table_name
     FROM information_schema.tables

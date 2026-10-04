@@ -189,7 +189,7 @@ export default function Welcome() {
   const skipOnboarding = () => {
     completeOnboarding("client");
     setIsLaunchingAuth(true);
-    window.setTimeout(() => navigate("/auth/phone?mode=register&role=client"), 520);
+    window.setTimeout(() => navigate("/login"), 520);
   };
 
   return (
@@ -207,7 +207,7 @@ export default function Welcome() {
                 <div className="mt-5 w-full"><PhonePreview /></div><FeatureBenefits />
               </div>
               <div className="relative z-10 mt-5 space-y-4">
-                <Button type="button" onClick={() => setStep(1)} className="group h-14 w-full justify-between rounded-2xl bg-[#f0b046] px-5 text-base font-black text-[#182d53] shadow-[0_14px_28px_rgba(245,185,22,0.24)] hover:bg-[#ffca3a]"><span>لنبدأ</span><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#182d53]/10"><ChevronLeft className="h-5 w-5" /></span></Button>
+                <Button type="button" onClick={skipOnboarding} className="group h-14 w-full justify-between rounded-2xl bg-[#f0b046] px-5 text-base font-black text-[#182d53] shadow-[0_14px_28px_rgba(245,185,22,0.24)] hover:bg-[#ffca3a]"><span>لنبدأ</span><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#182d53]/10"><ChevronLeft className="h-5 w-5" /></span></Button>
                 <ProgressDots active={0} />
                 <button type="button" onClick={skipOnboarding} className="block w-full text-center text-xs font-semibold text-white/70 hover:text-white">تخطي</button>
               </div>

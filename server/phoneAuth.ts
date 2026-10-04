@@ -1,4 +1,4 @@
-import { createHash, randomInt, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomInt, randomUUID, scryptSync } from "node:crypto";
 import type { Express, Request, Response } from "express";
 import { eq } from "drizzle-orm";
 import { getDb } from "./db";
@@ -73,6 +73,11 @@ export function normalizePhone(value: string): string {
 
 function hashCode(code: string) {
   return createHash("sha256").update(code).digest("hex");
+}
+
+function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  return `${salt}:${scryptSync(password, salt, 64).toString("hex")}`;
 }
 
 function jsonError(res: Response, status: number, error: string) {
@@ -240,6 +245,7 @@ export function registerPhoneAuthRoutes(app: Express) {
         await db.insert(phoneUsers).values({
           phone,
           name: typeof body.name === "string" && body.name.trim() ? body.name.trim() : "مستخدم فزعة",
+          passwordHash: typeof body.password === "string" && body.password.length >= 6 ? hashPassword(body.password) : null,
           role,
           city: typeof body.city === "string" ? body.city : null,
           country: typeof body.country === "string" ? body.country : null,

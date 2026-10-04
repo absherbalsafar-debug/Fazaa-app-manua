@@ -30,9 +30,10 @@ export type InsertUser = typeof users.$inferInsert;
 
 export const phoneUsers = pgTable("phone_users", {
   id: serial("id").primaryKey(),
-  phone: varchar("phone", { length: 20 }).notNull().unique(),
+  phone: varchar("phone", { length: 320 }).notNull().unique(),
   name: varchar("name", { length: 160 }).notNull(),
   email: varchar("email", { length: 320 }),
+  passwordHash: varchar("passwordHash", { length: 255 }),
   googleId: varchar("googleId", { length: 255 }).unique(),
   avatarUrl: varchar("avatarUrl", { length: 512 }),
   emailVerified: integer("emailVerified").default(0).notNull(),

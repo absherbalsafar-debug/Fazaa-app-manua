@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, BriefcaseBusiness, Camera, Check, CheckCircle2, ChevronDown, FileText, ImagePlus, Loader2, MessageCircle, Phone, ShieldCheck, Upload, UserRound, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, BriefcaseBusiness, Camera, Check, CheckCircle2, ChevronDown, Eye, EyeOff, FileText, ImagePlus, Loader2, LockKeyhole, MessageCircle, Phone, ShieldCheck, Upload, UserRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -69,6 +69,8 @@ export default function AuthPhone() {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [customerLocation, setCustomerLocation] = useState<CustomerLocation | null>(null);
   const [categoryId, setCategoryId] = useState("");
   const [specialty, setSpecialty] = useState("");
@@ -173,6 +175,10 @@ export default function AuthPhone() {
   }
 
   async function completeRegistration() {
+    if (password.length < 6) {
+      toast({ title: "كلمة المرور مطلوبة", description: "أنشئ كلمة مرور من 6 أحرف أو أرقام على الأقل", variant: "destructive" });
+      return;
+    }
     if (role === "client" && namePartsCount < 4) {
       toast({ title: "الاسم الرباعي مطلوب", description: "يرجى إدخال الاسم الرباعي كاملاً", variant: "destructive" });
       return;
@@ -218,6 +224,7 @@ export default function AuthPhone() {
             name: name.trim(),
             role,
             mode,
+            password,
             city: customerLocation?.city || undefined,
             country: customerLocation?.country || undefined,
             governorate: customerLocation?.governorate || undefined,
@@ -313,7 +320,7 @@ export default function AuthPhone() {
         <header className="flex items-center justify-between">
           <button
             type="button"
-            onClick={() => step === "phone" ? navigate("/welcome") : setStep(step === "otp" ? "phone" : "otp")}
+            onClick={() => step === "phone" ? navigate("/login") : setStep(step === "otp" ? "phone" : "otp")}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-[#ddd8ce] bg-white text-primary transition-colors hover:bg-[#ebe8e0]"
             aria-label="رجوع"
           >
@@ -438,6 +445,14 @@ export default function AuthPhone() {
                   />
                   <p className="text-[11px] leading-5 text-[#8b897f]">الاسم الأول، اسم الأب، اسم الجد، واسم العائلة</p>
                   {role === "client" && name.trim() && namePartsCount < 4 && <p className="text-xs font-bold text-red-600">يرجى إدخال الاسم الرباعي كاملاً</p>}
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="registration-password" className="block text-sm font-black text-primary">كلمة المرور <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <LockKeyhole className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8b897f]" />
+                    <Input id="registration-password" type={showPassword ? "text" : "password"} placeholder="6 أحرف أو أرقام على الأقل" value={password} onChange={e => setPassword(e.target.value)} className="h-14 rounded-2xl border-[#d4d9df] bg-white px-11 text-base shadow-sm focus-visible:ring-primary" dir="ltr" autoComplete="new-password" />
+                    <button type="button" onClick={() => setShowPassword(value => !value)} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8b897f]" aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                  </div>
                 </div>
                 {role === "provider" && (
                   <div className="space-y-3 rounded-[26px] border border-primary/10 bg-white p-4 shadow-[0_12px_28px_rgba(14,47,98,0.06)]">

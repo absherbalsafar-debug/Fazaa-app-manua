@@ -80,6 +80,45 @@
   --destructive-foreground: 0 0% 100%;
 }
 
+.dark input,
+.dark textarea,
+.dark select {
+  color: hsl(var(--foreground)) !important;
+  caret-color: hsl(var(--accent)) !important;
+  -webkit-text-fill-color: hsl(var(--foreground)) !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: hsl(var(--muted-foreground)) !important;
+  opacity: 0.9 !important;
+  -webkit-text-fill-color: hsl(var(--muted-foreground)) !important;
+}
+
+.dark .auth-logo {
+  filter: drop-shadow(0 0 5px rgb(255 255 255 / 0.72)) drop-shadow(0 8px 16px rgb(240 176 70 / 0.18));
+}
+
+input,
+textarea,
+select {
+  color: hsl(var(--foreground)) !important;
+  caret-color: hsl(var(--accent)) !important;
+  -webkit-text-fill-color: hsl(var(--foreground)) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: hsl(var(--muted-foreground)) !important;
+  opacity: 0.9 !important;
+  -webkit-text-fill-color: hsl(var(--muted-foreground)) !important;
+}
+
+.dark [class~="bg-[#fbfcfe]"],
+.dark [class~="bg-[#f5f8fb]"] {
+  background-color: hsl(var(--input)) !important;
+}
+
 .dark {
   color-scheme: dark;
   --background: 218 30% 8%;
@@ -132,6 +171,7 @@
 }
 
 .dark [class~="bg-[#f7f8fa]"],
+.dark [class~="bg-[#f7f9fc]"],
 .dark [class~="bg-[#f5f3ee]"],
 .dark [class~="bg-[#fbfaf7]"],
 .dark [class~="bg-[#f3f6fa]"],
@@ -159,6 +199,10 @@
 }
 
 .dark [class~="text-[#60728a]"],
+.dark [class~="text-[#68778d]"],
+.dark [class~="text-[#738197]"],
+.dark [class~="text-[#78879a]"],
+.dark [class~="text-[#8793a3]"],
 .dark [class~="text-[#637087]"],
 .dark [class~="text-[#67758a]"],
 .dark [class~="text-[#708198]"],

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Crosshair, Loader2, MapPin, RefreshCw } from "lucide-react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import type Leaflet from "leaflet";
 import { useToast } from "@/hooks/use-toast";
 
 export type CustomerLocation = {
@@ -20,11 +19,12 @@ type LocationPickerProps = {
   title?: string;
   description?: string;
 };
+type LeafletApi = typeof import("leaflet");
 
-const DEFAULT_CENTER: L.LatLngExpression = [15.3694, 44.191];
+const DEFAULT_CENTER: Leaflet.LatLngExpression = [15.3694, 44.191];
 
-function pinIcon() {
-  return L.divIcon({
+function pinIcon(leaflet: LeafletApi) {
+  return leaflet.divIcon({
     className: "fazaa-map-pin",
     html: '<div style="font-size:34px;filter:drop-shadow(0 3px 3px rgba(0,0,0,.3))">📍</div>',
     iconSize: [34, 34],
@@ -47,11 +47,22 @@ function parseAddress(address: Record<string, string> | undefined, latitude: num
 export function LocationPicker({ value, onChange, error, title = "حدد موقعك", description = "نحتاج موقعك لعرض أقرب المهنيين والخدمات المتاحة حولك." }: LocationPickerProps) {
   const { toast } = useToast();
   const mapElement = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<L.Map | null>(null);
-  const markerRef = useRef<L.Marker | null>(null);
+  const mapRef = useRef<Leaflet.Map | null>(null);
+  const markerRef = useRef<Leaflet.Marker | null>(null);
+  const [leaflet, setLeaflet] = useState<LeafletApi | null>(null);
   const [locating, setLocating] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void Promise.all([import("leaflet"), import("leaflet/dist/leaflet.css")]).then(([module]) => {
+      if (active) setLeaflet(module);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
 async function resolveLocation(latitude: number, longitude: number) {
   setResolving(true);
@@ -75,14 +86,16 @@ async function resolveLocation(latitude: number, longitude: number) {
 
   function setMarker(latitude: number, longitude: number, shouldResolve = true) {
     const map = mapRef.current;
-    if (!map) return;
-    const point: L.LatLngExpression = [latitude, longitude];
+    const leafletApi = leaflet;
+    if (!map || !leafletApi) return;
+    const point: Leaflet.LatLngExpression = [latitude, longitude];
     // احفظ الإحداثيات فورًا؛ قراءة اسم الدولة والمنطقة خدمة إضافية لا تمنع التسجيل.
     onChange(parseAddress(undefined, latitude, longitude));
     if (!markerRef.current) {
-      markerRef.current = L.marker(point, { draggable: true, icon: pinIcon() }).addTo(map);
-      markerRef.current.on("dragend", () => {
-        const position = markerRef.current?.getLatLng();
+      const marker = leafletApi.marker(point, { draggable: true, icon: pinIcon(leafletApi) }).addTo(map);
+      markerRef.current = marker;
+      marker.on("dragend", () => {
+        const position = marker.getLatLng();
         if (position) void resolveLocation(position.lat, position.lng);
       });
     } else {
@@ -136,17 +149,17 @@ async function resolveLocation(latitude: number, longitude: number) {
   }
 
   useEffect(() => {
-    if (!mapElement.current || mapRef.current) return;
-    const map = L.map(mapElement.current, { zoomControl: false }).setView(
+    if (!leaflet || !mapElement.current || mapRef.current) return;
+    const map = leaflet.map(mapElement.current, { zoomControl: false }).setView(
       value ? [value.latitude, value.longitude] : DEFAULT_CENTER,
       value ? 15 : 6,
     );
-    L.control.zoom({ position: "bottomleft" }).addTo(map);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    leaflet.control.zoom({ position: "bottomleft" }).addTo(map);
+    leaflet.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       maxZoom: 19,
     }).addTo(map);
-    map.on("click", event => setMarker(event.latlng.lat, event.latlng.lng));
+    map.on("click", (event: Leaflet.LeafletMouseEvent) => setMarker(event.latlng.lat, event.latlng.lng));
     mapRef.current = map;
     if (value) setMarker(value.latitude, value.longitude, false);
     return () => {
@@ -154,7 +167,7 @@ async function resolveLocation(latitude: number, longitude: number) {
       mapRef.current = null;
       markerRef.current = null;
     };
-  }, []);
+  }, [leaflet]);
 
   useEffect(() => {
     if (value && mapRef.current && !markerRef.current) setMarker(value.latitude, value.longitude, false);

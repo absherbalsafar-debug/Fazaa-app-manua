@@ -8,15 +8,13 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { ProtectedRoute } from "@/components/layout/protected-route";
 import { PageTransition } from "@/components/layout/page-transition";
-import { ControlCenterLayout } from "@/control-center/ControlCenterLayout";
 import { BrandLoadingScreen } from "@/components/brand-loader";
 
 // Auth Pages
 const Welcome = lazy(() => import("@/pages/welcome"));
-const WelcomeBack = lazy(() => import("@/pages/welcome-back"));
 const AuthPhone = lazy(() => import("@/pages/auth-phone"));
-const AuthEmail = lazy(() => import("@/pages/auth-email"));
 const ForgotPassword = lazy(() => import("@/pages/forgot-password"));
+const Login = lazy(() => import("@/pages/login"));
 
 // App Pages
 const Home = lazy(() => import("@/pages/home"));
@@ -35,6 +33,7 @@ const ProviderVerify = lazy(() => import("@/pages/provider-verify"));
 const ProviderSubscription = lazy(() => import("@/pages/provider-subscription"));
 
 // Admin Pages
+const ControlCenterLayout = lazy(() => import("@/control-center/ControlCenterLayout").then(module => ({ default: module.ControlCenterLayout })));
 const AdminDashboard = lazy(() => import("@/control-center/pages/dashboard"));
 const AdminUsers = lazy(() => import("@/control-center/pages/users"));
 const AdminProviders = lazy(() => import("@/control-center/pages/providers"));
@@ -145,13 +144,11 @@ function Router() {
     <Switch>
       {/* ── Auth Routes (public) ── */}
       <Route path="/welcome"><PageTransition><Welcome /></PageTransition></Route>
-      <Route path="/welcome-back"><PageTransition><WelcomeBack /></PageTransition></Route>
       <Route path="/auth/phone"><PageTransition><AuthPhone /></PageTransition></Route>
-      <Route path="/auth/email"><PageTransition><AuthEmail /></PageTransition></Route>
       <Route path="/auth/forgot-password"><PageTransition><ForgotPassword /></PageTransition></Route>
       {/* Legacy redirects */}
-      <Route path="/login"><Redirect to="/auth/email" /></Route>
-      <Route path="/register"><Redirect to="/welcome" /></Route>
+      <Route path="/login"><PageTransition><Login /></PageTransition></Route>
+      <Route path="/register"><Redirect to="/login?view=register" /></Route>
 
       {/* ── Standalone Control Center ── */}
       <Route path="/control-center">

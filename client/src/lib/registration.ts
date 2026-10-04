@@ -10,8 +10,7 @@ export function getPostAuthPath(role: RegistrationRole): "/" | "/provider-dashbo
 }
 
 export function getFirstLoginPath(role: RegistrationRole): string {
-  if (localStorage.getItem(FIRST_LOGIN_WELCOME_KEY) === "true") return getPostAuthPath(role);
-  return `/welcome-back?next=${encodeURIComponent(getPostAuthPath(role))}`;
+  return getPostAuthPath(role);
 }
 
 export function buildGoogleAuthPayload(
