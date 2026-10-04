@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { ArrowRight, Moon, Sun, Bell, Lock, Trash2, LogOut, HelpCircle, Info, Shield, Globe, ChevronLeft, ShieldCheck, UserRound, Monitor, FileText, ScrollText } from "lucide-react";
+import { ArrowRight, Moon, Sun, Bell, Lock, Trash2, LogOut, HelpCircle, Info, Shield, Globe, ChevronLeft, ShieldCheck, UserRound, Monitor, FileText, ScrollText, Fingerprint, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/components/theme-provider";
+import { disableBiometric, enableBiometric, isBiometricEnabled } from "@/lib/biometric";
 
 type ThemeOption = "system" | "light" | "dark";
 
@@ -13,6 +14,8 @@ export default function Settings() {
   const { theme, setTheme } = useTheme();
   const [, navigate] = useLocation();
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => localStorage.getItem("fazaah-notifications-enabled") !== "false");
+  const [biometricEnabled, setBiometricEnabled] = useState(() => isBiometricEnabled());
+  const [biometricBusy, setBiometricBusy] = useState(false);
 
   function handleLogout() {
     const nativeBridge = window as unknown as { FazaaNativeLogout?: { requestLogout: () => void } };
@@ -45,6 +48,27 @@ export default function Settings() {
     setNotificationsEnabled(enabled);
     localStorage.setItem("fazaah-notifications-enabled", String(enabled));
     toast({ title: enabled ? "تم تفعيل إشعارات الطلبات" : "تم إيقاف إشعارات الطلبات" });
+  }
+
+  async function handleBiometricToggle(enabled: boolean) {
+    if (!enabled) {
+      disableBiometric();
+      setBiometricEnabled(false);
+      toast({ title: "تم إيقاف تسجيل الدخول بالبصمة" });
+      return;
+    }
+    if (!user) return;
+    setBiometricBusy(true);
+    try {
+      await enableBiometric({ id: user.id, name: user.name });
+      setBiometricEnabled(true);
+      toast({ title: "تم تفعيل البصمة", description: "سيطلب جهازك البصمة عند استخدام ميزة الدخول المدعوم." });
+    } catch (error) {
+      setBiometricEnabled(false);
+      toast({ title: "تعذر تفعيل البصمة", description: error instanceof Error ? error.message : "تأكد من دعم الجهاز للبصمة والمحاولة مرة أخرى.", variant: "destructive" });
+    } finally {
+      setBiometricBusy(false);
+    }
   }
 
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
@@ -167,6 +191,7 @@ export default function Settings() {
 
         <Section title="الأمان والخصوصية">
           <Item icon={Lock} label="تغيير كلمة المرور" onClick={() => navigate('/auth/forgot-password')} />
+          <Item icon={Fingerprint} label="تسجيل الدخول بالبصمة" sub={biometricBusy ? "جاري تجهيز بصمة الجهاز..." : biometricEnabled ? "مفعّل على هذا الجهاز" : "استخدم بصمة الجهاز أو قفل الشاشة"} right={biometricBusy ? <Loader2 className="h-5 w-5 animate-spin text-primary" /> : <input type="checkbox" checked={biometricEnabled} onChange={(event) => void handleBiometricToggle(event.target.checked)} className="h-5 w-5 accent-primary" />} />
           <Item icon={Shield} label="توثيق رقم الهاتف" sub={user?.phoneVerified ? "موثق ✓" : "غير موثق"} onClick={handlePhoneVerification} />
           <Item icon={FileText} label="سياسة الخصوصية" sub="كيف نحمي بياناتك ونستخدمها" onClick={() => navigate('/privacy')} />
           <Item icon={ScrollText} label="شروط الاستخدام" sub="القواعد المنظمة لاستخدام فزعة" onClick={() => navigate('/terms')} />

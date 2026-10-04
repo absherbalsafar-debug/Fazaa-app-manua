@@ -9,6 +9,7 @@ import { BottomNav } from "@/components/layout/bottom-nav";
 import { ProtectedRoute } from "@/components/layout/protected-route";
 import { PageTransition } from "@/components/layout/page-transition";
 import { BrandLoadingScreen } from "@/components/brand-loader";
+import { BackExitGuard } from "@/components/layout/back-exit-guard";
 
 // Auth Pages
 const Welcome = lazy(() => import("@/pages/welcome"));
@@ -293,6 +294,7 @@ function App() {
           <TooltipProvider>
             <div dir="rtl" className="min-h-[100dvh] bg-background text-foreground font-sans">
               <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                <BackExitGuard />
                 <NavigationTransition />
                 <Suspense fallback={<BrandLoadingScreen message="جارٍ تحميل الصفحة..." />}>
                   <Router />
