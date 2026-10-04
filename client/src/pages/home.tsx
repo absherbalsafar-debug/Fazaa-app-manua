@@ -30,7 +30,6 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { BrandLogo } from "@/components/brand-logo";
 
 function CategoryIcon({ name }: { name: string }) {
   const normalized = name.toLowerCase();
@@ -74,7 +73,7 @@ export default function Home() {
               <span>{user?.city ?? "صنعاء"}</span>
               <MapPin className="h-4 w-4 text-primary" />
             </button>
-            <Link href="/" aria-label="الرئيسية"><BrandLogo className="h-14 w-20 object-contain" /></Link>
+            <Link href="/" aria-label="الرئيسية" className="home-brand-mark"><img src="/assets/fazaah-logo-mark.webp" alt="فزعة" /></Link>
             <div className="flex items-center gap-2">
               <Link href="/notifications" className="relative flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition hover:bg-muted" aria-label="الإشعارات">
                 <Bell className="h-5 w-5" strokeWidth={1.8} />
