@@ -20,10 +20,13 @@ export default function Login() {
   const [, navigate] = useLocation();
   const { login } = useAuth();
   const { toast } = useToast();
-  const [view, setView] = useState<PortalView>(() => new URLSearchParams(window.location.search).get("view") === "register" ? "register" : "login");
-  const [method, setMethod] = useState<AuthMethod>("phone");
-  const [registerRole, setRegisterRole] = useState<RegistrationRole | null>(null);
-  const [registerMethod, setRegisterMethod] = useState<AuthMethod | null>(null);
+  const searchParams = new URLSearchParams(window.location.search);
+  const initialMethod = searchParams.get("method") === "email" ? "email" : "phone";
+  const initialRole = searchParams.get("role") === "client" ? "client" : null;
+  const [view, setView] = useState<PortalView>(() => searchParams.get("view") === "register" ? "register" : "login");
+  const [method, setMethod] = useState<AuthMethod>(initialMethod);
+  const [registerRole, setRegisterRole] = useState<RegistrationRole | null>(initialRole);
+  const [registerMethod, setRegisterMethod] = useState<AuthMethod | null>(() => searchParams.get("view") === "register" && initialRole === "client" && initialMethod === "email" ? "email" : null);
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

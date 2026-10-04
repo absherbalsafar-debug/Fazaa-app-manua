@@ -38,7 +38,7 @@ export default function ForgotPassword() {
   return (
     <div className="min-h-[100dvh] bg-background flex flex-col" dir="rtl">
       <div className="flex items-center gap-4 p-4 pt-safe">
-        <button onClick={() => navigate('/auth/email')} className="w-10 h-10 flex items-center justify-center rounded-full bg-muted">
+        <button onClick={() => navigate('/login?method=email')} className="w-10 h-10 flex items-center justify-center rounded-full bg-muted">
           <ArrowRight className="w-5 h-5" />
         </button>
         <h1 className="text-lg font-bold">استعادة كلمة المرور</h1>
@@ -57,7 +57,7 @@ export default function ForgotPassword() {
                 <p className="font-mono break-all">{devToken}</p>
               </div>
             )}
-            <Button onClick={() => navigate('/auth/email')} className="w-full h-12 rounded-2xl mt-4">
+            <Button onClick={() => navigate('/login?method=email')} className="w-full h-12 rounded-2xl mt-4">
               العودة لتسجيل الدخول
             </Button>
           </motion.div>

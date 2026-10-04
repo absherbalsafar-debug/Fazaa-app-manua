@@ -175,7 +175,7 @@ export default function Welcome() {
 
   const authPath = (type: "phone" | "email") => {
     completeOnboarding();
-    return type === "phone" ? `/auth/phone?mode=register&role=${selectedRole}` : `/auth/email?mode=register&role=${selectedRole}`;
+    return type === "phone" ? `/auth/phone?mode=register&role=${selectedRole}` : "/login?view=register&role=client&method=email";
   };
   const launchAuth = (type: "phone" | "email") => {
     const destination = authPath(type);

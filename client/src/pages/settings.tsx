@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { ArrowRight, Moon, Sun, Bell, Lock, Trash2, LogOut, HelpCircle, Info, Shield, Globe, ChevronLeft, ShieldCheck, UserRound, Monitor, FileText, ScrollText } from "lucide-react";
 import { useAuth } from "@/lib/auth";
@@ -11,6 +12,7 @@ export default function Settings() {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const [, navigate] = useLocation();
+  const [notificationsEnabled, setNotificationsEnabled] = useState(() => localStorage.getItem("fazaah-notifications-enabled") !== "false");
 
   function handleLogout() {
     const nativeBridge = window as unknown as { FazaaNativeLogout?: { requestLogout: () => void } };
@@ -37,6 +39,12 @@ export default function Settings() {
       description: "لم يتم ربط مزود SMS بعد. ستبقى جلستك محفوظة ولن نخرجك من التطبيق.",
       variant: "destructive",
     });
+  }
+
+  function handleNotificationsToggle(enabled: boolean) {
+    setNotificationsEnabled(enabled);
+    localStorage.setItem("fazaah-notifications-enabled", String(enabled));
+    toast({ title: enabled ? "تم تفعيل إشعارات الطلبات" : "تم إيقاف إشعارات الطلبات" });
   }
 
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
@@ -154,7 +162,7 @@ export default function Settings() {
         </Section>
 
         <Section title="الإشعارات">
-          <Item icon={Bell} label="إشعارات الطلبات" sub="تلقي تنبيهات عند تحديث الطلبات" right={<input type="checkbox" defaultChecked className="h-5 w-5 accent-primary" />} />
+          <Item icon={Bell} label="إشعارات الطلبات" sub="تلقي تنبيهات عند تحديث الطلبات" right={<input type="checkbox" checked={notificationsEnabled} onChange={(event) => handleNotificationsToggle(event.target.checked)} className="h-5 w-5 accent-primary" />} />
         </Section>
 
         <Section title="الأمان والخصوصية">

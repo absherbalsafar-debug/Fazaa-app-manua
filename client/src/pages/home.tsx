@@ -105,7 +105,7 @@ export default function Home() {
             <span className="flex w-fit items-center gap-1.5 rounded-full bg-accent px-3 py-1.5 text-[10px] font-black text-accent-foreground"><Sparkles className="h-3.5 w-3.5" /> فزعة أقرب لك</span>
             <h2 className="mt-3 text-[26px] font-black leading-[1.25]">تحتاج خدمة؟<span className="block text-accent">نوصلك بالمناسب</span></h2>
             <p className="mt-2 text-[11px] leading-5 text-primary-foreground/75">اطلب مهنيًا موثوقًا قريبًا منك خلال دقائق.</p>
-            <button type="button" onClick={() => navigate("/new-request")} className="mt-4 flex w-fit items-center gap-2 rounded-full bg-card px-4 py-2.5 text-xs font-black text-primary shadow-lg transition active:scale-95">
+            <button type="button" onClick={() => navigate("/request/new")} className="mt-4 flex w-fit items-center gap-2 rounded-full bg-card px-4 py-2.5 text-xs font-black text-primary shadow-lg transition active:scale-95">
               اطلب خدمة الآن <ArrowLeft className="h-4 w-4 text-accent" />
             </button>
           </div>
@@ -121,7 +121,7 @@ export default function Home() {
         </section>
 
         <section className="grid grid-cols-3 gap-2.5">
-          <Link href="/new-request" className="group flex items-center gap-2 rounded-[18px] border border-accent/30 bg-accent/10 p-3 transition hover:border-accent">
+          <Link href="/request/new" className="group flex items-center gap-2 rounded-[18px] border border-accent/30 bg-accent/10 p-3 transition hover:border-accent">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-accent text-accent-foreground"><Plus className="h-5 w-5" /></span><span className="text-[11px] font-black leading-4">طلب جديد</span>
           </Link>
           <Link href="/my-requests" className="group flex items-center gap-2 rounded-[18px] border border-border bg-card p-3 transition hover:border-primary/30">
