@@ -326,7 +326,7 @@ export default function AuthPhone() {
           >
             <ArrowRight className="h-4 w-4" />
           </button>
-          <BrandLogo className="h-16 w-24 object-contain" />
+          <img src="/assets/fazaah-logo-mark.webp" alt="فزعة" className="auth-brand-image h-16 w-24 object-contain" />
           <span className="rounded-full border border-[#d9d5cd] bg-white px-3 py-1.5 text-[10px] font-bold text-[#8e8b82]">
             {stepNumber} <span className="mx-1 text-[#b57920]">/</span> ٠٣
           </span>

@@ -199,7 +199,7 @@ export default function Welcome() {
           <motion.section key="intro" initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -28 }} transition={{ duration: 0.35 }} className="relative min-h-[100dvh]">
             <div className="onboarding-wave absolute inset-x-0 bottom-0 h-[24%] overflow-hidden bg-[#182d53]"><span className="onboarding-wave-gold" /></div>
             <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 pb-5 pt-7 sm:max-w-lg sm:px-9">
-              <header className="flex items-center justify-between"><span className="text-[11px] font-bold text-[#182d53]">9:41</span><BrandLogo className="h-24 w-28 object-contain" /><span className="flex gap-1"><span className="h-2 w-2 rounded-full bg-[#182d53]" /><span className="h-2 w-2 rounded-full bg-[#f0b046]" /></span></header>
+              <header className="flex items-center justify-between"><span className="text-[11px] font-bold text-[#182d53]">9:41</span><img src="/assets/fazaah-logo-mark.webp" alt="فزعة" className="auth-brand-image h-24 w-28 object-contain" /><span className="flex gap-1"><span className="h-2 w-2 rounded-full bg-[#182d53]" /><span className="h-2 w-2 rounded-full bg-[#f0b046]" /></span></header>
               <div className="flex flex-1 flex-col items-center text-center">
                 <span className="mt-2 inline-flex items-center gap-2 rounded-full border border-[#f0b046]/30 bg-[#fff5db] px-3 py-2 text-[10px] font-bold text-[#b57920]"><Sparkles className="h-3.5 w-3.5" /> خدمة تستحق الثقة</span>
                 <h1 className="mt-5 text-[34px] font-black leading-[1.25] tracking-[-0.04em] sm:text-[42px]">أهلاً وسهلاً بك في <span className="block text-[#b57920]">فزعة</span></h1>
@@ -218,7 +218,7 @@ export default function Welcome() {
         {step === 1 && (
           <motion.section key="role" initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -28 }} transition={{ duration: 0.35 }} className="min-h-[100dvh] bg-[#f7f8fa]">
             <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 pb-7 pt-7 sm:max-w-lg sm:px-9">
-              <header className="flex items-center justify-between"><button type="button" onClick={() => setStep(0)} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#ddd8ce] bg-white text-[#182d53]" aria-label="العودة"><ArrowRight className="h-4 w-4" /></button><BrandLogo className="h-20 w-24 object-contain" /><span className="text-[10px] font-bold text-[#182d53]">9:41</span></header>
+              <header className="flex items-center justify-between"><button type="button" onClick={() => setStep(0)} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#ddd8ce] bg-white text-[#182d53]" aria-label="العودة"><ArrowRight className="h-4 w-4" /></button><img src="/assets/fazaah-logo-mark.webp" alt="فزعة" className="auth-brand-image h-20 w-24 object-contain" /><span className="text-[10px] font-bold text-[#182d53]">9:41</span></header>
               <div className="flex flex-1 flex-col pt-7">
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#b57920]">الخطوة الثانية</p>
                 <h2 className="mt-3 text-[32px] font-black leading-[1.25] tracking-[-0.04em]">اختر نوع حسابك<span className="block text-[#b57920]">ونبدأ معاً.</span></h2>
@@ -256,7 +256,7 @@ export default function Welcome() {
               className="relative flex flex-col items-center gap-5 text-center"
             >
               <div className="flex h-24 w-24 items-center justify-center rounded-[30px] bg-white p-3 shadow-[0_18px_55px_rgba(0,0,0,0.2)]">
-                <BrandLogo className="h-full w-full object-contain" />
+                <img src="/assets/fazaah-logo-mark.webp" alt="فزعة" className="auth-brand-image h-full w-full object-contain" />
               </div>
               <div>
                 <p className="text-lg font-black text-white">نجهّز لك تجربة فزعة</p>

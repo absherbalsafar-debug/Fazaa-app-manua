@@ -61,7 +61,9 @@
   object-position: center top;
 }
 
-.dark .home-brand-mark img {
+.dark .home-brand-mark img,
+.dark .brand-logo-image,
+.dark .auth-brand-image {
   filter: brightness(0) saturate(100%) invert(73%) sepia(81%) saturate(690%) hue-rotate(354deg) brightness(102%) contrast(91%);
 }
 
