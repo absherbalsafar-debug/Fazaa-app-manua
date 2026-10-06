@@ -48,11 +48,14 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.setContent
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import com.google.firebase.messaging.FirebaseMessaging
+import com.fazaah.app.presentation.NativeFazaaApp
 
 class MainActivity : ComponentActivity() {
+    private val useNativeCompose = true
     private lateinit var webView: WebView
     private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
     private var pendingGeolocation: GeolocationPermissions.Callback? = null
@@ -98,21 +101,32 @@ class MainActivity : ComponentActivity() {
         window.navigationBarColor = AndroidColor.rgb(8, 11, 18)
         clearWebSessionOnFirstInstall()
         setupWebView()
-        // يعرض WebView الموقع مباشرة؛ لا نضيف طبقة Splash ثانية فوق شاشة الموقع.
-        setContentView(webView)
         val welcomeSeen = getPreferences(MODE_PRIVATE).getBoolean("welcome_seen_v1", false)
-        val initialUrl = if (welcomeSeen) {
-            "${BuildConfig.WEB_APP_URL}/auth/phone?mode=login"
+        if (useNativeCompose) {
+            setContent {
+                NativeFazaaApp(
+                    container = AppContainer(this@MainActivity),
+                    initialRoute = if (welcomeSeen) "phone" else "welcome",
+                    onWelcomeSeen = { getPreferences(MODE_PRIVATE).edit().putBoolean("welcome_seen_v1", true).apply() },
+                    onExit = { finish() },
+                )
+            }
         } else {
-            BuildConfig.WEB_APP_URL
+            // WebView يبقى متاحاً كطبقة توافق للصفحات التي لم تُحوّل إلى Compose بعد.
+            setContentView(webView)
+            val initialUrl = if (welcomeSeen) {
+                "${BuildConfig.WEB_APP_URL}/auth/phone?mode=login"
+            } else {
+                BuildConfig.WEB_APP_URL
+            }
+            webView.loadUrl(initialUrl)
         }
-        webView.loadUrl(initialUrl)
         FazaaFirebaseMessagingService.ensureNotificationChannel(this)
         requestNotificationPermission()
         initializePushNotifications()
         checkForAppUpdate()
 
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+        if (!useNativeCompose) onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (logoutInProgress || isPublicAuthPage(webView.url)) {
                     finish()

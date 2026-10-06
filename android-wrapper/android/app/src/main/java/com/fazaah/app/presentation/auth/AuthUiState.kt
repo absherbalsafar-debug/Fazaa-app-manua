@@ -9,6 +9,7 @@ data class AuthUiState(
     val role: UserRole = UserRole.CLIENT,
     val phone: String = "",
     val code: String = "",
+    val pin: String = "",
     val name: String = "",
     val latitude: String = "",
     val longitude: String = "",

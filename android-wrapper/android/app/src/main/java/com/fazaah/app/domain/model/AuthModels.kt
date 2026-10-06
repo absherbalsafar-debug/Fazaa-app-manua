@@ -11,6 +11,12 @@ data class SendOtpResponse(
     val expiresInSeconds: Int? = null,
 )
 
+data class LoginPinRequest(
+    val phone: String,
+    val pin: String,
+    val role: String,
+)
+
 data class VerifyOtpRequest(
     val phone: String,
     val code: String,

@@ -9,6 +9,7 @@ import com.fazaah.app.domain.model.VerifyOtpResponse
 import com.fazaah.app.domain.model.AuthUser
 import com.fazaah.app.domain.model.UpdateProfileRequest
 import com.fazaah.app.domain.model.VerificationDocumentRequest
+import com.fazaah.app.domain.model.LoginPinRequest
 
 class AuthRepository(
     private val api: FazaaApi,
@@ -19,6 +20,11 @@ class AuthRepository(
 
     suspend fun verifyOtp(request: VerifyOtpRequest): VerifyOtpResponse =
         api.verifyOtp(request).also { response ->
+            response.token?.takeIf { it.isNotBlank() }?.let { sessionStore.saveToken(it) }
+        }
+
+    suspend fun loginWithPin(phone: String, pin: String, role: String): VerifyOtpResponse =
+        api.loginWithPin(LoginPinRequest(phone, pin, role)).also { response ->
             response.token?.takeIf { it.isNotBlank() }?.let { sessionStore.saveToken(it) }
         }
 

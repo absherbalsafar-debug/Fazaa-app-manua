@@ -19,6 +19,7 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     fun setRole(role: UserRole) = _uiState.update { it.copy(role = role) }
     fun setPhone(value: String) = _uiState.update { it.copy(phone = value.filter(Char::isDigit), message = null) }
     fun setCode(value: String) = _uiState.update { it.copy(code = value.filter(Char::isDigit).take(6), message = null) }
+    fun setPin(value: String) = _uiState.update { it.copy(pin = value.filter(Char::isDigit).take(4), message = null) }
     fun setName(value: String) = _uiState.update { it.copy(name = value, message = null) }
     fun setLatitude(value: String) = _uiState.update { it.copy(latitude = value, message = null) }
     fun setLongitude(value: String) = _uiState.update { it.copy(longitude = value, message = null) }
@@ -51,6 +52,18 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
         }, onSuccess = { response ->
             val authenticatedRole = if (response.user?.role == "provider") UserRole.PROVIDER else state.role
             _uiState.update { current -> current.copy(role = authenticatedRole, step = if (response.needsRegistration) AuthStep.PROFILE else AuthStep.HOME) }
+        })
+    }
+
+    fun loginWithPin() {
+        val state = _uiState.value
+        if (state.phone.length < 9 || state.pin.length != 4) {
+            _uiState.update { it.copy(message = "أدخل رقم الهاتف والرمز السري المكون من 4 أرقام") }
+            return
+        }
+        execute(request = { repository.loginWithPin(state.phone, state.pin, state.role.apiValue) }, onSuccess = { response ->
+            val authenticatedRole = if (response.user?.role == "provider") UserRole.PROVIDER else state.role
+            _uiState.update { it.copy(role = authenticatedRole, step = AuthStep.HOME) }
         })
     }
 

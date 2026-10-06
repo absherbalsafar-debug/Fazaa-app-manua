@@ -7,6 +7,7 @@ import com.fazaah.app.domain.model.ProviderUpdateRequest
 import com.fazaah.app.domain.model.ProviderSummary
 import com.fazaah.app.domain.model.SendOtpRequest
 import com.fazaah.app.domain.model.SendOtpResponse
+import com.fazaah.app.domain.model.LoginPinRequest
 import com.fazaah.app.domain.model.VerifyOtpRequest
 import com.fazaah.app.domain.model.VerifyOtpResponse
 import com.fazaah.app.domain.model.UpdateProfileRequest
@@ -34,6 +35,9 @@ interface FazaaApi {
 
     @POST("auth/verify-otp")
     suspend fun verifyOtp(@Body request: VerifyOtpRequest): VerifyOtpResponse
+
+    @POST("auth/login-pin")
+    suspend fun loginWithPin(@Body request: LoginPinRequest): VerifyOtpResponse
 
     @GET("auth/me")
     suspend fun currentUser(): AuthUser
