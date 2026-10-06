@@ -10,6 +10,7 @@ import com.fazaah.app.domain.model.AuthUser
 import com.fazaah.app.domain.model.UpdateProfileRequest
 import com.fazaah.app.domain.model.VerificationDocumentRequest
 import com.fazaah.app.domain.model.LoginPinRequest
+import com.fazaah.app.domain.model.SetPinRequest
 
 class AuthRepository(
     private val api: FazaaApi,
@@ -27,6 +28,8 @@ class AuthRepository(
         api.loginWithPin(LoginPinRequest(phone, pin, role)).also { response ->
             response.token?.takeIf { it.isNotBlank() }?.let { sessionStore.saveToken(it) }
         }
+
+    suspend fun setPin(pin: String) = api.setPin(SetPinRequest(pin))
 
     suspend fun logout() {
         runCatching { api.logoutAll() }

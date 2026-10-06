@@ -67,6 +67,14 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
         })
     }
 
+    fun createPin(pin: String, confirmation: String, onComplete: () -> Unit) {
+        if (!pin.matches(Regex("\\d{4}")) || pin != confirmation) {
+            _uiState.update { it.copy(message = "أدخل رمزاً من 4 أرقام متطابقاً في الخانتين") }
+            return
+        }
+        execute(request = { repository.setPin(pin) }, onSuccess = { onComplete() })
+    }
+
     fun completeProfile() {
         val state = _uiState.value
         if (state.name.trim().split(" ").filter(String::isNotBlank).size < 4) return

@@ -17,6 +17,11 @@ data class LoginPinRequest(
     val role: String,
 )
 
+data class SetPinRequest(
+    val pin: String,
+    val currentPin: String? = null,
+)
+
 data class VerifyOtpRequest(
     val phone: String,
     val code: String,

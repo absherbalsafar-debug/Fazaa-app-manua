@@ -109,10 +109,20 @@ fun NativeFazaaApp(
                         onBack = { onExit() },
                         onRole = authViewModel::setRole,
                         onPhone = authViewModel::setPhone,
-                        onPin = authViewModel::setPin,
                         onSendOtp = authViewModel::sendOtp,
-                        onPinLogin = authViewModel::loginWithPin,
-                        onShowOtp = { authViewModel.resetToPhone(); navController.navigate("phone") },
+                        onOpenPin = { navController.navigate("pin") },
+                    )
+                }
+                composable("pin") {
+                    PinLoginScreen(
+                        phone = state.phone,
+                        pin = state.pin,
+                        loading = state.loading,
+                        message = state.message,
+                        onBack = { navController.popBackStack() },
+                        onPin = authViewModel::setPin,
+                        onLogin = authViewModel::loginWithPin,
+                        onUseOtp = { authViewModel.resetToPhone(); navController.navigate("phone") { popUpTo("pin") { inclusive = true } } },
                     )
                 }
                 composable("otp") {
@@ -192,10 +202,8 @@ private fun PhoneLoginScreen(
     onBack: () -> Unit,
     onRole: (UserRole) -> Unit,
     onPhone: (String) -> Unit,
-    onPin: (String) -> Unit,
     onSendOtp: () -> Unit,
-    onPinLogin: () -> Unit,
-    onShowOtp: () -> Unit,
+    onOpenPin: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize().padding(horizontal = 22.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -220,18 +228,34 @@ private fun PhoneLoginScreen(
         Button(onClick = onSendOtp, enabled = !state.loading && state.phone.length >= 9, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = FazaaNavy)) {
             if (state.loading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp)) else Text("إرسال رمز التحقق", fontWeight = FontWeight.Bold)
         }
-        Spacer(Modifier.height(16.dp))
-        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-            Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.Lock, contentDescription = null, tint = FazaaGold); Spacer(Modifier.width(6.dp)); Text("الدخول السريع بالرمز السري", color = FazaaNavy, fontWeight = FontWeight.Bold) }
-                Spacer(Modifier.height(12.dp))
-                PinBoxes(value = state.pin, onValueChange = onPin)
-                Spacer(Modifier.height(12.dp))
-                Button(onClick = onPinLogin, enabled = !state.loading && state.pin.length == 4 && state.phone.length >= 9, modifier = Modifier.fillMaxWidth().height(48.dp), shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = FazaaGold, contentColor = FazaaNavy)) { Text("دخول بالرمز السري", fontWeight = FontWeight.ExtraBold) }
-                TextButton(onClick = onShowOtp) { Text("نسيت الرمز؟ استخدم رمز التحقق", color = FazaaNavy) }
-            }
-        }
+        Spacer(Modifier.height(12.dp))
+        TextButton(onClick = onOpenPin, enabled = state.phone.length >= 9) { Text("لدي حساب — الدخول برمز الدخول", color = FazaaNavy, fontWeight = FontWeight.Bold) }
         state.message?.let { Text(it, color = Color(0xFFB3261E), textAlign = TextAlign.Center, modifier = Modifier.padding(top = 12.dp)) }
+    }
+}
+
+@Composable
+private fun PinLoginScreen(phone: String, pin: String, loading: Boolean, message: String?, onBack: () -> Unit, onPin: (String) -> Unit, onLogin: () -> Unit, onUseOtp: () -> Unit) {
+    Column(Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowForward, contentDescription = "رجوع", tint = FazaaNavy) }
+            Logo(Modifier.size(76.dp))
+            Text("دخول آمن", color = FazaaNavy.copy(alpha = .55f), fontSize = 12.sp)
+        }
+        Spacer(Modifier.height(62.dp))
+        Icon(Icons.Default.Lock, contentDescription = null, tint = FazaaGold, modifier = Modifier.size(46.dp))
+        Spacer(Modifier.height(12.dp))
+        Text("أدخل رمز الدخول", color = FazaaNavy, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
+        Text("رمزك الشخصي المكون من 4 أرقام", color = Color.Gray, fontSize = 14.sp)
+        if (phone.isNotBlank()) Text("+967 $phone", color = FazaaBlue, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp))
+        Spacer(Modifier.height(28.dp))
+        PinBoxes(value = pin, onValueChange = onPin)
+        Spacer(Modifier.height(26.dp))
+        Button(onClick = onLogin, enabled = !loading && pin.length == 4 && phone.length >= 9, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = FazaaGold, contentColor = FazaaNavy)) {
+            if (loading) CircularProgressIndicator(color = FazaaNavy, modifier = Modifier.size(22.dp)) else Text("دخول", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp)
+        }
+        TextButton(onClick = onUseOtp) { Text("نسيت الرمز؟ التحقق برمز OTP", color = FazaaNavy) }
+        message?.let { Text(it, color = Color(0xFFB3261E), textAlign = TextAlign.Center) }
     }
 }
 
