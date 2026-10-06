@@ -72,7 +72,10 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
             _uiState.update { it.copy(message = "أدخل رمزاً من 4 أرقام متطابقاً في الخانتين") }
             return
         }
-        execute(request = { repository.setPin(pin) }, onSuccess = { onComplete() })
+        execute(request = { repository.setPin(pin) }, onSuccess = {
+            _uiState.update { it.copy(step = AuthStep.HOME, message = null) }
+            onComplete()
+        })
     }
 
     fun completeProfile() {
@@ -111,7 +114,7 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
                     }
                 }
                 val authenticatedRole = if (response.user?.role == "provider") UserRole.PROVIDER else state.role
-                _uiState.update { it.copy(role = authenticatedRole, step = AuthStep.HOME, message = if (authenticatedRole == UserRole.PROVIDER) "تم إرسال طلب اعتمادك للمراجعة" else null) }
+                _uiState.update { it.copy(role = authenticatedRole, step = AuthStep.PIN, message = if (authenticatedRole == UserRole.PROVIDER) "تم حفظ بياناتك. أنشئ رمز الدخول لإكمال الحساب" else null) }
             }
         })
     }
@@ -119,6 +122,7 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     fun goBack() = _uiState.update { state ->
         state.copy(step = when (state.step) {
             AuthStep.PROFILE -> AuthStep.OTP
+            AuthStep.PIN -> AuthStep.PROFILE
             AuthStep.OTP -> AuthStep.PHONE
             else -> state.step
         }, message = null)

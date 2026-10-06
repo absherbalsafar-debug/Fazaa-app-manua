@@ -1,6 +1,6 @@
 package com.fazaah.app.presentation.auth
 
-enum class AuthStep { PHONE, OTP, PROFILE, HOME }
+enum class AuthStep { PHONE, OTP, PROFILE, PIN, HOME }
 
 enum class UserRole(val apiValue: String) { CLIENT("client"), PROVIDER("provider") }
 

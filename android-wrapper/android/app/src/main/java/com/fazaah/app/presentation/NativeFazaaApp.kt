@@ -1,5 +1,14 @@
 package com.fazaah.app.presentation
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.location.LocationManager
+import android.util.Base64
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.compose.foundation.clickable
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +36,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -90,6 +100,8 @@ fun NativeFazaaApp(
             AuthStep.HOME -> {
                 navController.navigate("home") { popUpTo(0) }
             }
+            AuthStep.PROFILE -> if (navController.currentDestination?.route != "profile") navController.navigate("profile")
+            AuthStep.PIN -> if (navController.currentDestination?.route != "pin-setup") navController.navigate("pin-setup")
             else -> Unit
         }
     }
@@ -136,6 +148,33 @@ fun NativeFazaaApp(
                         onOtp = authViewModel::setCode,
                         onVerify = authViewModel::verifyLogin,
                         onResend = authViewModel::sendOtp,
+                    )
+                }
+                composable("profile") {
+                    RegistrationProfileScreen(
+                        state = state,
+                        catalogRepository = container.catalogRepository,
+                        onName = authViewModel::setName,
+                        onWhatsapp = authViewModel::setWhatsapp,
+                        onNationalId = authViewModel::setNationalId,
+                        onSpecialty = authViewModel::setSpecialty,
+                        onBio = authViewModel::setBio,
+                        onCategory = authViewModel::setCategoryId,
+                        onTerms = authViewModel::setTermsAccepted,
+                        onLocation = { lat, lon -> authViewModel.setLatitude(lat.toString()); authViewModel.setLongitude(lon.toString()) },
+                        onSelfie = authViewModel::setSelfie,
+                        onIdFront = authViewModel::setIdFront,
+                        onIdBack = authViewModel::setIdBack,
+                        onSubmit = authViewModel::completeProfile,
+                        onBack = { authViewModel.goBack(); navController.popBackStack() },
+                    )
+                }
+                composable("pin-setup") {
+                    PinSetupScreen(
+                        loading = state.loading,
+                        message = state.message,
+                        onCreate = { pin, confirm -> authViewModel.createPin(pin, confirm) { } },
+                        onBack = { authViewModel.goBack(); navController.popBackStack() },
                     )
                 }
                 composable("home") {
@@ -277,7 +316,7 @@ private fun OtpScreen(phone: String, otp: String, developmentOtp: String?, loadi
 }
 
 @Composable
-private fun PinBoxes(value: String, onValueChange: (String) -> Unit) = BasicTextField(value = value, onValueChange = { onValueChange(it.filter(Char::isDigit).take(4)) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), visualTransformation = PasswordVisualTransformation(), singleLine = true, textStyle = TextStyle(color = Color.Transparent), decorationBox = { inner -> PinRow(value, 4, inner) })
+fun PinBoxes(value: String, onValueChange: (String) -> Unit) = BasicTextField(value = value, onValueChange = { onValueChange(it.filter(Char::isDigit).take(4)) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), visualTransformation = PasswordVisualTransformation(), singleLine = true, textStyle = TextStyle(color = Color.Transparent), decorationBox = { inner -> PinRow(value, 4, inner) })
 
 @Composable
 private fun OtpBoxes(value: String, onValueChange: (String) -> Unit) = BasicTextField(value = value, onValueChange = { onValueChange(it.filter(Char::isDigit).take(6)) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, textStyle = TextStyle(color = Color.Transparent), decorationBox = { inner -> PinRow(value, 6, inner) })
@@ -308,4 +347,4 @@ private fun RoleChoice(title: String, subtitle: String, selected: Boolean, onCli
 private fun FeaturePill(text: String) { Box(Modifier.background(Color.White.copy(alpha = .1f), RoundedCornerShape(14.dp)).padding(horizontal = 12.dp, vertical = 8.dp)) { Text(text, color = Color.White, fontSize = 11.sp) } }
 
 @Composable
-private fun Logo(modifier: Modifier) { androidx.compose.foundation.Image(painter = painterResource(R.drawable.fazaah_logo), contentDescription = "فزعة", modifier = modifier) }
+fun Logo(modifier: Modifier) { androidx.compose.foundation.Image(painter = painterResource(R.drawable.fazaah_logo), contentDescription = "فزعة", modifier = modifier) }
