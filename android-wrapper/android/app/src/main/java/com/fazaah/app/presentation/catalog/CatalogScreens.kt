@@ -27,7 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Button
@@ -94,7 +94,7 @@ import com.fazaah.app.presentation.utility.HelpSupportScreen
 import com.fazaah.app.presentation.emergency.EmergencyScreen
 
 @Composable
-fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepository, subscriptionRepository: SubscriptionRepository, role: UserRole, onLogout: () -> Unit) {
+fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepository, subscriptionRepository: SubscriptionRepository, role: UserRole, onLogout: () -> Unit, onThemeChange: (Boolean) -> Unit) {
     val navController = rememberNavController()
     val catalogViewModel: CatalogViewModel = viewModel(factory = CatalogViewModel.factory(catalogRepository))
     val state by catalogViewModel.uiState.collectAsStateWithLifecycle()
@@ -102,7 +102,7 @@ fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepos
     val notificationsViewModel: NotificationsViewModel = viewModel(factory = NotificationsViewModel.factory(catalogRepository))
     val currentEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentEntry?.destination?.route
-    val bottomRoutes = if (role == UserRole.PROVIDER) setOf(Routes.ProviderDashboard, Routes.Requests, Routes.Profile, Routes.Settings) else setOf(Routes.Home, Routes.Discover, Routes.Providers, Routes.Requests, Routes.Profile)
+    val bottomRoutes = if (role == UserRole.PROVIDER) setOf(Routes.ProviderDashboard, Routes.Requests, Routes.Profile, Routes.Settings) else setOf(Routes.Home, Routes.Providers, Routes.Requests, Routes.Profile)
 
     Scaffold(
         bottomBar = { if (currentRoute in bottomRoutes) CatalogBottomBar(navController, role) },
@@ -128,7 +128,7 @@ fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepos
             composable("${Routes.NewRequest}/{providerId}", arguments = listOf(navArgument("providerId") { type = NavType.IntType })) { entry -> NewRequestScreen(requestViewModel, entry.arguments?.getInt("providerId") ?: 0) { requestId -> navController.navigate("${Routes.RequestDetail}/$requestId") } }
             composable(Routes.Notifications) { NotificationsScreen(notificationsViewModel) }
             composable(Routes.Favorites) { FavoritesScreen(catalogRepository) }
-            composable(Routes.Settings) { SettingsScreen(navController) }
+            composable(Routes.Settings) { SettingsScreen(navController, onThemeChange) }
             composable(Routes.Privacy) { PrivacyScreen(navController) }
             composable(Routes.Terms) { TermsScreen(navController) }
             composable(Routes.Emergency) { EmergencyScreen(catalogRepository, authRepository, navController) }
@@ -152,12 +152,12 @@ private fun CatalogBottomBar(navController: NavHostController, role: UserRole) {
             NavigationBarItem(selected = currentRoute == Routes.ProviderDashboard, onClick = { navController.navigateSingleTop(Routes.ProviderDashboard) }, icon = { Icon(Icons.Default.Home, null) }, label = { Text("لوحتي") })
         } else {
             NavigationBarItem(selected = currentRoute == Routes.Home, onClick = { navController.navigateSingleTop(Routes.Home) }, icon = { Icon(Icons.Default.Home, null) }, label = { Text("الرئيسية") })
-            NavigationBarItem(selected = currentRoute == Routes.Providers, onClick = { navController.navigateSingleTop(Routes.Providers) }, icon = { Icon(Icons.Default.Search, null) }, label = { Text("استعرض") })
+            NavigationBarItem(selected = currentRoute == Routes.Providers || currentRoute == Routes.Discover, onClick = { navController.navigateSingleTop(Routes.Providers) }, icon = { Icon(Icons.Default.Search, null) }, label = { Text("استعرض") })
         }
         NavigationBarItem(
             selected = currentRoute == Routes.Requests || currentRoute?.startsWith("${Routes.RequestDetail}/") == true,
             onClick = { navController.navigateSingleTop(Routes.Requests) },
-            icon = { Icon(Icons.Default.Refresh, contentDescription = null) },
+            icon = { Icon(Icons.Default.Assignment, contentDescription = null) },
             label = { Text("طلباتي") },
         )
         NavigationBarItem(

@@ -10,6 +10,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.platform.LocalLayoutDirection
 import com.fazaah.app.presentation.auth.AuthViewModel
 import com.fazaah.app.presentation.catalog.CatalogShell
 import com.fazaah.app.ui.FazaaTheme
@@ -21,15 +24,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         container = AppContainer(this)
         setContent {
-            FazaaTheme {
-                FazaaNativeApp(container)
+            var darkTheme by remember { mutableStateOf(getSharedPreferences("fazaa_preferences", MODE_PRIVATE).getBoolean("dark_theme", false)) }
+            FazaaTheme(darkTheme = darkTheme) {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) { FazaaNativeApp(container) { enabled -> darkTheme = enabled; getSharedPreferences("fazaa_preferences", MODE_PRIVATE).edit().putBoolean("dark_theme", enabled).apply() } }
             }
         }
     }
 }
 
 @Composable
-private fun FazaaNativeApp(container: AppContainer) {
+private fun FazaaNativeApp(container: AppContainer, onThemeChange: (Boolean) -> Unit) {
     val token by container.sessionStore.token.collectAsState(initial = null)
     var resolvedRole by remember { mutableStateOf<com.fazaah.app.presentation.auth.UserRole?>(null) }
     var checkingSession by remember(token) { mutableStateOf(token != null) }
@@ -58,6 +62,7 @@ private fun FazaaNativeApp(container: AppContainer) {
             subscriptionRepository = container.subscriptionRepository,
             role = resolvedRole!!,
             onLogout = { resolvedRole = null },
+            onThemeChange = onThemeChange,
         )
     } else {
         val authViewModel: AuthViewModel = androidx.lifecycle.viewmodel.compose.viewModel(

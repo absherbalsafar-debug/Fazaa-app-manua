@@ -15,18 +15,26 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import com.fazaah.app.presentation.navigation.Routes
 
 @Composable
-fun SettingsScreen(navController: NavHostController) {
+fun SettingsScreen(navController: NavHostController, onThemeChange: (Boolean) -> Unit) {
+    val context = LocalContext.current
+    var darkTheme by remember { mutableStateOf(context.getSharedPreferences("fazaa_preferences", 0).getBoolean("dark_theme", false)) }
     Column(Modifier.fillMaxSize().padding(18.dp)) {
         Text("الإعدادات", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
         Text("خصص تجربة فزعة كما تحب", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp, bottom = 18.dp))
-        SettingSection("المظهر", listOf("الوضع التلقائي", "الوضع النهاري", "الوضع الليلي"))
+        Text("المظهر", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(vertical = 8.dp))
+        Card(Modifier.fillMaxWidth()) { Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) { listOf(false to "نهاري", true to "ليلي").forEach { (value, label) -> FilterChip(selected = darkTheme == value, onClick = { darkTheme = value; onThemeChange(value) }, label = { Text(label) }, modifier = Modifier.weight(1f)) } } }
         SettingSection("الأمان والخصوصية", listOf("توثيق رقم الهاتف", "الإشعارات"))
         Button(onClick = { navController.navigate(Routes.Privacy) }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("سياسة الخصوصية") }
         OutlinedButton(onClick = { navController.navigate(Routes.Terms) }, modifier = Modifier.fillMaxWidth()) { Text("شروط الاستخدام") }
