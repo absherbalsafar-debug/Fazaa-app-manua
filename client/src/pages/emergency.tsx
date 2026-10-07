@@ -1,16 +1,54 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Droplets, Lock, ArrowRight, MapPin, AlertTriangle, CheckCircle, Phone } from "lucide-react";
+import { motion } from "framer-motion";
+import {
+  AlertTriangle,
+  ArrowRight,
+  CheckCircle,
+  Droplets,
+  Lock,
+  MapPin,
+  Phone,
+  Zap,
+  Loader2,
+  ShieldAlert,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/auth";
 import { useAuth } from "@/lib/auth";
+import {
+  AppPage,
+  PageHeading,
+  SectionHeading,
+  SurfaceCard,
+} from "@/components/app-ui";
 
 const EMERGENCY_SERVICES = [
-  { id: 1, icon: Zap, label: "كهربائي طارئ", color: "bg-yellow-500", categoryId: 2, desc: "مشكلة كهربائية خطيرة" },
-  { id: 2, icon: Droplets, label: "سباك طارئ", color: "bg-blue-500", categoryId: 1, desc: "تسرب مياه أو انسداد" },
-  { id: 3, icon: Lock, label: "فتح أقفال", color: "bg-gray-700", categoryId: null, desc: "فتح باب أو قفل" },
+  {
+    id: 1,
+    icon: Zap,
+    label: "كهربائي طارئ",
+    color: "bg-yellow-500",
+    categoryId: 2,
+    desc: "مشكلة كهربائية خطيرة",
+  },
+  {
+    id: 2,
+    icon: Droplets,
+    label: "سباك طارئ",
+    color: "bg-blue-500",
+    categoryId: 1,
+    desc: "تسرب مياه أو انسداد",
+  },
+  {
+    id: 3,
+    icon: Lock,
+    label: "فتح أقفال",
+    color: "bg-gray-700",
+    categoryId: null,
+    desc: "فتح باب أو قفل",
+  },
 ];
 
 export default function Emergency() {
@@ -27,18 +65,21 @@ export default function Emergency() {
     setSending(true);
     try {
       const query = new URLSearchParams({ limit: "20" });
-      if (service.categoryId) query.set("categoryId", String(service.categoryId));
+      if (service.categoryId)
+        query.set("categoryId", String(service.categoryId));
       const providersPage = await apiRequest(`/providers?${query.toString()}`);
-      const provider = providersPage.providers.find((item: { isAvailable: boolean }) => item.isAvailable)
-        ?? providersPage.providers[0];
+      const provider =
+        providersPage.providers.find(
+          (item: { isAvailable: boolean }) => item.isAvailable
+        ) ?? providersPage.providers[0];
       if (!provider) throw new Error("لا يوجد مهني متاح لهذا النوع حالياً");
-      await apiRequest('/requests', {
-        method: 'POST',
+      await apiRequest("/requests", {
+        method: "POST",
         body: JSON.stringify({
           providerId: provider.id,
           serviceType: service.label,
           description: `طلب طارئ: ${service.desc}`,
-          city: user?.city ?? 'صنعاء',
+          city: user?.city ?? "صنعاء",
           district: "",
           scheduledAt: null,
           isImmediate: true,
@@ -53,85 +94,176 @@ export default function Emergency() {
 
   if (sent) {
     return (
-      <div className="min-h-[100dvh] bg-primary flex flex-col items-center justify-center p-8 text-center" dir="rtl">
-        <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring" }}>
-          <div className="w-24 h-24 bg-accent rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-12 h-12 text-primary" />
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-3">تم إرسال طلبك!</h2>
-          <p className="text-white/70 mb-8">نبحث الآن عن أقرب مهني متاح في منطقتك</p>
-          <div className="bg-white/10 rounded-2xl p-4 mb-8">
-            <p className="text-white/60 text-sm">متوسط وقت الاستجابة</p>
-            <p className="text-white text-3xl font-bold">١٥ دقيقة</p>
-          </div>
-          <Button onClick={() => navigate('/my-requests')} className="bg-accent text-primary font-bold h-14 px-10 rounded-2xl">
-            تتبع الطلب
-          </Button>
-        </motion.div>
+      <div
+        className="min-h-[100dvh] bg-primary px-4 py-8 text-primary-foreground"
+        dir="rtl"
+      >
+        <div className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-lg items-center justify-center">
+          <motion.div
+            initial={{ scale: 0.94, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 180 }}
+            className="w-full text-center"
+          >
+            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-[28px] bg-accent text-primary shadow-xl shadow-black/10">
+              <CheckCircle className="h-12 w-12" />
+            </div>
+            <p className="mt-7 text-xs font-extrabold text-accent">طلب عاجل</p>
+            <h1 className="mt-2 text-2xl font-black tracking-tight text-white">
+              تم إرسال طلبك!
+            </h1>
+            <p className="mx-auto mt-3 max-w-xs text-sm leading-7 text-white/70">
+              نبحث الآن عن أقرب مهني متاح في منطقتك.
+            </p>
+            <div className="mx-auto mt-8 max-w-xs rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur-sm">
+              <p className="text-xs text-white/60">متوسط وقت الاستجابة</p>
+              <p className="mt-1 text-3xl font-black text-white">١٥ دقيقة</p>
+            </div>
+            <Button
+              onClick={() => navigate("/my-requests")}
+              className="mt-8 h-14 w-full max-w-xs rounded-2xl bg-accent text-base font-black text-primary shadow-lg shadow-black/10 hover:bg-accent/90"
+            >
+              تتبع الطلب
+            </Button>
+          </motion.div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col" dir="rtl">
-      {/* Header */}
-      <div className="bg-red-600 text-white pt-safe">
-        <div className="flex items-center gap-3 px-4 py-4">
-          <button onClick={() => navigate('/')} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20">
-            <ArrowRight className="w-5 h-5" />
-          </button>
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-6 h-6" />
-            <h1 className="text-xl font-bold">خدمة الطوارئ</h1>
-          </div>
-        </div>
-        <div className="px-4 pb-6">
-          <p className="text-red-100 text-sm">اضغط على نوع الطارئ وسنرسل لك أقرب مهني متاح فوراً</p>
-        </div>
-      </div>
-
-      <div className="flex-1 px-4 py-8 space-y-4 max-w-sm mx-auto w-full">
-        {EMERGENCY_SERVICES.map((service) => {
-          const Icon = service.icon;
-          const isSelected = selected === service.id;
-          return (
-            <motion.button
-              key={service.id}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => !sending && sendEmergency(service.id)}
-              disabled={sending}
-              className={`w-full rounded-2xl p-5 flex items-center gap-4 border-2 transition-all text-right shadow-sm ${
-                isSelected ? 'border-red-500 bg-red-50' : 'border-border bg-card hover:border-primary/40'
-              }`}
+    <div className="min-h-[100dvh] bg-background pb-24" dir="rtl">
+      <header className="border-b border-red-200/70 bg-red-50/80 dark:border-red-900/50 dark:bg-red-950/25">
+        <div className="mx-auto max-w-3xl px-4 pb-5 pt-safe sm:px-6">
+          <div className="flex items-center gap-3 py-3">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => navigate("/")}
+              aria-label="العودة للرئيسية"
+              className="h-11 w-11 rounded-2xl border-red-200 bg-card text-red-700 dark:border-red-900/60 dark:text-red-300"
             >
-              <div className={`w-14 h-14 rounded-2xl ${service.color} flex items-center justify-center shrink-0`}>
-                <Icon className="w-7 h-7 text-white" />
+              <ArrowRight className="h-5 w-5" />
+            </Button>
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-600 text-white shadow-sm">
+                <AlertTriangle className="h-6 w-6" />
+              </span>
+              <div>
+                <p className="text-[11px] font-extrabold text-red-700 dark:text-red-300">
+                  استجابة سريعة
+                </p>
+                <h1 className="text-lg font-black text-foreground">
+                  خدمة الطوارئ
+                </h1>
               </div>
-              <div className="flex-1">
-                <p className="text-lg font-bold">{service.label}</p>
-                <p className="text-sm text-muted-foreground">{service.desc}</p>
-              </div>
-              {isSelected && sending && (
-                <div className="w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-              )}
-            </motion.button>
-          );
-        })}
-
-        <div className="mt-8 bg-muted rounded-2xl p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <MapPin className="w-5 h-5 text-primary" />
-            <p className="font-semibold text-sm">موقعك الحالي</p>
+            </div>
           </div>
-          <p className="text-muted-foreground text-sm">{user?.city ?? 'صنعاء'} — سيتم تحديد الموقع الدقيق عند الإرسال</p>
+          <p className="max-w-xl pr-1 text-sm leading-6 text-red-900/70 dark:text-red-100/70">
+            اختر نوع الطارئ وسنرسل طلبك إلى أقرب مهني متاح فورًا.
+          </p>
+        </div>
+      </header>
+
+      <AppPage width="mobile" className="app-stage premium-surface">
+        <PageHeading
+          title="ما الذي حدث؟"
+          description="اختر الخيار الأقرب لحالتك. لا تحتاج إلى تعبئة نموذج طويل في الحالات العاجلة."
+          className="mb-6"
+        />
+
+        <section>
+          <SectionHeading
+            title="اختر نوع الخدمة"
+            description="اضغط مرة واحدة لإرسال طلب الطوارئ."
+          />
+          <div className="space-y-3" aria-busy={sending}>
+            {EMERGENCY_SERVICES.map(service => {
+              const Icon = service.icon;
+              const isSelected = selected === service.id;
+              return (
+                <motion.button
+                  key={service.id}
+                  type="button"
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => !sending && sendEmergency(service.id)}
+                  disabled={sending}
+                  className={`flex min-h-[88px] w-full items-center gap-4 rounded-3xl border p-4 text-right transition-all ${isSelected ? "border-red-500 bg-red-50/70 shadow-md shadow-red-900/5 dark:bg-red-950/20" : "border-border bg-card hover:border-primary/30 hover:shadow-sm"}`}
+                  aria-label={`طلب ${service.label}`}
+                >
+                  <span
+                    className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${service.color} shadow-sm`}
+                  >
+                    <Icon className="h-7 w-7 text-white" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-base font-black text-foreground">
+                      {service.label}
+                    </span>
+                    <span className="mt-1 block text-sm leading-5 text-muted-foreground">
+                      {service.desc}
+                    </span>
+                  </span>
+                  {isSelected && sending ? (
+                    <Loader2
+                      className="h-6 w-6 shrink-0 animate-spin text-red-600"
+                      aria-label="جارٍ الإرسال"
+                    />
+                  ) : (
+                    <ArrowRight
+                      className="h-5 w-5 shrink-0 rotate-180 text-muted-foreground/50"
+                      aria-hidden="true"
+                    />
+                  )}
+                </motion.button>
+              );
+            })}
+          </div>
+          {sending && (
+            <p
+              className="mt-4 flex items-center justify-center gap-2 text-xs font-bold text-primary"
+              role="status"
+            >
+              <Loader2 className="h-4 w-4 animate-spin" /> جارٍ البحث عن أقرب
+              مهني...
+            </p>
+          )}
+        </section>
+
+        <SurfaceCard className="mt-7 p-4 sm:p-5">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/8 text-primary">
+              <MapPin className="h-5 w-5" />
+            </span>
+            <div>
+              <h2 className="text-sm font-black text-foreground">
+                موقعك الحالي
+              </h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {user?.city ?? "صنعاء"} — سيتم تحديد الموقع الدقيق عند الإرسال
+              </p>
+            </div>
+          </div>
+        </SurfaceCard>
+
+        <div className="mt-4 rounded-3xl border border-red-200 bg-red-50/70 p-5 text-center dark:border-red-900/50 dark:bg-red-950/20">
+          <Phone className="mx-auto h-5 w-5 text-red-600 dark:text-red-300" />
+          <p className="mt-2 text-sm font-bold text-red-800 dark:text-red-200">
+            في حالات الخطر الشديد
+          </p>
+          <a
+            href="tel:199"
+            className="mt-1 block text-2xl font-black text-red-600 underline decoration-red-300 underline-offset-4 dark:text-red-300"
+          >
+            اتصل 199
+          </a>
         </div>
 
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-center">
-          <Phone className="w-5 h-5 text-red-600 mx-auto mb-2" />
-          <p className="text-red-700 text-sm font-medium">في حالات الخطر الشديد</p>
-          <a href="tel:199" className="text-red-600 text-2xl font-bold block mt-1">اتصل 199</a>
+        <div className="mt-5 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <ShieldAlert className="h-4 w-4 text-primary" /> نرسل طلبك للمهني
+          الأقرب دون تأخير
         </div>
-      </div>
+      </AppPage>
     </div>
   );
 }

@@ -1,24 +1,63 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, BriefcaseBusiness, Camera, Check, CheckCircle2, ChevronDown, Eye, EyeOff, FileText, ImagePlus, Loader2, LockKeyhole, MessageCircle, Phone, ShieldCheck, Upload, UserRound, X } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BriefcaseBusiness,
+  Camera,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  Eye,
+  EyeOff,
+  FileText,
+  ImagePlus,
+  Loader2,
+  LockKeyhole,
+  MessageCircle,
+  Phone,
+  ShieldCheck,
+  Upload,
+  UserRound,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { CustomerLocation } from "@/components/LocationPicker";
 import { useAuth, apiRequest } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
-import { getFirstLoginPath, getRegistrationRole, type RegistrationRole } from "@/lib/registration";
+import {
+  getFirstLoginPath,
+  getRegistrationRole,
+  type RegistrationRole,
+} from "@/lib/registration";
 import { BrandLogo } from "@/components/brand-logo";
+import { SurfaceCard } from "@/components/app-ui";
 
 type Step = "phone" | "otp" | "name";
-type Category = { id: number; name: string; icon?: string | null; specialties?: string[] };
+type Category = {
+  id: number;
+  name: string;
+  icon?: string | null;
+  specialties?: string[];
+};
 
 const LocationPicker = lazy(() => import("@/components/LocationPicker"));
 
-const roleLabels: Record<RegistrationRole, { title: string; description: string }> = {
-  client: { title: "أبحث عن خدمة", description: "ستظهر لك أفضل الخدمات والمهنيين" },
-  provider: { title: "أقدّم خدمة", description: "ستستقبل طلبات العملاء وتدير عملك" },
+const roleLabels: Record<
+  RegistrationRole,
+  { title: string; description: string }
+> = {
+  client: {
+    title: "أبحث عن خدمة",
+    description: "ستظهر لك أفضل الخدمات والمهنيين",
+  },
+  provider: {
+    title: "أقدّم خدمة",
+    description: "ستستقبل طلبات العملاء وتدير عملك",
+  },
 };
 
 function fileToDataUrl(file: Blob): Promise<string> {
@@ -30,10 +69,18 @@ function fileToDataUrl(file: Blob): Promise<string> {
   });
 }
 
-async function prepareDocument(file: File): Promise<{ dataBase64: string; contentType: string; originalName: string }> {
-  const isImage = file.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(file.name);
+async function prepareDocument(
+  file: File
+): Promise<{ dataBase64: string; contentType: string; originalName: string }> {
+  const isImage =
+    file.type.startsWith("image/") ||
+    /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(file.name);
   if (!isImage) {
-    return { dataBase64: await fileToDataUrl(file), contentType: file.type || "application/pdf", originalName: file.name };
+    return {
+      dataBase64: await fileToDataUrl(file),
+      contentType: file.type || "application/pdf",
+      originalName: file.name,
+    };
   }
 
   try {
@@ -45,22 +92,45 @@ async function prepareDocument(file: File): Promise<{ dataBase64: string; conten
       element.src = sourceUrl;
     });
     const maxDimension = 1800;
-    const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height));
+    const scale = Math.min(
+      1,
+      maxDimension /
+        Math.max(
+          image.naturalWidth || image.width,
+          image.naturalHeight || image.height
+        )
+    );
     const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale));
-    canvas.height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale));
+    canvas.width = Math.max(
+      1,
+      Math.round((image.naturalWidth || image.width) * scale)
+    );
+    canvas.height = Math.max(
+      1,
+      Math.round((image.naturalHeight || image.height) * scale)
+    );
     const context = canvas.getContext("2d");
     if (!context) throw new Error("تعذر تجهيز صورة الهاتف");
     context.fillStyle = "#ffffff";
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
     URL.revokeObjectURL(sourceUrl);
-    const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg", 0.86));
+    const blob = await new Promise<Blob | null>(resolve =>
+      canvas.toBlob(resolve, "image/jpeg", 0.86)
+    );
     if (!blob) throw new Error("تعذر ضغط صورة الهاتف");
     const baseName = file.name.replace(/\.[^.]+$/, "") || "document";
-    return { dataBase64: await fileToDataUrl(blob), contentType: "image/jpeg", originalName: `${baseName}.jpg` };
+    return {
+      dataBase64: await fileToDataUrl(blob),
+      contentType: "image/jpeg",
+      originalName: `${baseName}.jpg`,
+    };
   } catch {
-    return { dataBase64: await fileToDataUrl(file), contentType: file.type || "image/jpeg", originalName: file.name };
+    return {
+      dataBase64: await fileToDataUrl(file),
+      contentType: file.type || "image/jpeg",
+      originalName: file.name,
+    };
   }
 }
 
@@ -71,7 +141,8 @@ export default function AuthPhone() {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [customerLocation, setCustomerLocation] = useState<CustomerLocation | null>(null);
+  const [customerLocation, setCustomerLocation] =
+    useState<CustomerLocation | null>(null);
   const [categoryId, setCategoryId] = useState("");
   const [specialty, setSpecialty] = useState("");
   const [bio, setBio] = useState("");
@@ -86,21 +157,31 @@ export default function AuthPhone() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [specialtyOpen, setSpecialtyOpen] = useState(false);
-  const [role, setRole] = useState<RegistrationRole>(() => getRegistrationRole(window.location.search));
+  const [role, setRole] = useState<RegistrationRole>(() =>
+    getRegistrationRole(window.location.search)
+  );
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStage, setUploadStage] = useState("");
-  const [verificationSuccess, setVerificationSuccess] = useState<{ requestId: number; reviewTime: string } | null>(null);
+  const [verificationSuccess, setVerificationSuccess] = useState<{
+    requestId: number;
+    reviewTime: string;
+  } | null>(null);
   const [devOtp, setDevOtp] = useState<string | null>(null);
   const [providerSessionReady, setProviderSessionReady] = useState(false);
   const { login } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
-  const mode = new URLSearchParams(window.location.search).get("mode") === "login" ? "login" : "register";
+  const mode =
+    new URLSearchParams(window.location.search).get("mode") === "login"
+      ? "login"
+      : "register";
   const selectedRole = roleLabels[role];
   const RoleIcon = role === "provider" ? BriefcaseBusiness : UserRound;
-  const selectedCategory = categories.find((category) => String(category.id) === categoryId);
+  const selectedCategory = categories.find(
+    category => String(category.id) === categoryId
+  );
   const namePartsCount = name.trim().split(/\s+/).filter(Boolean).length;
   const clientProfileReady = namePartsCount >= 4 && customerLocation !== null;
 
@@ -109,11 +190,16 @@ export default function AuthPhone() {
     let active = true;
     setCategoriesLoading(true);
     apiRequest("/categories")
-      .then((data) => {
+      .then(data => {
         if (active) setCategories(Array.isArray(data) ? data : []);
       })
       .catch((err: any) => {
-        if (active) toast({ title: "تعذر تحميل مجالات الخدمة", description: err.message, variant: "destructive" });
+        if (active)
+          toast({
+            title: "تعذر تحميل مجالات الخدمة",
+            description: err.message,
+            variant: "destructive",
+          });
       })
       .finally(() => {
         if (active) setCategoriesLoading(false);
@@ -125,24 +211,43 @@ export default function AuthPhone() {
 
   async function sendOtp() {
     if (phone.trim().length < 7) {
-      toast({ title: "خطأ", description: "أدخل رقم هاتف صحيح", variant: "destructive" });
+      toast({
+        title: "خطأ",
+        description: "أدخل رقم هاتف صحيح",
+        variant: "destructive",
+      });
       return;
     }
     setLoading(true);
     try {
-      const data = await apiRequest('/auth/send-otp', {
-        method: 'POST',
+      const data = await apiRequest("/auth/send-otp", {
+        method: "POST",
         body: JSON.stringify({ phone: phone.trim(), role, mode }),
       });
       const developmentCode = typeof data.otp === "string" ? data.otp : null;
       setDevOtp(developmentCode);
       setStep("otp");
-      toast(developmentCode
-        ? { title: "رمز الاختبار جاهز", description: "الرمز ظاهر على هذه الشاشة؛ لم يتم إرسال رسالة SMS." }
-        : { title: "خدمة SMS غير مهيأة", description: "لم يتم ربط مزود SMS بعد، لذلك لن تصل رسالة تحقق حالياً." });
+      toast(
+        developmentCode
+          ? {
+              title: "رمز الاختبار جاهز",
+              description: "الرمز ظاهر على هذه الشاشة؛ لم يتم إرسال رسالة SMS.",
+            }
+          : {
+              title: "خدمة SMS غير مهيأة",
+              description:
+                "لم يتم ربط مزود SMS بعد، لذلك لن تصل رسالة تحقق حالياً.",
+            }
+      );
     } catch (err: any) {
       const message = err?.message || "تعذر إرسال رمز التحقق";
-      toast({ title: message.includes("هذا الرقم") ? "لا يمكن استخدام هذا الرقم" : "خطأ", description: message, variant: "destructive" });
+      toast({
+        title: message.includes("هذا الرقم")
+          ? "لا يمكن استخدام هذا الرقم"
+          : "خطأ",
+        description: message,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -150,25 +255,36 @@ export default function AuthPhone() {
 
   async function verifyOtp() {
     if (otp.length !== 6) {
-      toast({ title: "خطأ", description: "أدخل الرمز المكون من 6 أرقام", variant: "destructive" });
+      toast({
+        title: "خطأ",
+        description: "أدخل الرمز المكون من 6 أرقام",
+        variant: "destructive",
+      });
       return;
     }
     setLoading(true);
     try {
-      const data = await apiRequest('/auth/verify-otp', {
-        method: 'POST',
+      const data = await apiRequest("/auth/verify-otp", {
+        method: "POST",
         body: JSON.stringify({ phone: phone.trim(), code: otp, role, mode }),
       });
       if (data.needsRegistration) {
         setStep("name");
       } else {
-        const authenticatedUser = role === "provider" ? { ...data.user, role: "provider" } : data.user;
+        const authenticatedUser =
+          role === "provider" ? { ...data.user, role: "provider" } : data.user;
         login(data.token, authenticatedUser);
         navigate(getFirstLoginPath(role));
       }
     } catch (err: any) {
       const message = err?.message || "رمز التحقق غير صحيح";
-      toast({ title: message.includes("هذا الرقم") ? "لا يمكن استخدام هذا الرقم" : "رمز خاطئ", description: message, variant: "destructive" });
+      toast({
+        title: message.includes("هذا الرقم")
+          ? "لا يمكن استخدام هذا الرقم"
+          : "رمز خاطئ",
+        description: message,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -176,19 +292,36 @@ export default function AuthPhone() {
 
   async function completeRegistration() {
     if (password.length < 6) {
-      toast({ title: "كلمة المرور مطلوبة", description: "أنشئ كلمة مرور من 6 أحرف أو أرقام على الأقل", variant: "destructive" });
+      toast({
+        title: "كلمة المرور مطلوبة",
+        description: "أنشئ كلمة مرور من 6 أحرف أو أرقام على الأقل",
+        variant: "destructive",
+      });
       return;
     }
     if (role === "client" && namePartsCount < 4) {
-      toast({ title: "الاسم الرباعي مطلوب", description: "يرجى إدخال الاسم الرباعي كاملاً", variant: "destructive" });
+      toast({
+        title: "الاسم الرباعي مطلوب",
+        description: "يرجى إدخال الاسم الرباعي كاملاً",
+        variant: "destructive",
+      });
       return;
     }
     if (role === "client" && !customerLocation) {
-      toast({ title: "الموقع مطلوب", description: "يجب تحديد موقعك للعثور على المهنيين القريبين منك", variant: "destructive" });
+      toast({
+        title: "الموقع مطلوب",
+        description: "يجب تحديد موقعك للعثور على المهنيين القريبين منك",
+        variant: "destructive",
+      });
       return;
     }
     if (role === "provider" && !customerLocation) {
-      toast({ title: "موقع العمل مطلوب", description: "حدد موقع عملك بدقة من خلال GPS أو الخريطة قبل إكمال التسجيل", variant: "destructive" });
+      toast({
+        title: "موقع العمل مطلوب",
+        description:
+          "حدد موقع عملك بدقة من خلال GPS أو الخريطة قبل إكمال التسجيل",
+        variant: "destructive",
+      });
       return;
     }
     if (!name.trim()) {
@@ -196,19 +329,76 @@ export default function AuthPhone() {
       return;
     }
     if (role === "provider" && !categoryId) {
-      toast({ title: "حدد مجال خدمتك", description: "اختر المجال الذي ستقدم خدماته للعملاء", variant: "destructive" });
+      toast({
+        title: "حدد مجال خدمتك",
+        description: "اختر المجال الذي ستقدم خدماته للعملاء",
+        variant: "destructive",
+      });
       return;
     }
-    if (role === "provider" && selectedCategory?.specialties?.length && !specialty) {
-      toast({ title: "حدد تخصصك الفرعي", description: "اختر التخصص الأدق داخل مجال خدمتك", variant: "destructive" });
+    if (
+      role === "provider" &&
+      selectedCategory?.specialties?.length &&
+      !specialty
+    ) {
+      toast({
+        title: "حدد تخصصك الفرعي",
+        description: "اختر التخصص الأدق داخل مجال خدمتك",
+        variant: "destructive",
+      });
       return;
     }
-    if (role === "provider" && namePartsCount < 4) { toast({ title: "الاسم الرباعي مطلوب", description: "أدخل أربعة أسماء كاملة على الأقل", variant: "destructive" }); return; }
-    if (role === "provider" && !/^\d{11}$/.test(nationalId)) { toast({ title: "الرقم الوطني غير صحيح", description: "يجب إدخال 11 رقماً بالضبط", variant: "destructive" }); return; }
-    if (role === "provider" && (!selfieFile || !idFrontFile || !idBackFile)) { toast({ title: "الصور المطلوبة ناقصة", description: "أرفق صورتك الشخصية وصورة الهوية الوطنية من الأمام والخلف", variant: "destructive" }); return; }
-    if (role === "provider" && !/^7\d{8}$/.test(whatsapp)) { toast({ title: "رقم واتساب غير صحيح", description: "أدخل رقمًا يمنيًا من 9 أرقام يبدأ بالرقم 7", variant: "destructive" }); return; }
-    if (role === "provider" && (bio.trim().length < 50 || bio.trim().length > 1000)) { toast({ title: "وصف التخصص غير مكتمل", description: "يجب أن يكون الوصف بين 50 و1000 حرف", variant: "destructive" }); return; }
-    if (role === "provider" && !termsAccepted) { toast({ title: "الموافقة مطلوبة", description: "وافق على التعهد والشروط والأحكام للمتابعة", variant: "destructive" }); return; }
+    if (role === "provider" && namePartsCount < 4) {
+      toast({
+        title: "الاسم الرباعي مطلوب",
+        description: "أدخل أربعة أسماء كاملة على الأقل",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (role === "provider" && !/^\d{11}$/.test(nationalId)) {
+      toast({
+        title: "الرقم الوطني غير صحيح",
+        description: "يجب إدخال 11 رقماً بالضبط",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (role === "provider" && (!selfieFile || !idFrontFile || !idBackFile)) {
+      toast({
+        title: "الصور المطلوبة ناقصة",
+        description: "أرفق صورتك الشخصية وصورة الهوية الوطنية من الأمام والخلف",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (role === "provider" && !/^7\d{8}$/.test(whatsapp)) {
+      toast({
+        title: "رقم واتساب غير صحيح",
+        description: "أدخل رقمًا يمنيًا من 9 أرقام يبدأ بالرقم 7",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (
+      role === "provider" &&
+      (bio.trim().length < 50 || bio.trim().length > 1000)
+    ) {
+      toast({
+        title: "وصف التخصص غير مكتمل",
+        description: "يجب أن يكون الوصف بين 50 و1000 حرف",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (role === "provider" && !termsAccepted) {
+      toast({
+        title: "الموافقة مطلوبة",
+        description: "وافق على التعهد والشروط والأحكام للمتابعة",
+        variant: "destructive",
+      });
+      return;
+    }
     setLoading(true);
     if (role === "provider") {
       setUploadProgress(0);
@@ -216,8 +406,8 @@ export default function AuthPhone() {
     }
     try {
       if (!providerSessionReady) {
-        const data = await apiRequest('/auth/verify-otp', {
-          method: 'POST',
+        const data = await apiRequest("/auth/verify-otp", {
+          method: "POST",
           body: JSON.stringify({
             phone: phone.trim(),
             code: otp,
@@ -234,13 +424,18 @@ export default function AuthPhone() {
             categoryId: categoryId ? Number(categoryId) : undefined,
             specialty: specialty.trim() || undefined,
             bio: bio.trim() || undefined,
-            yearsExperience: yearsExperience ? Number(yearsExperience) : undefined,
+            yearsExperience: yearsExperience
+              ? Number(yearsExperience)
+              : undefined,
             nationalId: role === "provider" ? nationalId : undefined,
             whatsapp: role === "provider" ? whatsapp : undefined,
             termsAccepted: role === "provider" ? termsAccepted : undefined,
           }),
         });
-        login(data.token, role === "provider" ? { ...data.user, role: "provider" } : data.user);
+        login(
+          data.token,
+          role === "provider" ? { ...data.user, role: "provider" } : data.user
+        );
         if (role === "provider") setProviderSessionReady(true);
       }
       try {
@@ -253,23 +448,43 @@ export default function AuthPhone() {
           let requestId: number | null = null;
           for (let index = 0; index < documents.length; index += 1) {
             const [type, label, file] = documents[index];
-            setUploadStage(`جاري رفع ${label} (${index + 1} من ${documents.length})`);
+            setUploadStage(
+              `جاري رفع ${label} (${index + 1} من ${documents.length})`
+            );
             const prepared = await prepareDocument(file);
-            const uploadResult = await apiRequest("/providers/me/verification-documents/base64", {
-              method: "POST",
-              body: JSON.stringify({ type, originalName: prepared.originalName, contentType: prepared.contentType, dataBase64: prepared.dataBase64 }),
-            });
-            if (typeof uploadResult.requestId === "number") requestId = uploadResult.requestId;
-            setUploadProgress(Math.round(((index + 1) / documents.length) * 100));
+            const uploadResult = await apiRequest(
+              "/providers/me/verification-documents/base64",
+              {
+                method: "POST",
+                body: JSON.stringify({
+                  type,
+                  originalName: prepared.originalName,
+                  contentType: prepared.contentType,
+                  dataBase64: prepared.dataBase64,
+                }),
+              }
+            );
+            if (typeof uploadResult.requestId === "number")
+              requestId = uploadResult.requestId;
+            setUploadProgress(
+              Math.round(((index + 1) / documents.length) * 100)
+            );
           }
           setUploadStage("اكتمل رفع جميع المستندات");
           if (requestId !== null) {
-            setVerificationSuccess({ requestId, reviewTime: "عادةً خلال 1 إلى 3 أيام عمل" });
+            setVerificationSuccess({
+              requestId,
+              reviewTime: "عادةً خلال 1 إلى 3 أيام عمل",
+            });
             return;
           }
         }
       } catch (uploadError) {
-        throw new Error(uploadError instanceof Error ? `تعذر رفع مستندات الاعتماد: ${uploadError.message}` : "تعذر رفع مستندات الاعتماد");
+        throw new Error(
+          uploadError instanceof Error
+            ? `تعذر رفع مستندات الاعتماد: ${uploadError.message}`
+            : "تعذر رفع مستندات الاعتماد"
+        );
       }
       navigate(getFirstLoginPath(role));
     } catch (err: any) {
@@ -279,15 +494,25 @@ export default function AuthPhone() {
     }
   }
 
-  async function handleIdentityCamera(event: React.ChangeEvent<HTMLInputElement>) {
+  async function handleIdentityCamera(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
     const selected = event.target.files?.[0];
     if (!selected) return;
     if (!selected.type.startsWith("image/")) {
-      toast({ title: "صورة الهوية مطلوبة", description: "استخدم الكاميرا لالتقاط صورة واضحة للهوية.", variant: "destructive" });
+      toast({
+        title: "صورة الهوية مطلوبة",
+        description: "استخدم الكاميرا لالتقاط صورة واضحة للهوية.",
+        variant: "destructive",
+      });
       return;
     }
     if (selected.size > 10 * 1024 * 1024) {
-      toast({ title: "الملف كبير", description: "يجب ألا يتجاوز حجم الصورة 10 ميجابايت", variant: "destructive" });
+      toast({
+        title: "الملف كبير",
+        description: "يجب ألا يتجاوز حجم الصورة 10 ميجابايت",
+        variant: "destructive",
+      });
       return;
     }
     setIdFrontFile(selected);
@@ -296,38 +521,64 @@ export default function AuthPhone() {
       const { BrowserMultiFormatReader } = await import("@zxing/browser");
       const reader = new BrowserMultiFormatReader();
       const result = await reader.decodeFromImageUrl(imageUrl);
-      const rawValue = result.getText().replace(/[٠-٩]/g, digit => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)));
+      const rawValue = result
+        .getText()
+        .replace(/[٠-٩]/g, digit => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)));
       const nationalIdMatch = rawValue.match(/\d{11}/);
       if (nationalIdMatch) {
         setNationalId(nationalIdMatch[0]);
-        toast({ title: "تمت قراءة باركود الهوية", description: `تم إدخال الرقم الوطني تلقائيًا: ${nationalIdMatch[0]}` });
+        toast({
+          title: "تمت قراءة باركود الهوية",
+          description: `تم إدخال الرقم الوطني تلقائيًا: ${nationalIdMatch[0]}`,
+        });
       } else {
-        toast({ title: "تم التقاط الصورة", description: "لم نستخرج 11 رقمًا من الباركود؛ راجع الرقم الوطني واكتبه يدويًا." });
+        toast({
+          title: "تم التقاط الصورة",
+          description:
+            "لم نستخرج 11 رقمًا من الباركود؛ راجع الرقم الوطني واكتبه يدويًا.",
+        });
       }
     } catch {
-      toast({ title: "تم التقاط الصورة", description: "قرّب الباركود واجعله واضحًا ثم حاول التصوير مرة أخرى، أو اكتب الرقم الوطني يدويًا." });
+      toast({
+        title: "تم التقاط الصورة",
+        description:
+          "قرّب الباركود واجعله واضحًا ثم حاول التصوير مرة أخرى، أو اكتب الرقم الوطني يدويًا.",
+      });
     } finally {
       URL.revokeObjectURL(imageUrl);
     }
   }
 
   const stepNumber = step === "phone" ? "٠١" : step === "otp" ? "٠٢" : "٠٣";
-  const stepTitle = step === "phone" ? "أدخل رقم هاتفك" : step === "otp" ? "تحقق من هاتفك" : "أكمل بياناتك";
+  const stepTitle =
+    step === "phone"
+      ? "أدخل رقم هاتفك"
+      : step === "otp"
+        ? "تحقق من هاتفك"
+        : "أكمل بياناتك";
 
   return (
-    <main className="min-h-[100dvh] bg-[#f5f3ee] text-primary" dir="rtl">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col overflow-y-auto px-5 pb-8 pt-6 sm:max-w-lg sm:px-9">
+    <main className="min-h-[100dvh] bg-background text-foreground" dir="rtl">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col overflow-y-auto px-5 pb-8 pt-5 sm:px-8 sm:pt-7">
         <header className="flex items-center justify-between">
           <button
             type="button"
-            onClick={() => step === "phone" ? navigate("/login") : setStep(step === "otp" ? "phone" : "otp")}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-[#ddd8ce] bg-white text-primary transition-colors hover:bg-[#ebe8e0]"
+            onClick={() =>
+              step === "phone"
+                ? navigate("/login")
+                : setStep(step === "otp" ? "phone" : "otp")
+            }
+            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-card text-foreground shadow-sm transition-colors hover:bg-secondary"
             aria-label="رجوع"
           >
             <ArrowRight className="h-4 w-4" />
           </button>
-          <img src="/assets/fazaah-logo-mark.webp" alt="فزعة" className="auth-brand-image h-16 w-24 object-contain" />
-          <span className="rounded-full border border-[#d9d5cd] bg-white px-3 py-1.5 text-[10px] font-bold text-[#8e8b82]">
+          <img
+            src="/assets/fazaah-logo-mark.webp"
+            alt="فزعة"
+            className="auth-brand-image h-14 w-20 object-contain"
+          />
+          <span className="rounded-full border border-border bg-card px-3 py-2 text-[10px] font-bold text-muted-foreground shadow-sm">
             {stepNumber} <span className="mx-1 text-[#b57920]">/</span> ٠٣
           </span>
         </header>
@@ -341,39 +592,71 @@ export default function AuthPhone() {
             className="space-y-7"
           >
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#b57920]">التحقق الآمن</p>
-              <h1 className="mt-3 text-[32px] font-black leading-tight tracking-[-0.04em]">{stepTitle}</h1>
-              <p className="mt-3 text-sm leading-7 text-[#77766f]">
-                {step === "phone" && "حالياً يظهر رمز التحقق التجريبي على الشاشة؛ سنرسل SMS بعد ربط المزود."}
-                {step === "otp" && (devOtp ? "أدخل رمز الاختبار الظاهر على الشاشة لإكمال الدخول." : "أدخل الرمز الذي وصل إلى هاتفك لإكمال الدخول.")}
-                {step === "name" && (role === "provider"
-                  ? "عرّف العملاء بخدمتك حتى تصل إليك الطلبات المناسبة."
-                  : "أكمل بياناتك: أدخل اسمك الحقيقي وحدد موقعك لنتمكن من عرض أفضل المهنيين والخدمات القريبة منك.")}
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-accent-foreground">
+                التحقق الآمن
+              </p>
+              <h1 className="mt-3 text-[32px] font-black leading-tight tracking-[-0.04em] text-foreground">
+                {stepTitle}
+              </h1>
+              <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                {step === "phone" &&
+                  "حالياً يظهر رمز التحقق التجريبي على الشاشة؛ سنرسل SMS بعد ربط المزود."}
+                {step === "otp" &&
+                  (devOtp
+                    ? "أدخل رمز الاختبار الظاهر على الشاشة لإكمال الدخول."
+                    : "أدخل الرمز الذي وصل إلى هاتفك لإكمال الدخول.")}
+                {step === "name" &&
+                  (role === "provider"
+                    ? "عرّف العملاء بخدمتك حتى تصل إليك الطلبات المناسبة."
+                    : "أكمل بياناتك: أدخل اسمك الحقيقي وحدد موقعك لنتمكن من عرض أفضل المهنيين والخدمات القريبة منك.")}
               </p>
             </div>
 
             {step === "phone" && (
               <>
-                <div className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-primary/10 text-primary shadow-[0_12px_28px_rgba(14,47,98,0.08)]">
+                <div className="flex h-20 w-20 items-center justify-center rounded-[26px] bg-primary/10 text-foreground shadow-[0_12px_28px_rgba(14,47,98,0.08)]">
                   <Phone className="h-9 w-9" />
                 </div>
-                <div className="flex items-center gap-3 rounded-2xl border border-primary/10 bg-white p-3 shadow-sm">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary"><RoleIcon className="h-5 w-5" /></div>
-                  <div className="min-w-0 flex-1"><p className="text-[11px] font-bold text-[#8b897f]">نوع الحساب</p><p className="mt-0.5 text-sm font-extrabold text-primary">{selectedRole.title}</p></div>
-                  <Check className="h-5 w-5 text-[#b57920]" />
-                </div>
+                <SurfaceCard className="flex items-center gap-3 rounded-2xl p-3 shadow-sm">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-foreground">
+                    <RoleIcon className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-bold text-muted-foreground">
+                      نوع الحساب
+                    </p>
+                    <p className="mt-0.5 text-sm font-extrabold text-foreground">
+                      {selectedRole.title}
+                    </p>
+                  </div>
+                  <Check className="h-5 w-5 text-accent-foreground" />
+                </SurfaceCard>
                 <Input
                   type="tel"
                   placeholder="7XXXXXXXX"
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
-                  className="h-14 rounded-2xl border-[#d4d9df] bg-white text-center text-lg font-semibold shadow-sm focus-visible:ring-primary"
+                  className="h-14 rounded-2xl border-input bg-card text-center text-lg font-semibold shadow-sm focus-visible:ring-primary"
                   dir="ltr"
                   disabled={loading}
                   onKeyDown={e => e.key === "Enter" && sendOtp()}
                 />
-                <Button onClick={sendOtp} disabled={loading} className="h-14 w-full rounded-2xl bg-primary text-base font-extrabold text-primary-foreground shadow-[0_12px_26px_rgba(14,47,98,0.16)] hover:bg-primary/90">
-                  {loading ? <><Loader2 className="ml-2 h-5 w-5 animate-spin" /> جاري إرسال الرمز...</> : <>إرسال رمز التحقق<ArrowLeft className="mr-2 h-4 w-4" /></>}
+                <Button
+                  onClick={sendOtp}
+                  disabled={loading}
+                  className="h-14 w-full rounded-2xl bg-primary text-base font-extrabold text-primary-foreground shadow-[0_12px_26px_rgba(14,47,98,0.16)] hover:bg-primary/90"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="ml-2 h-5 w-5 animate-spin" /> جاري
+                      إرسال الرمز...
+                    </>
+                  ) : (
+                    <>
+                      إرسال رمز التحقق
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                    </>
+                  )}
                 </Button>
               </>
             )}
@@ -384,14 +667,30 @@ export default function AuthPhone() {
                   <ShieldCheck className="h-9 w-9" />
                 </div>
                 <div>
-                  <p className="mb-3 text-sm text-[#77766f]">
-                    {devOtp
-                      ? <>لم يتم إرسال SMS؛ استخدم رمز التطوير الظاهر أدناه للاختبار مع <span className="font-bold text-primary" dir="ltr">{phone}</span>.</>
-                      : <>لم يتم ربط مزود SMS بعد، ولن يصل رمز إلى <span className="font-bold text-primary" dir="ltr">{phone}</span>.</>}
+                  <p className="mb-3 text-sm text-muted-foreground">
+                    {devOtp ? (
+                      <>
+                        لم يتم إرسال SMS؛ استخدم رمز التطوير الظاهر أدناه
+                        للاختبار مع{" "}
+                        <span className="font-bold text-foreground" dir="ltr">
+                          {phone}
+                        </span>
+                        .
+                      </>
+                    ) : (
+                      <>
+                        لم يتم ربط مزود SMS بعد، ولن يصل رمز إلى{" "}
+                        <span className="font-bold text-foreground" dir="ltr">
+                          {phone}
+                        </span>
+                        .
+                      </>
+                    )}
                   </p>
                   {devOtp && (
                     <p className="mb-3 rounded-xl border border-accent/30 bg-accent/10 px-3 py-2 text-xs text-[#8a6925]">
-                      رمز التطوير (للاختبار فقط): <span className="font-mono font-bold">{devOtp}</span>
+                      رمز التطوير (للاختبار فقط):{" "}
+                      <span className="font-mono font-bold">{devOtp}</span>
                     </p>
                   )}
                   <Input
@@ -401,15 +700,23 @@ export default function AuthPhone() {
                     maxLength={6}
                     value={otp}
                     onChange={e => setOtp(e.target.value.replace(/\D/g, ""))}
-                    className="h-14 rounded-2xl border-[#d4d9df] bg-white text-center font-mono text-2xl tracking-[0.5em] shadow-sm focus-visible:ring-primary"
+                    className="h-14 rounded-2xl border-input bg-card text-center font-mono text-2xl tracking-[0.5em] shadow-sm focus-visible:ring-primary"
                     dir="ltr"
                   />
                 </div>
-                <Button onClick={verifyOtp} disabled={loading || otp.length !== 6} className="h-14 w-full rounded-2xl bg-primary text-base font-extrabold text-primary-foreground shadow-[0_12px_26px_rgba(14,47,98,0.16)] hover:bg-primary/90">
+                <Button
+                  onClick={verifyOtp}
+                  disabled={loading || otp.length !== 6}
+                  className="h-14 w-full rounded-2xl bg-primary text-base font-extrabold text-primary-foreground shadow-[0_12px_26px_rgba(14,47,98,0.16)] hover:bg-primary/90"
+                >
                   {loading ? "جاري التحقق..." : "تأكيد الرمز"}
                   <Check className="mr-2 h-4 w-4" />
                 </Button>
-                <button type="button" onClick={sendOtp} className="w-full text-center text-sm font-bold text-[#b57920]">
+                <button
+                  type="button"
+                  onClick={sendOtp}
+                  className="w-full text-center text-sm font-bold text-[#b57920]"
+                >
                   إعادة إرسال الرمز
                 </button>
               </>
@@ -418,131 +725,571 @@ export default function AuthPhone() {
             {step === "name" && (
               <>
                 <div className={verificationSuccess ? "hidden" : "space-y-7"}>
-                <div className="rounded-[26px] border border-primary/10 bg-primary p-4 text-white shadow-[0_16px_32px_rgba(14,47,98,0.14)]">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-primary">
-                      <RoleIcon className="h-6 w-6" />
+                  <div className="rounded-[26px] border border-primary/10 bg-primary p-4 text-white shadow-[0_16px_32px_rgba(14,47,98,0.14)]">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-foreground">
+                        <RoleIcon className="h-6 w-6" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[15px] font-extrabold">
+                          {selectedRole.title}
+                        </p>
+                        <p className="mt-1 text-xs text-white/65">
+                          {selectedRole.description}
+                        </p>
+                      </div>
+                      <Check className="h-5 w-5 text-accent" />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[15px] font-extrabold">{selectedRole.title}</p>
-                      <p className="mt-1 text-xs text-white/65">{selectedRole.description}</p>
+                    <p className="mt-3 border-t border-white/10 pt-3 text-[10px] font-medium text-white/55">
+                      تم حفظ اختيارك ولن نطلب منك تحديده مرة أخرى.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="customer-four-part-name"
+                      className="block text-sm font-black text-foreground"
+                    >
+                      الاسم الرباعي <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      id="customer-four-part-name"
+                      placeholder="أدخل اسمك الرباعي"
+                      value={name}
+                      onChange={e => setName(e.target.value)}
+                      className="h-14 rounded-2xl border-input bg-card text-base shadow-sm focus-visible:ring-primary"
+                      autoFocus
+                    />
+                    <p className="text-[11px] leading-5 text-muted-foreground">
+                      الاسم الأول، اسم الأب، اسم الجد، واسم العائلة
+                    </p>
+                    {role === "client" && name.trim() && namePartsCount < 4 && (
+                      <p className="text-xs font-bold text-red-600">
+                        يرجى إدخال الاسم الرباعي كاملاً
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="registration-password"
+                      className="block text-sm font-black text-foreground"
+                    >
+                      كلمة المرور <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <LockKeyhole className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="registration-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="6 أحرف أو أرقام على الأقل"
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        className="h-14 rounded-2xl border-input bg-card px-11 text-base shadow-sm focus-visible:ring-primary"
+                        dir="ltr"
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(value => !value)}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+                        aria-label={
+                          showPassword
+                            ? "إخفاء كلمة المرور"
+                            : "إظهار كلمة المرور"
+                        }
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
                     </div>
-                    <Check className="h-5 w-5 text-accent" />
                   </div>
-                  <p className="mt-3 border-t border-white/10 pt-3 text-[10px] font-medium text-white/55">
-                    تم حفظ اختيارك ولن نطلب منك تحديده مرة أخرى.
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="customer-four-part-name" className="block text-sm font-black text-primary">الاسم الرباعي <span className="text-red-500">*</span></label>
-                  <Input
-                    id="customer-four-part-name"
-                    placeholder="أدخل اسمك الرباعي"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    className="h-14 rounded-2xl border-[#d4d9df] bg-white text-base shadow-sm focus-visible:ring-primary"
-                    autoFocus
-                  />
-                  <p className="text-[11px] leading-5 text-[#8b897f]">الاسم الأول، اسم الأب، اسم الجد، واسم العائلة</p>
-                  {role === "client" && name.trim() && namePartsCount < 4 && <p className="text-xs font-bold text-red-600">يرجى إدخال الاسم الرباعي كاملاً</p>}
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="registration-password" className="block text-sm font-black text-primary">كلمة المرور <span className="text-red-500">*</span></label>
-                  <div className="relative">
-                    <LockKeyhole className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8b897f]" />
-                    <Input id="registration-password" type={showPassword ? "text" : "password"} placeholder="6 أحرف أو أرقام على الأقل" value={password} onChange={e => setPassword(e.target.value)} className="h-14 rounded-2xl border-[#d4d9df] bg-white px-11 text-base shadow-sm focus-visible:ring-primary" dir="ltr" autoComplete="new-password" />
-                    <button type="button" onClick={() => setShowPassword(value => !value)} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8b897f]" aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
-                  </div>
-                </div>
-                {role === "provider" && (
-                  <div className="space-y-3 rounded-[26px] border border-primary/10 bg-white p-4 shadow-[0_12px_28px_rgba(14,47,98,0.06)]">
-                    <p className="text-sm font-extrabold text-primary">التحقق من الهوية والتواصل</p>
-                    <div className="flex gap-2">
-                      <Input inputMode="numeric" maxLength={11} placeholder="الرقم الوطني — 11 رقمًا" value={nationalId} onChange={e => setNationalId(e.target.value.replace(/\D/g, ""))} className="h-12 rounded-xl" dir="ltr" aria-label="الرقم الوطني" />
-                      <label className="relative flex h-12 shrink-0 cursor-pointer items-center gap-1 rounded-xl bg-primary px-3 text-xs font-bold text-white transition hover:bg-primary/90 active:scale-[.98]" title="تصوير الهوية بالكاميرا">
-                        <Camera className="h-4 w-4 text-accent" />
-                        تصوير الهوية
-                        <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={handleIdentityCamera} aria-label="تصوير الهوية بالكاميرا" />
+                  {role === "provider" && (
+                    <div className="space-y-3 rounded-[26px] border border-border bg-card p-4 shadow-[0_12px_28px_rgba(14,47,98,0.06)]">
+                      <p className="text-sm font-extrabold text-foreground">
+                        التحقق من الهوية والتواصل
+                      </p>
+                      <div className="flex gap-2">
+                        <Input
+                          inputMode="numeric"
+                          maxLength={11}
+                          placeholder="الرقم الوطني — 11 رقمًا"
+                          value={nationalId}
+                          onChange={e =>
+                            setNationalId(e.target.value.replace(/\D/g, ""))
+                          }
+                          className="h-12 rounded-xl"
+                          dir="ltr"
+                          aria-label="الرقم الوطني"
+                        />
+                        <label
+                          className="relative flex h-12 shrink-0 cursor-pointer items-center gap-1 rounded-xl bg-primary px-3 text-xs font-bold text-white transition hover:bg-primary/90 active:scale-[.98]"
+                          title="تصوير الهوية بالكاميرا"
+                        >
+                          <Camera className="h-4 w-4 text-accent" />
+                          تصوير الهوية
+                          <input
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            className="sr-only"
+                            onChange={handleIdentityCamera}
+                            aria-label="تصوير الهوية بالكاميرا"
+                          />
+                        </label>
+                      </div>
+                      <p className="text-[10px] leading-5 text-muted-foreground">
+                        زر تصوير الهوية يفتح كاميرا الهاتف. إذا ظهرت رسالة إذن
+                        الموقع، فهي تخص تحديد موقع العمل وليست الكاميرا.
+                      </p>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        {(
+                          [
+                            [
+                              "selfie",
+                              "الصورة الشخصية",
+                              selfieFile,
+                              setSelfieFile,
+                            ],
+                            [
+                              "front",
+                              "صورة الهوية — الأمام",
+                              idFrontFile,
+                              setIdFrontFile,
+                            ],
+                            [
+                              "back",
+                              "صورة الهوية — الخلف",
+                              idBackFile,
+                              setIdBackFile,
+                            ],
+                          ] as const
+                        ).map(([side, label, file, setter]) => (
+                          <label
+                            key={side}
+                            className="group flex min-h-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-[#cfd5dd] bg-background px-3 py-3 text-center transition hover:border-primary/50 hover:bg-primary/[0.03]"
+                          >
+                            {file ? (
+                              <CheckCircle2 className="h-7 w-7 text-emerald-600" />
+                            ) : (
+                              <ImagePlus className="h-7 w-7 text-[#b57920]" />
+                            )}
+                            <span className="text-[11px] font-black text-foreground">
+                              {file ? file.name : label}
+                            </span>
+                            <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                              <Upload className="h-3 w-3" />{" "}
+                              {file ? "تغيير الصورة" : "إرفاق صورة واضحة"}
+                            </span>
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp,application/pdf"
+                              capture={
+                                side === "selfie" ? "user" : "environment"
+                              }
+                              className="sr-only"
+                              onChange={event => {
+                                const selected = event.target.files?.[0];
+                                if (!selected) return;
+                                if (selected.size > 10 * 1024 * 1024) {
+                                  toast({
+                                    title: "الملف كبير",
+                                    description:
+                                      "يجب ألا يتجاوز حجم الصورة 10 ميجابايت",
+                                    variant: "destructive",
+                                  });
+                                  return;
+                                }
+                                setter(selected);
+                              }}
+                              aria-label={label}
+                            />
+                          </label>
+                        ))}
+                      </div>
+                      <div className="flex h-12 items-center gap-2 rounded-xl border border-input bg-background px-3 focus-within:border-[#25d366] focus-within:ring-2 focus-within:ring-[#25d366]/15">
+                        <MessageCircle
+                          className="h-5 w-5 shrink-0 text-[#25d366]"
+                          aria-hidden="true"
+                        />
+                        <Input
+                          inputMode="numeric"
+                          maxLength={9}
+                          placeholder="أدخل رقم الواتس اب"
+                          value={whatsapp}
+                          onChange={e =>
+                            setWhatsapp(e.target.value.replace(/\D/g, ""))
+                          }
+                          className="h-10 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
+                          dir="ltr"
+                          aria-label="رقم الواتس اب"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {role === "provider" && (
+                    <div className="space-y-4 rounded-[26px] border border-border bg-card p-4 shadow-[0_12px_28px_rgba(14,47,98,0.06)]">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/20 text-[#b57920]">
+                          <BriefcaseBusiness className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-extrabold text-foreground">
+                            اختر تخصصك أو مجالك
+                          </p>
+                          <p className="mt-0.5 text-[10px] text-muted-foreground">
+                            اختر المجال والتخصص الفرعي واكتب وصفًا مختصرًا
+                            لخدمتك
+                          </p>
+                        </div>
+                      </div>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          disabled={categoriesLoading}
+                          aria-expanded={categoryOpen}
+                          onClick={() => {
+                            setCategoryOpen(open => !open);
+                            setSpecialtyOpen(false);
+                          }}
+                          className="flex h-14 w-full items-center justify-between rounded-2xl border border-[#d4d9df] bg-background px-4 text-right text-sm font-bold text-foreground outline-none transition hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <span>
+                            {categoriesLoading
+                              ? "جاري تحميل مجالات الخدمة..."
+                              : selectedCategory
+                                ? `${selectedCategory.icon ? `${selectedCategory.icon} ` : ""}${selectedCategory.name}`
+                                : "اختر مجال خدمتك"}
+                          </span>
+                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        </button>
+                        {categoryOpen && !categoriesLoading && (
+                          <div
+                            role="listbox"
+                            className="absolute inset-x-0 top-[calc(100%+8px)] z-50 max-h-64 overflow-y-auto rounded-2xl border border-border bg-popover p-2 text-popover-foreground shadow-2xl"
+                          >
+                            {categories.map(category => (
+                              <button
+                                key={category.id}
+                                type="button"
+                                role="option"
+                                aria-selected={
+                                  String(category.id) === categoryId
+                                }
+                                onClick={() => {
+                                  setCategoryId(String(category.id));
+                                  setSpecialty("");
+                                  setCategoryOpen(false);
+                                }}
+                                className="flex w-full items-center rounded-xl px-3 py-3 text-right text-sm font-bold transition hover:bg-accent hover:text-accent-foreground"
+                              >
+                                {category.icon ? `${category.icon} ` : ""}
+                                {category.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {selectedCategory?.specialties?.length ? (
+                        <div className="relative">
+                          <button
+                            type="button"
+                            aria-expanded={specialtyOpen}
+                            onClick={() => {
+                              setSpecialtyOpen(open => !open);
+                              setCategoryOpen(false);
+                            }}
+                            className="flex h-14 w-full items-center justify-between rounded-2xl border border-[#d4d9df] bg-background px-4 text-right text-sm font-bold text-foreground outline-none transition hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/10"
+                          >
+                            <span>{specialty || "اختر تخصصك الفرعي"}</span>
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          </button>
+                          {specialtyOpen && (
+                            <div
+                              role="listbox"
+                              className="absolute inset-x-0 top-[calc(100%+8px)] z-50 max-h-64 overflow-y-auto rounded-2xl border border-border bg-popover p-2 text-popover-foreground shadow-2xl"
+                            >
+                              {selectedCategory.specialties.map(item => (
+                                <button
+                                  key={item}
+                                  type="button"
+                                  role="option"
+                                  aria-selected={item === specialty}
+                                  onClick={() => {
+                                    setSpecialty(item);
+                                    setSpecialtyOpen(false);
+                                  }}
+                                  className="flex w-full items-center rounded-xl px-3 py-3 text-right text-sm font-bold transition hover:bg-accent hover:text-accent-foreground"
+                                >
+                                  {item}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : null}
+                      <div className="relative">
+                        <FileText className="pointer-events-none absolute right-4 top-4 h-4 w-4 text-[#b57920]" />
+                        <Textarea
+                          value={bio}
+                          onChange={event => setBio(event.target.value)}
+                          placeholder="اكتب وصف تخصصك أو مجالك، مثل: أقدم خدمات السباكة المنزلية وإصلاح التسربات..."
+                          className="min-h-[96px] resize-none rounded-2xl border-input bg-background pr-11 pt-3 text-sm leading-6 shadow-none focus-visible:ring-primary"
+                          maxLength={1000}
+                        />
+                        <span className="mt-1 block text-left text-[10px] text-[#aaa69b]">
+                          {bio.length}/1000
+                        </span>
+                      </div>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={60}
+                        inputMode="numeric"
+                        placeholder="سنوات الخبرة (اختياري)"
+                        value={yearsExperience}
+                        onChange={event =>
+                          setYearsExperience(event.target.value)
+                        }
+                        className="h-14 rounded-2xl border-input bg-background text-sm shadow-none focus-visible:ring-primary"
+                      />
+                    </div>
+                  )}
+                  <Suspense
+                    fallback={
+                      <div
+                        className="flex min-h-64 items-center justify-center rounded-[28px] border border-border bg-card text-sm font-bold text-foreground"
+                        role="status"
+                      >
+                        جاري تجهيز الخريطة...
+                      </div>
+                    }
+                  >
+                    <LocationPicker
+                      value={customerLocation}
+                      onChange={setCustomerLocation}
+                      title={
+                        role === "provider" ? "حدد موقع عملك بدقة" : "حدد موقعك"
+                      }
+                      description={
+                        role === "provider"
+                          ? "اسمح للتطبيق بالوصول إلى موقعك الحالي ليتم تحديد منطقة عملك بدقة."
+                          : "نحتاج موقعك لعرض أقرب المهنيين والخدمات المتاحة حولك."
+                      }
+                    />
+                  </Suspense>
+                  {role === "provider" && (
+                    <div className="rounded-[26px] border border-[#e5dcc5] bg-gradient-to-br from-[#fffdf7] to-[#f8f4e9] p-4 shadow-[0_12px_28px_rgba(14,47,98,0.05)]">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f0b046]/20 text-[#a8731d]">
+                          <ShieldCheck className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-black text-foreground">
+                            إقرار وتعهد المهني
+                          </p>
+                          <p className="mt-1 text-[11px] leading-5 text-[#737066]">
+                            نحتاج موافقتك على صحة البيانات والمستندات قبل إرسال
+                            طلب الاعتماد.
+                          </p>
+                        </div>
+                      </div>
+                      <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border border-[#e6dfd0] bg-white/80 p-3 text-xs leading-6 text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          checked={termsAccepted}
+                          onChange={e => setTermsAccepted(e.target.checked)}
+                          className="mt-1 h-5 w-5 shrink-0 accent-[#182d53]"
+                        />
+                        <span>
+                          أقر بأن بياناتي ومستنداتي صحيحة، وأوافق على مراجعتها
+                          وفق شروط منصة فزعة.{" "}
+                          <button
+                            type="button"
+                            className="font-black text-[#a8731d] underline underline-offset-4"
+                            onClick={() => setTermsOpen(true)}
+                          >
+                            قراءة نص التعهد
+                          </button>
+                        </span>
                       </label>
                     </div>
-                    <p className="text-[10px] leading-5 text-[#8b897f]">زر تصوير الهوية يفتح كاميرا الهاتف. إذا ظهرت رسالة إذن الموقع، فهي تخص تحديد موقع العمل وليست الكاميرا.</p>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                      {([['selfie', 'الصورة الشخصية', selfieFile, setSelfieFile], ['front', 'صورة الهوية — الأمام', idFrontFile, setIdFrontFile], ['back', 'صورة الهوية — الخلف', idBackFile, setIdBackFile]] as const).map(([side, label, file, setter]) => (
-                        <label key={side} className="group flex min-h-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-[#cfd5dd] bg-[#fbfaf7] px-3 py-3 text-center transition hover:border-primary/50 hover:bg-primary/[0.03]">
-                          {file ? <CheckCircle2 className="h-7 w-7 text-emerald-600" /> : <ImagePlus className="h-7 w-7 text-[#b57920]" />}
-                          <span className="text-[11px] font-black text-primary">{file ? file.name : label}</span>
-                          <span className="flex items-center gap-1 text-[10px] text-[#8b897f]"><Upload className="h-3 w-3" /> {file ? "تغيير الصورة" : "إرفاق صورة واضحة"}</span>
-                          <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" capture={side === "selfie" ? "user" : "environment"} className="sr-only" onChange={event => { const selected = event.target.files?.[0]; if (!selected) return; if (selected.size > 10 * 1024 * 1024) { toast({ title: "الملف كبير", description: "يجب ألا يتجاوز حجم الصورة 10 ميجابايت", variant: "destructive" }); return; } setter(selected); }} aria-label={label} />
-                        </label>
-                      ))}
-                    </div>
-                    <div className="flex h-12 items-center gap-2 rounded-xl border border-[#d4d9df] bg-[#fbfaf7] px-3 focus-within:border-[#25d366] focus-within:ring-2 focus-within:ring-[#25d366]/15">
-                      <MessageCircle className="h-5 w-5 shrink-0 text-[#25d366]" aria-hidden="true" />
-                      <Input inputMode="numeric" maxLength={9} placeholder="أدخل رقم الواتس اب" value={whatsapp} onChange={e => setWhatsapp(e.target.value.replace(/\D/g, ""))} className="h-10 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0" dir="ltr" aria-label="رقم الواتس اب" />
-                    </div>
-                  </div>
-                )}
-
-                {role === "provider" && (
-                  <div className="space-y-4 rounded-[26px] border border-primary/10 bg-white p-4 shadow-[0_12px_28px_rgba(14,47,98,0.06)]">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/20 text-[#b57920]">
-                        <BriefcaseBusiness className="h-4 w-4" />
+                  )}
+                  {termsOpen && (
+                    <div className="fixed inset-0 z-50 flex items-end justify-center bg-primary/40 p-4 backdrop-blur-sm sm:items-center">
+                      <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="terms-title"
+                        className="w-full max-w-md rounded-[28px] bg-white p-5 shadow-2xl"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/20 text-[#a8731d]">
+                              <ShieldCheck className="h-5 w-5" />
+                            </div>
+                            <h2
+                              id="terms-title"
+                              className="text-base font-black text-foreground"
+                            >
+                              نص الإقرار والتعهد
+                            </h2>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setTermsOpen(false)}
+                            className="flex h-9 w-9 items-center justify-center rounded-full bg-background text-[#667085]"
+                            aria-label="إغلاق"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <p className="mt-4 rounded-2xl bg-background p-4 text-sm leading-7 text-muted-foreground">
+                          أتعهد بأن جميع البيانات والمستندات التي أقدمها صحيحة
+                          ومملوكة لي، وأوافق على قيام منصة فزعة بمراجعتها
+                          والتحقق منها وفق شروط الاستخدام وسياسة الخصوصية.
+                          وأتحمل مسؤولية أي معلومات غير صحيحة.
+                        </p>
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            setTermsAccepted(true);
+                            setTermsOpen(false);
+                          }}
+                          className="mt-4 h-12 w-full rounded-2xl bg-primary font-extrabold"
+                        >
+                          أوافق وأغلق
+                        </Button>
                       </div>
-                      <div>
-                        <p className="text-sm font-extrabold text-primary">اختر تخصصك أو مجالك</p>
-                        <p className="mt-0.5 text-[10px] text-[#8b897f]">اختر المجال والتخصص الفرعي واكتب وصفًا مختصرًا لخدمتك</p>
+                    </div>
+                  )}
+                  {role === "provider" && loading && uploadStage && (
+                    <div
+                      className="rounded-[24px] border border-primary/10 bg-[#182d53] p-4 text-white shadow-[0_14px_30px_rgba(14,47,98,0.16)]"
+                      role="status"
+                      aria-live="polite"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f0b046]/20 text-[#f0b046]">
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-black">
+                              رفع مستندات الاعتماد
+                            </p>
+                            <p className="mt-1 truncate text-[11px] text-white/70">
+                              {uploadStage}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="shrink-0 text-lg font-black text-[#f0b046]">
+                          {uploadProgress}%
+                        </span>
+                      </div>
+                      <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/15">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-l from-[#f0b046] to-[#ffd978] transition-all duration-500"
+                          style={{ width: `${Math.max(uploadProgress, 7)}%` }}
+                        />
+                      </div>
+                      <div className="mt-3 flex justify-between text-[10px] text-white/55">
+                        <span
+                          className={
+                            uploadProgress >= 33 ? "text-[#f0b046]" : ""
+                          }
+                        >
+                          الصورة الشخصية
+                        </span>
+                        <span
+                          className={
+                            uploadProgress >= 66 ? "text-[#f0b046]" : ""
+                          }
+                        >
+                          الهوية الأمامية
+                        </span>
+                        <span
+                          className={
+                            uploadProgress >= 100 ? "text-[#f0b046]" : ""
+                          }
+                        >
+                          الهوية الخلفية
+                        </span>
                       </div>
                     </div>
-                    <div className="relative">
-                      <button type="button" disabled={categoriesLoading} aria-expanded={categoryOpen} onClick={() => { setCategoryOpen(open => !open); setSpecialtyOpen(false); }} className="flex h-14 w-full items-center justify-between rounded-2xl border border-[#d4d9df] bg-background px-4 text-right text-sm font-bold text-foreground outline-none transition hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60">
-                        <span>{categoriesLoading ? "جاري تحميل مجالات الخدمة..." : selectedCategory ? `${selectedCategory.icon ? `${selectedCategory.icon} ` : ""}${selectedCategory.name}` : "اختر مجال خدمتك"}</span>
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                      </button>
-                      {categoryOpen && !categoriesLoading && <div role="listbox" className="absolute inset-x-0 top-[calc(100%+8px)] z-50 max-h-64 overflow-y-auto rounded-2xl border border-border bg-popover p-2 text-popover-foreground shadow-2xl">
-                        {categories.map((category) => <button key={category.id} type="button" role="option" aria-selected={String(category.id) === categoryId} onClick={() => { setCategoryId(String(category.id)); setSpecialty(""); setCategoryOpen(false); }} className="flex w-full items-center rounded-xl px-3 py-3 text-right text-sm font-bold transition hover:bg-accent hover:text-accent-foreground">{category.icon ? `${category.icon} ` : ""}{category.name}</button>)}
-                      </div>}
-                    </div>
-                    {selectedCategory?.specialties?.length ? <div className="relative"><button type="button" aria-expanded={specialtyOpen} onClick={() => { setSpecialtyOpen(open => !open); setCategoryOpen(false); }} className="flex h-14 w-full items-center justify-between rounded-2xl border border-[#d4d9df] bg-background px-4 text-right text-sm font-bold text-foreground outline-none transition hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/10"><span>{specialty || "اختر تخصصك الفرعي"}</span><ChevronDown className="h-4 w-4 text-muted-foreground" /></button>{specialtyOpen && <div role="listbox" className="absolute inset-x-0 top-[calc(100%+8px)] z-50 max-h-64 overflow-y-auto rounded-2xl border border-border bg-popover p-2 text-popover-foreground shadow-2xl">{selectedCategory.specialties.map((item) => <button key={item} type="button" role="option" aria-selected={item === specialty} onClick={() => { setSpecialty(item); setSpecialtyOpen(false); }} className="flex w-full items-center rounded-xl px-3 py-3 text-right text-sm font-bold transition hover:bg-accent hover:text-accent-foreground">{item}</button>)}</div>}</div> : null}
-                    <div className="relative">
-                      <FileText className="pointer-events-none absolute right-4 top-4 h-4 w-4 text-[#b57920]" />
-                      <Textarea
-                        value={bio}
-                        onChange={(event) => setBio(event.target.value)}
-                        placeholder="اكتب وصف تخصصك أو مجالك، مثل: أقدم خدمات السباكة المنزلية وإصلاح التسربات..."
-                        className="min-h-[96px] resize-none rounded-2xl border-[#d4d9df] bg-[#fbfaf7] pr-11 pt-3 text-sm leading-6 shadow-none focus-visible:ring-primary"
-                        maxLength={1000}
-                      />
-                      <span className="mt-1 block text-left text-[10px] text-[#aaa69b]">{bio.length}/1000</span>
-                    </div>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={60}
-                      inputMode="numeric"
-                      placeholder="سنوات الخبرة (اختياري)"
-                      value={yearsExperience}
-                      onChange={(event) => setYearsExperience(event.target.value)}
-                      className="h-14 rounded-2xl border-[#d4d9df] bg-[#fbfaf7] text-sm shadow-none focus-visible:ring-primary"
-                    />
-                  </div>
-                )}
-                <Suspense fallback={<div className="flex min-h-64 items-center justify-center rounded-[28px] border border-primary/10 bg-white text-sm font-bold text-primary" role="status">جاري تجهيز الخريطة...</div>}>
-                  <LocationPicker
-                    value={customerLocation}
-                    onChange={setCustomerLocation}
-                    title={role === "provider" ? "حدد موقع عملك بدقة" : "حدد موقعك"}
-                    description={role === "provider" ? "اسمح للتطبيق بالوصول إلى موقعك الحالي ليتم تحديد منطقة عملك بدقة." : "نحتاج موقعك لعرض أقرب المهنيين والخدمات المتاحة حولك."}
-                  />
-                </Suspense>
-                {role === "provider" && <div className="rounded-[26px] border border-[#e5dcc5] bg-gradient-to-br from-[#fffdf7] to-[#f8f4e9] p-4 shadow-[0_12px_28px_rgba(14,47,98,0.05)]"><div className="flex items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f0b046]/20 text-[#a8731d]"><ShieldCheck className="h-5 w-5" /></div><div className="min-w-0 flex-1"><p className="text-sm font-black text-primary">إقرار وتعهد المهني</p><p className="mt-1 text-[11px] leading-5 text-[#737066]">نحتاج موافقتك على صحة البيانات والمستندات قبل إرسال طلب الاعتماد.</p></div></div><label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border border-[#e6dfd0] bg-white/80 p-3 text-xs leading-6 text-[#596273]"><input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-[#182d53]" /><span>أقر بأن بياناتي ومستنداتي صحيحة، وأوافق على مراجعتها وفق شروط منصة فزعة. <button type="button" className="font-black text-[#a8731d] underline underline-offset-4" onClick={() => setTermsOpen(true)}>قراءة نص التعهد</button></span></label></div>}
-                {termsOpen && <div className="fixed inset-0 z-50 flex items-end justify-center bg-primary/40 p-4 backdrop-blur-sm sm:items-center"><div role="dialog" aria-modal="true" aria-labelledby="terms-title" className="w-full max-w-md rounded-[28px] bg-white p-5 shadow-2xl"><div className="flex items-center justify-between"><div className="flex items-center gap-2"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/20 text-[#a8731d]"><ShieldCheck className="h-5 w-5" /></div><h2 id="terms-title" className="text-base font-black text-primary">نص الإقرار والتعهد</h2></div><button type="button" onClick={() => setTermsOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f3ee] text-[#667085]" aria-label="إغلاق"><X className="h-4 w-4" /></button></div><p className="mt-4 rounded-2xl bg-[#fbfaf7] p-4 text-sm leading-7 text-[#596273]">أتعهد بأن جميع البيانات والمستندات التي أقدمها صحيحة ومملوكة لي، وأوافق على قيام منصة فزعة بمراجعتها والتحقق منها وفق شروط الاستخدام وسياسة الخصوصية. وأتحمل مسؤولية أي معلومات غير صحيحة.</p><Button type="button" onClick={() => { setTermsAccepted(true); setTermsOpen(false); }} className="mt-4 h-12 w-full rounded-2xl bg-primary font-extrabold">أوافق وأغلق</Button></div></div>}
-                {role === "provider" && loading && uploadStage && <div className="rounded-[24px] border border-primary/10 bg-[#182d53] p-4 text-white shadow-[0_14px_30px_rgba(14,47,98,0.16)]" role="status" aria-live="polite"><div className="flex items-center justify-between gap-3"><div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f0b046]/20 text-[#f0b046]"><Loader2 className="h-5 w-5 animate-spin" /></div><div className="min-w-0"><p className="text-sm font-black">رفع مستندات الاعتماد</p><p className="mt-1 truncate text-[11px] text-white/70">{uploadStage}</p></div></div><span className="shrink-0 text-lg font-black text-[#f0b046]">{uploadProgress}%</span></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-white/15"><div className="h-full rounded-full bg-gradient-to-l from-[#f0b046] to-[#ffd978] transition-all duration-500" style={{ width: `${Math.max(uploadProgress, 7)}%` }} /></div><div className="mt-3 flex justify-between text-[10px] text-white/55"><span className={uploadProgress >= 33 ? "text-[#f0b046]" : ""}>الصورة الشخصية</span><span className={uploadProgress >= 66 ? "text-[#f0b046]" : ""}>الهوية الأمامية</span><span className={uploadProgress >= 100 ? "text-[#f0b046]" : ""}>الهوية الخلفية</span></div></div>}
+                  )}
                 </div>
-                {verificationSuccess ? <motion.div initial={{ opacity: 0, y: 24, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }} className="relative space-y-4 overflow-hidden rounded-[26px] border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 text-center shadow-[0_14px_30px_rgba(16,185,129,0.10)]" role="status" aria-live="polite"><motion.div initial={{ scale: 0, rotate: -18 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 260, damping: 16, delay: 0.18 }} className="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600"><CheckCircle2 className="h-8 w-8" /></motion.div><div><p className="text-lg font-black text-primary">تم إرسال طلب الاعتماد بنجاح</p><p className="mt-2 text-sm leading-6 text-[#596273]">تم استلام مستنداتك وستتم مراجعتها من فريق فزعة.</p></div><div className="grid grid-cols-2 gap-3 text-right"><div className="rounded-2xl bg-white p-3 ring-1 ring-emerald-100"><p className="text-[10px] font-bold text-[#8b897f]">رقم الطلب</p><p className="mt-1 text-lg font-black text-primary" dir="ltr">#{verificationSuccess.requestId}</p></div><div className="rounded-2xl bg-white p-3"><p className="text-[10px] font-bold text-[#8b897f]">المدة المتوقعة</p><p className="mt-1 text-xs font-black leading-5 text-primary">{verificationSuccess.reviewTime}</p></div></div><Button type="button" onClick={() => navigate(getFirstLoginPath("provider"))} className="h-13 w-full rounded-2xl bg-primary font-extrabold text-primary-foreground hover:bg-primary/90">الانتقال إلى حسابي <ArrowLeft className="mr-2 h-4 w-4" /></Button></motion.div> : <Button onClick={completeRegistration} disabled={loading || !name.trim() || !clientProfileReady} className="h-14 w-full rounded-2xl bg-primary text-base font-extrabold text-primary-foreground shadow-[0_12px_26px_rgba(14,47,98,0.16)] hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">
-                  {loading ? "جاري إنشاء الحساب..." : "المتابعة"}
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                </Button>}
+                {verificationSuccess ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 24, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                    className="relative space-y-4 overflow-hidden rounded-[26px] border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 text-center shadow-[0_14px_30px_rgba(16,185,129,0.10)]"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <motion.div
+                      initial={{ scale: 0, rotate: -18 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 260,
+                        damping: 16,
+                        delay: 0.18,
+                      }}
+                      className="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600"
+                    >
+                      <CheckCircle2 className="h-8 w-8" />
+                    </motion.div>
+                    <div>
+                      <p className="text-lg font-black text-foreground">
+                        تم إرسال طلب الاعتماد بنجاح
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                        تم استلام مستنداتك وستتم مراجعتها من فريق فزعة.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-right">
+                      <div className="rounded-2xl bg-white p-3 ring-1 ring-emerald-100">
+                        <p className="text-[10px] font-bold text-muted-foreground">
+                          رقم الطلب
+                        </p>
+                        <p
+                          className="mt-1 text-lg font-black text-foreground"
+                          dir="ltr"
+                        >
+                          #{verificationSuccess.requestId}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-white p-3">
+                        <p className="text-[10px] font-bold text-muted-foreground">
+                          المدة المتوقعة
+                        </p>
+                        <p className="mt-1 text-xs font-black leading-5 text-foreground">
+                          {verificationSuccess.reviewTime}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={() => navigate(getFirstLoginPath("provider"))}
+                      className="h-13 w-full rounded-2xl bg-primary font-extrabold text-primary-foreground hover:bg-primary/90"
+                    >
+                      الانتقال إلى حسابي <ArrowLeft className="mr-2 h-4 w-4" />
+                    </Button>
+                  </motion.div>
+                ) : (
+                  <Button
+                    onClick={completeRegistration}
+                    disabled={loading || !name.trim() || !clientProfileReady}
+                    className="h-14 w-full rounded-2xl bg-primary text-base font-extrabold text-primary-foreground shadow-[0_12px_26px_rgba(14,47,98,0.16)] hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {loading ? "جاري إنشاء الحساب..." : "المتابعة"}
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                  </Button>
+                )}
               </>
             )}
           </motion.div>

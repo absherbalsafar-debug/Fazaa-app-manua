@@ -32,9 +32,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AppPage,
+  EmptyState,
+  PageHeading,
+  SectionHeading,
+  SurfaceCard,
+} from "@/components/app-ui";
 import { apiRequest } from "@/lib/auth";
 
-const wallets: Array<{ value: SubscriptionPaymentInput["wallet"]; label: string }> = [
+const wallets: Array<{
+  value: SubscriptionPaymentInput["wallet"];
+  label: string;
+}> = [
   { value: "jeeb", label: "جيب" },
   { value: "floosk", label: "فلوسك" },
   { value: "jawali", label: "جوالي" },
@@ -58,26 +68,63 @@ const adStatus: Record<string, string> = {
   expired: "منتهي",
 };
 
-const advertisementPackages: Array<{ id: string; title: string; days: number; placement: string; description: string }> = [
-  { id: "standard", title: "إعلان عادي", days: 7, placement: "داخل نتائج الفئة", description: "حل مناسب للظهور الأساسي" },
-  { id: "featured", title: "إعلان مميز", days: 14, placement: "ترتيب أعلى وشارة مميز", description: "ظهور أقوى لمدة أسبوعين" },
-  { id: "homepage", title: "إعلان رئيسي", days: 30, placement: "الصفحة الرئيسية والفئة", description: "أوسع ظهور داخل فزعة" },
-  { id: "vip", title: "إعلان VIP", days: 60, placement: "أعلى الصفحة الرئيسية", description: "أعلى أولوية وظهور" },
+const advertisementPackages: Array<{
+  id: string;
+  title: string;
+  days: number;
+  placement: string;
+  description: string;
+}> = [
+  {
+    id: "standard",
+    title: "إعلان عادي",
+    days: 7,
+    placement: "داخل نتائج الفئة",
+    description: "حل مناسب للظهور الأساسي",
+  },
+  {
+    id: "featured",
+    title: "إعلان مميز",
+    days: 14,
+    placement: "ترتيب أعلى وشارة مميز",
+    description: "ظهور أقوى لمدة أسبوعين",
+  },
+  {
+    id: "homepage",
+    title: "إعلان رئيسي",
+    days: 30,
+    placement: "الصفحة الرئيسية والفئة",
+    description: "أوسع ظهور داخل فزعة",
+  },
+  {
+    id: "vip",
+    title: "إعلان VIP",
+    days: 60,
+    placement: "أعلى الصفحة الرئيسية",
+    description: "أعلى أولوية وظهور",
+  },
 ];
 
 export default function ProviderBusiness() {
   const { toast } = useToast();
-  const { data: business, isLoading: businessLoading } = useGetProviderBusiness();
+  const { data: business, isLoading: businessLoading } =
+    useGetProviderBusiness();
   const { data: plans = [] } = useListSubscriptionPlans();
   const { data: paymentWallets = [] } = useListPaymentWallets();
-  const { data: payments = [], refetch: refetchPayments } = useListProviderPayments();
+  const { data: payments = [], refetch: refetchPayments } =
+    useListProviderPayments();
   const { data: ads = [], refetch: refetchAds } = useListMyAdvertisements();
   const createPayment = useCreateSubscriptionPayment();
   const createAd = useCreateAdvertisement();
 
-  const [paymentPlan, setPaymentPlan] = useState<"monthly" | "yearly">("monthly");
-  const [paymentPurpose, setPaymentPurpose] = useState<"subscriptions" | "advertisements">("subscriptions");
-  const [wallet, setWallet] = useState<SubscriptionPaymentInput["wallet"]>("jeeb");
+  const [paymentPlan, setPaymentPlan] = useState<"monthly" | "yearly">(
+    "monthly"
+  );
+  const [paymentPurpose, setPaymentPurpose] = useState<
+    "subscriptions" | "advertisements"
+  >("subscriptions");
+  const [wallet, setWallet] =
+    useState<SubscriptionPaymentInput["wallet"]>("jeeb");
   const [transactionReference, setTransactionReference] = useState("");
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [isUploadingReceipt, setIsUploadingReceipt] = useState(false);
@@ -93,23 +140,78 @@ export default function ProviderBusiness() {
   const [adPackages, setAdPackages] = useState(advertisementPackages);
   const [adImageFile, setAdImageFile] = useState<File | null>(null);
   const [isUploadingAdImage, setIsUploadingAdImage] = useState(false);
-  const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
-  useEffect(() => { const token = localStorage.getItem("fazaah_token"); fetch("/api/commercial-plans?kind=advertisement", { headers: token ? { Authorization: `Bearer ${token}` } : {} }).then((response) => response.ok ? response.json() : []).then((rows: Array<{ code: string; name: string; description: string; durationDays: number }>) => { if (rows.length) setAdPackages(rows.map((row) => ({ id: row.code, title: row.name, days: row.durationDays, placement: row.description, description: row.description }))); }).catch(() => undefined); }, []);
-  useEffect(() => { apiRequest("/providers/me/verification-status").then((status) => setVerificationStatus(status?.status ?? null)).catch(() => setVerificationStatus(null)); }, []);
+  const [verificationStatus, setVerificationStatus] = useState<string | null>(
+    null
+  );
+  useEffect(() => {
+    const token = localStorage.getItem("fazaah_token");
+    fetch("/api/commercial-plans?kind=advertisement", {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then(response => (response.ok ? response.json() : []))
+      .then(
+        (
+          rows: Array<{
+            code: string;
+            name: string;
+            description: string;
+            durationDays: number;
+          }>
+        ) => {
+          if (rows.length)
+            setAdPackages(
+              rows.map(row => ({
+                id: row.code,
+                title: row.name,
+                days: row.durationDays,
+                placement: row.description,
+                description: row.description,
+              }))
+            );
+        }
+      )
+      .catch(() => undefined);
+  }, []);
+  useEffect(() => {
+    apiRequest("/providers/me/verification-status")
+      .then(status => setVerificationStatus(status?.status ?? null))
+      .catch(() => setVerificationStatus(null));
+  }, []);
 
-  const selectedPlan = useMemo(() => plans.find((plan) => plan.id === paymentPlan), [plans, paymentPlan]);
-  const selectedWallet = useMemo(() => paymentWallets.find((item) => item.wallet === wallet), [paymentWallets, wallet]);
-  const availableWallets = useMemo(() => paymentWallets.filter((item) => item.usage === "both" || item.usage === paymentPurpose), [paymentWallets, paymentPurpose]);
-  const selectedAdPackage = adPackages.find((item) => item.id === adForm.plan) ?? adPackages[0];
+  const selectedPlan = useMemo(
+    () => plans.find(plan => plan.id === paymentPlan),
+    [plans, paymentPlan]
+  );
+  const selectedWallet = useMemo(
+    () => paymentWallets.find(item => item.wallet === wallet),
+    [paymentWallets, wallet]
+  );
+  const availableWallets = useMemo(
+    () =>
+      paymentWallets.filter(
+        item => item.usage === "both" || item.usage === paymentPurpose
+      ),
+    [paymentWallets, paymentPurpose]
+  );
+  const selectedAdPackage =
+    adPackages.find(item => item.id === adForm.plan) ?? adPackages[0];
 
   const submitPayment = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!transactionReference.trim()) {
-      toast({ title: "أدخل رقم العملية", description: "نحتاج رقم التحويل حتى تراجع الإدارة طلبك.", variant: "destructive" });
+      toast({
+        title: "أدخل رقم العملية",
+        description: "نحتاج رقم التحويل حتى تراجع الإدارة طلبك.",
+        variant: "destructive",
+      });
       return;
     }
     if (!receiptFile) {
-      toast({ title: "أرفق إيصال التحويل", description: "يساعد الإيصال الإدارة على مطابقة العملية قبل اعتمادها.", variant: "destructive" });
+      toast({
+        title: "أرفق إيصال التحويل",
+        description: "يساعد الإيصال الإدارة على مطابقة العملية قبل اعتمادها.",
+        variant: "destructive",
+      });
       return;
     }
     setIsUploadingReceipt(true);
@@ -121,24 +223,46 @@ export default function ProviderBusiness() {
       });
       const uploadResponse = await fetch(upload.uploadURL, {
         method: "PUT",
-        headers: { "Content-Type": receiptFile.type || "application/octet-stream" },
+        headers: {
+          "Content-Type": receiptFile.type || "application/octet-stream",
+        },
         body: receiptFile,
       });
       if (!uploadResponse.ok) throw new Error("تعذر رفع الإيصال");
       createPayment.mutate(
-        { data: { plan: paymentPlan, wallet, transactionReference: transactionReference.trim(), receiptUrl: upload.objectPath } },
+        {
+          data: {
+            plan: paymentPlan,
+            wallet,
+            transactionReference: transactionReference.trim(),
+            receiptUrl: upload.objectPath,
+          },
+        },
         {
           onSuccess: () => {
             setTransactionReference("");
             setReceiptFile(null);
             refetchPayments();
-            toast({ title: "تم إرسال طلب الاشتراك", description: "سيتم تفعيله بعد مراجعة التحويل والإيصال من الإدارة." });
+            toast({
+              title: "تم إرسال طلب الاشتراك",
+              description:
+                "سيتم تفعيله بعد مراجعة التحويل والإيصال من الإدارة.",
+            });
           },
-          onError: (error) => toast({ title: "تعذر إرسال الطلب", description: error.message, variant: "destructive" }),
-        },
+          onError: error =>
+            toast({
+              title: "تعذر إرسال الطلب",
+              description: error.message,
+              variant: "destructive",
+            }),
+        }
       );
     } catch (error) {
-      toast({ title: "تعذر رفع الإيصال", description: error instanceof Error ? error.message : "حاول مرة أخرى.", variant: "destructive" });
+      toast({
+        title: "تعذر رفع الإيصال",
+        description: error instanceof Error ? error.message : "حاول مرة أخرى.",
+        variant: "destructive",
+      });
     } finally {
       setIsUploadingReceipt(false);
     }
@@ -147,18 +271,54 @@ export default function ProviderBusiness() {
   const submitAd = async (event: React.FormEvent) => {
     event.preventDefault();
     if (verificationStatus !== "approved") {
-      toast({ title: "التوثيق مطلوب أولاً", description: "لا يمكن نشر إعلان قبل اعتماد ملفك المهني.", variant: "destructive" });
+      toast({
+        title: "التوثيق مطلوب أولاً",
+        description: "لا يمكن نشر إعلان قبل اعتماد ملفك المهني.",
+        variant: "destructive",
+      });
       return;
     }
     const budget = Number(adForm.budget);
-    if (!adForm.title.trim() || !adForm.city.trim() || !Number.isFinite(budget) || budget <= 0) {
-      toast({ title: "أكمل بيانات الإعلان", description: "العنوان والمدينة والميزانية مطلوبة.", variant: "destructive" });
+    if (
+      !adForm.title.trim() ||
+      !adForm.city.trim() ||
+      !Number.isFinite(budget) ||
+      budget <= 0
+    ) {
+      toast({
+        title: "أكمل بيانات الإعلان",
+        description: "العنوان والمدينة والميزانية مطلوبة.",
+        variant: "destructive",
+      });
       return;
     }
     let imageUrl: string | null = null;
     if (adImageFile) {
       setIsUploadingAdImage(true);
-      try { const upload = await requestUploadUrl({ name: adImageFile.name, size: adImageFile.size, contentType: adImageFile.type || "image/jpeg" }); const response = await fetch(upload.uploadURL, { method: "PUT", headers: { "Content-Type": adImageFile.type || "image/jpeg" }, body: adImageFile }); if (!response.ok) throw new Error("تعذر رفع صورة الإعلان"); imageUrl = upload.objectPath; } catch (error) { toast({ title: "تعذر رفع صورة الإعلان", description: error instanceof Error ? error.message : "حاول مرة أخرى.", variant: "destructive" }); return; } finally { setIsUploadingAdImage(false); }
+      try {
+        const upload = await requestUploadUrl({
+          name: adImageFile.name,
+          size: adImageFile.size,
+          contentType: adImageFile.type || "image/jpeg",
+        });
+        const response = await fetch(upload.uploadURL, {
+          method: "PUT",
+          headers: { "Content-Type": adImageFile.type || "image/jpeg" },
+          body: adImageFile,
+        });
+        if (!response.ok) throw new Error("تعذر رفع صورة الإعلان");
+        imageUrl = upload.objectPath;
+      } catch (error) {
+        toast({
+          title: "تعذر رفع صورة الإعلان",
+          description:
+            error instanceof Error ? error.message : "حاول مرة أخرى.",
+          variant: "destructive",
+        });
+        return;
+      } finally {
+        setIsUploadingAdImage(false);
+      }
     }
     createAd.mutate(
       {
@@ -177,154 +337,549 @@ export default function ProviderBusiness() {
       },
       {
         onSuccess: () => {
-          setAdForm({ title: "", description: "", city: "", district: "", plan: "standard", durationDays: 7, budget: "" }); setAdImageFile(null);
+          setAdForm({
+            title: "",
+            description: "",
+            city: "",
+            district: "",
+            plan: "standard",
+            durationDays: 7,
+            budget: "",
+          });
+          setAdImageFile(null);
           refetchAds();
-          toast({ title: "تم إرسال الإعلان", description: "سيظهر بعد اعتماد الإدارة واستلام الدفع." });
+          toast({
+            title: "تم إرسال الإعلان",
+            description: "سيظهر بعد اعتماد الإدارة واستلام الدفع.",
+          });
         },
-        onError: (error) => toast({ title: "تعذر إنشاء الإعلان", description: error.message, variant: "destructive" }),
-      },
+        onError: error =>
+          toast({
+            title: "تعذر إنشاء الإعلان",
+            description: error.message,
+            variant: "destructive",
+          }),
+      }
     );
   };
 
   if (businessLoading || !business) {
-    return <div className="flex min-h-[100dvh] items-center justify-center text-sm text-muted-foreground">جاري تحميل لوحة الأعمال...</div>;
+    return (
+      <div
+        className="flex min-h-[100dvh] items-center justify-center bg-background px-4 text-sm font-bold text-muted-foreground"
+        dir="rtl"
+      >
+        <div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
+          <Clock3 className="h-5 w-5 animate-pulse text-primary" />
+          جاري تحميل لوحة الأعمال...
+        </div>
+      </div>
+    );
   }
 
   const subscription = business.subscription;
-  const isFree = subscription.plan === "free" && subscription.status === "active";
+  const isFree =
+    subscription.plan === "free" && subscription.status === "active";
 
   return (
     <main className="min-h-[100dvh] bg-background pb-24" dir="rtl">
-      <header className="border-b border-border bg-background/90 px-4 py-4 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-2xl items-center gap-3">
-          <Link href="/provider-dashboard" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card">
+      <header className="border-b border-border bg-background/90 px-4 py-4 backdrop-blur-xl sm:py-5">
+        <div className="mx-auto flex max-w-4xl items-center gap-3">
+          <Link
+            href="/provider-dashboard"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-border bg-card transition hover:border-primary/40 hover:text-primary"
+            aria-label="العودة إلى لوحة المهني"
+          >
             <ArrowRight className="h-4 w-4" />
           </Link>
           <div>
-            <p className="text-[11px] font-bold text-muted-foreground">لوحة المهني</p>
-            <h1 className="text-xl font-black">الاشتراك والإعلانات</h1>
+            <p className="text-xs font-bold text-muted-foreground">
+              لوحة المهني
+            </p>
+            <h1 className="text-xl font-black tracking-tight sm:text-2xl">
+              الاشتراك والإعلانات
+            </h1>
           </div>
         </div>
       </header>
 
-      <section className="mx-auto max-w-2xl space-y-5 px-4 pt-5">
-        <div className="rounded-[28px] bg-primary p-5 text-primary-foreground shadow-lg">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs text-white/65">اشتراكك الحالي</p>
-              <h2 className="mt-2 text-2xl font-black">{isFree ? "مجاني لأول 300 مهني" : subscription.status === "active" ? `اشتراك ${subscription.plan === "yearly" ? "سنوي" : "شهري"}` : "لا يوجد اشتراك فعال"}</h2>
-              <p className="mt-2 text-xs leading-5 text-white/70">
-                {isFree ? `مقعدك المجاني رقم ${subscription.freeSlotNumber ?? "—"} · لا ينتهي` : subscription.endsAt ? `ينتهي في ${subscription.endsAt}` : "أرسل طلب اشتراك ليتم تفعيله بعد المراجعة"}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-white/10 p-3"><Sparkles className="h-6 w-6 text-accent" /></div>
-          </div>
-          <p className="mt-5 border-t border-white/10 pt-3 text-xs text-white/70">
-            المتبقي من المقاعد المجانية: <span className="font-black text-accent">{business.freeSlotsRemaining}</span>
-          </p>
-        </div>
+      <AppPage width="content" className="space-y-6">
+        <PageHeading
+          eyebrow="مساحة النمو"
+          title="حوّل حضورك إلى فرص أكثر"
+          description="تابع أداء ملفك، اختر خطتك، وأنشئ إعلاناً واضحاً يصل إلى العملاء المناسبين."
+        />
 
-        <section className="grid grid-cols-2 gap-3">
-          {[
-            { label: "مشاهدات الملف", value: business.metrics.profileViews, icon: Eye },
-            { label: "ضغطات اتصال", value: business.metrics.callClicks, icon: Phone },
-            { label: "ضغطات واتساب", value: business.metrics.whatsappClicks, icon: Smartphone },
-            { label: "طلبات الخدمة", value: business.metrics.serviceRequests, icon: BarChart3 },
-          ].map((item) => (
-            <div key={item.label} className="rounded-2xl border border-border bg-card p-4">
-              <item.icon className="h-4 w-4 text-primary" />
-              <p className="mt-3 text-2xl font-black">{item.value}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{item.label}</p>
-            </div>
-          ))}
-        </section>
-
-        {!isFree && (
-          <section className="rounded-2xl border border-border bg-card p-5">
-            <div className="flex items-center gap-3"><Sparkles className="h-5 w-5 text-primary" /><div><h2 className="font-black">خطط اشتراك المهني</h2><p className="mt-1 text-xs text-muted-foreground">اختر مدة الظهور والمزايا المناسبة لملفك المهني.</p></div></div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {plans.filter((plan) => plan.id !== "free").map((plan) => <button key={plan.id} type="button" onClick={() => { setPaymentPlan(plan.id as "monthly" | "yearly"); setPaymentPurpose("subscriptions"); }} className={`rounded-2xl border p-4 text-right transition-all hover:-translate-y-0.5 hover:border-primary hover:shadow-md ${paymentPurpose === "subscriptions" && paymentPlan === plan.id ? "border-primary bg-primary/5 shadow-sm" : "border-border"}`}><div className="flex items-start justify-between gap-3"><span className="font-black">{plan.name}</span><span className="rounded-full bg-primary/10 px-2 py-1 text-[11px] font-black text-primary">{plan.id === "monthly" ? `${plan.monthlyPrice} ريال / شهر` : `${plan.yearlyPrice} ريال`}</span></div><p className="mt-2 text-xs leading-5 text-muted-foreground">{plan.description}</p><ul className="mt-3 space-y-1 text-xs text-muted-foreground">{plan.benefits.map((benefit) => <li key={benefit}>✓ {benefit}</li>)}</ul></button>)}
-            </div>
-          </section>
-        )}
-
-        {!isFree && (
-          <section className="rounded-2xl border border-border bg-card p-5">
-            <div className="flex items-center gap-3">
-              <WalletCards className="h-5 w-5 text-primary" />
-              <div><h2 className="font-black">اختر محفظة الدفع</h2><p className="mt-1 text-xs text-muted-foreground">لـ {paymentPurpose === "subscriptions" ? selectedPlan?.name ?? "الاشتراك المختار" : selectedAdPackage.title} — اختر المحفظة للانتقال إلى شاشة الدفع الخاصة بها.</p></div>
-            </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {availableWallets.length === 0 ? <div className="rounded-2xl bg-muted/50 p-5 text-center text-sm text-muted-foreground">لا توجد محافظ مفعلة لهذا الاستخدام حاليًا.</div> : availableWallets.map((item) => {
-                const walletMeta = item as typeof item & { checkoutMode?: "api" | "manual" };
-                const selected = wallet === item.wallet;
-                return (
-                  <button key={item.wallet} type="button" aria-pressed={selected} onClick={() => setWallet(item.wallet)} className={`group relative flex min-h-[112px] w-full items-center gap-3 overflow-hidden rounded-[24px] border p-3 text-right transition-all duration-200 active:scale-[0.98] ${selected ? "border-primary/70 bg-primary/10 shadow-[0_14px_30px_rgba(24,45,83,0.16)] ring-2 ring-primary/20" : "border-border bg-background/80 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-muted/40 hover:shadow-[0_12px_26px_rgba(24,45,83,0.10)]"}`}>
-                    <span className={`absolute inset-y-3 right-0 w-1 rounded-full transition-colors ${selected ? "bg-primary" : "bg-transparent group-hover:bg-primary/40"}`} />
-                    <span className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[20px] border p-1.5 shadow-sm transition-transform duration-200 group-hover:scale-105 ${selected ? "border-primary/30 bg-card shadow-md" : "border-border/70 bg-card"}`}>{item.logoUrl ? <img src={item.logoUrl} alt={`شعار ${item.displayName}`} className="h-full w-full object-contain" /> : <WalletCards className="h-7 w-7 text-primary" />}</span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-center gap-2"><span className="truncate text-base font-black text-foreground">{item.displayName}</span>{selected && <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />}</span>
-                      {item.description && <span className="mt-1 block truncate text-[11px] text-muted-foreground">{item.description}</span>}
-                      <span className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold ${walletMeta.checkoutMode === "api" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-primary/10 text-primary"}`}><span className={`h-1.5 w-1.5 rounded-full ${walletMeta.checkoutMode === "api" ? "bg-emerald-500" : "bg-primary"}`} />{walletMeta.checkoutMode === "api" ? "دفع مباشر" : "جاهزة للربط"}</span>
-                    </span>
-                    <ArrowRight className={`h-5 w-5 shrink-0 transition-transform group-hover:-translate-x-0.5 ${selected ? "text-primary" : "text-muted-foreground"}`} />
-                  </button>
-                );
-              })}
-            </div>
-            {selectedWallet && <div className="mt-4 overflow-hidden rounded-[24px] border border-primary/20 bg-primary/5 p-4 text-sm leading-6 shadow-sm"><div className="flex items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary"><CheckCircle2 className="h-5 w-5" /></span><div><div className="flex flex-wrap items-center gap-2"><p className="font-black text-primary">تم اختيار {selectedWallet.displayName}</p><span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary">جاهزة للربط</span></div><p className="mt-1 text-muted-foreground">بعد استلام رابط API وبيانات التاجر الرسمية سيتم فتح الدفع الإلكتروني تلقائياً، ويتوفر التحويل اليدوي مؤقتاً.</p></div></div></div>}
-          </section>
-        )}
-
-        <section className="rounded-2xl border border-border bg-card p-5">
-          <div className="flex items-center gap-3"><Receipt className="h-5 w-5 text-primary" /><div><h2 className="font-black">طلبات الدفع السابقة</h2><p className="mt-1 text-xs text-muted-foreground">لا يتم تفعيل أي اشتراك قبل الاعتماد.</p></div></div>
-          {payments.length === 0 ? <p className="mt-5 text-center text-sm text-muted-foreground">لا توجد عمليات دفع حتى الآن.</p> : <div className="mt-4 space-y-2">{payments.slice(0, 5).map((payment) => <div key={payment.id} className="flex items-center justify-between gap-3 rounded-xl bg-muted/40 px-3 py-3 text-xs"><span>{payment.transactionReference} · {payment.plan === "yearly" ? "سنوي" : "شهري"}{payment.receiptUrl && <a className="mr-2 font-bold text-primary underline" href={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/api/storage${payment.receiptUrl}`} target="_blank" rel="noreferrer">الإيصال</a>}</span><span className="shrink-0 font-bold text-muted-foreground">{paymentStatus[payment.status] ?? payment.status}</span></div>)}</div>}
-        </section>
-
-        <section className="rounded-2xl border border-border bg-card p-5">
-          <div className="flex items-center gap-3"><Megaphone className="h-5 w-5 text-primary" /><div><h2 className="font-black">إنشاء إعلان مدفوع</h2><p className="mt-1 text-xs text-muted-foreground">يظهر بوضوح كإعلان بعد اعتماد الإدارة.</p></div></div>
-          {verificationStatus !== "approved" && <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900"><b>التوثيق مطلوب قبل نشر الإعلان</b><p className="mt-1">أرسل مستنداتك وانتظر اعتماد فريق فزعة، ثم ستتمكن من إنشاء إعلان.</p><Link href="/verify" className="mt-3 inline-block font-black text-primary underline">الانتقال إلى التوثيق</Link></div>}
-          <fieldset disabled={verificationStatus !== "approved"}>
-          <form onSubmit={submitAd} className="mt-4 space-y-3">
-            <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3 text-xs"><Upload className="h-4 w-4 text-primary" /><span className="flex-1">{adImageFile ? adImageFile.name : "إضافة صورة رئيسية للإعلان أو من أعمالك"}</span><input type="file" accept="image/*" className="sr-only" onChange={(event) => setAdImageFile(event.target.files?.[0] ?? null)} /></label>
-            <Input value={adForm.title} onChange={(event) => setAdForm({ ...adForm, title: event.target.value })} placeholder="عنوان الإعلان" className="h-11 rounded-xl" />
-            <Textarea value={adForm.description} onChange={(event) => setAdForm({ ...adForm, description: event.target.value })} placeholder="وصف مختصر للخدمة" className="rounded-xl" />
-            <div className="grid grid-cols-2 gap-2"><Input value={adForm.city} onChange={(event) => setAdForm({ ...adForm, city: event.target.value })} placeholder="المدينة" className="h-11 rounded-xl" /><Input value={adForm.district} onChange={(event) => setAdForm({ ...adForm, district: event.target.value })} placeholder="المنطقة" className="h-11 rounded-xl" /></div>
-            <div>
-              <p className="mb-2 text-xs font-black text-foreground">اختر باقة الإعلان</p>
-              <div className="grid gap-2">
-                {adPackages.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => { setPaymentPurpose("advertisements"); setAdForm({ ...adForm, plan: item.id as AdvertisementInput["plan"], durationDays: item.days as AdvertisementInput["durationDays"] }); }}
-                    className={`flex items-center justify-between rounded-xl border p-3 text-right transition-colors ${adForm.plan === item.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
-                  >
-                    <span>
-                      <span className="block text-sm font-black">{item.title}</span>
-                      <span className="mt-1 block text-[11px] text-muted-foreground">{item.description} · {item.placement}</span>
-                    </span>
-                    <span className="shrink-0 rounded-full bg-muted px-2 py-1 text-[10px] font-bold">{item.days} يوماً</span>
-                  </button>
-                ))}
+        <SurfaceCard className="overflow-hidden border-primary/15 bg-primary text-primary-foreground">
+          <div className="p-5 sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold text-white/65">
+                  اشتراكك الحالي
+                </p>
+                <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
+                  {isFree
+                    ? "مجاني لأول 300 مهني"
+                    : subscription.status === "active"
+                      ? `اشتراك ${subscription.plan === "yearly" ? "سنوي" : "شهري"}`
+                      : "لا يوجد اشتراك فعال"}
+                </h2>
+                <p className="mt-2 max-w-xl text-xs leading-6 text-white/70">
+                  {isFree
+                    ? `مقعدك المجاني رقم ${subscription.freeSlotNumber ?? "—"} · لا ينتهي`
+                    : subscription.endsAt
+                      ? `ينتهي في ${subscription.endsAt}`
+                      : "أرسل طلب اشتراك ليتم تفعيله بعد المراجعة"}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white/10 p-3">
+                <Sparkles className="h-6 w-6 text-accent" />
               </div>
             </div>
-            <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
-              الباقة المختارة: <b className="text-foreground">{selectedAdPackage.title}</b> · مدة الظهور <b className="text-foreground">{selectedAdPackage.days} يوماً</b>
-            </div>
-            <Input type="number" min="1" step="1" value={adForm.budget} onChange={(event) => setAdForm({ ...adForm, budget: event.target.value })} placeholder="مبلغ الإعلان بالريال اليمني" className="h-11 rounded-xl" />
-            <Button type="submit" variant="outline" className="h-11 w-full rounded-xl" disabled={createAd.isPending}><Megaphone className="ml-2 h-4 w-4" />إرسال الإعلان للمراجعة</Button>
-          </form>
-          </fieldset>
-          <div className="mt-5 space-y-2">{ads.length === 0 ? <p className="text-center text-xs text-muted-foreground">ستظهر إعلاناتك هنا.</p> : ads.map((ad) => <div key={ad.id} className="rounded-xl border border-border px-3 py-3 text-xs"><div className="flex items-center justify-between gap-3"><span className="font-bold">{ad.title}</span><span className="text-muted-foreground">{adStatus[ad.status] ?? ad.status}</span></div>{ad.imageUrl && <img src={ad.imageUrl} alt="" className="mt-3 h-28 w-full rounded-xl object-cover" />}<p className="mt-2 text-muted-foreground">#{ad.id} · {ad.plan === "standard" ? "عادي" : ad.plan === "featured" ? "مميز" : ad.plan === "homepage" ? "رئيسي" : "VIP"} · {ad.durationDays} يوماً · <b className="text-foreground">{ad.budget.toLocaleString("ar-YE")} ريال</b></p><div className="mt-3 grid grid-cols-4 gap-2 text-center"><div className="rounded-lg bg-muted/50 p-2"><b className="block">{(ad as any).metrics?.impressions ?? 0}</b><span className="text-[10px] text-muted-foreground">ظهور</span></div><div className="rounded-lg bg-muted/50 p-2"><b className="block">{(ad as any).metrics?.clicks ?? 0}</b><span className="text-[10px] text-muted-foreground">نقرات</span></div><div className="rounded-lg bg-muted/50 p-2"><b className="block">{(ad as any).metrics?.callClicks ?? 0}</b><span className="text-[10px] text-muted-foreground">اتصالات</span></div><div className="rounded-lg bg-muted/50 p-2"><b className="block">{(ad as any).metrics?.whatsappClicks ?? 0}</b><span className="text-[10px] text-muted-foreground">واتساب</span></div></div></div>)}</div>
+            <p className="mt-5 border-t border-white/10 pt-3 text-xs text-white/70">
+              المتبقي من المقاعد المجانية:{" "}
+              <span className="font-black text-accent">
+                {business.freeSlotsRemaining}
+              </span>
+            </p>
+          </div>
+        </SurfaceCard>
+
+        <section>
+          <SectionHeading
+            title="نبذة عن الأداء"
+            description="أرقام تساعدك على فهم تفاعل العملاء مع ملفك."
+          />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              {
+                label: "مشاهدات الملف",
+                value: business.metrics.profileViews,
+                icon: Eye,
+              },
+              {
+                label: "ضغطات اتصال",
+                value: business.metrics.callClicks,
+                icon: Phone,
+              },
+              {
+                label: "ضغطات واتساب",
+                value: business.metrics.whatsappClicks,
+                icon: Smartphone,
+              },
+              {
+                label: "طلبات الخدمة",
+                value: business.metrics.serviceRequests,
+                icon: BarChart3,
+              },
+            ].map(item => (
+              <SurfaceCard key={item.label} className="p-4 sm:p-5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <item.icon className="h-4 w-4" />
+                </span>
+                <p className="mt-4 text-2xl font-black text-foreground">
+                  {item.value}
+                </p>
+                <p className="mt-1 text-xs font-bold text-muted-foreground">
+                  {item.label}
+                </p>
+              </SurfaceCard>
+            ))}
+          </div>
         </section>
 
-        <div className="flex items-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-xs leading-5 text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-100">
-          <Clock3 className="h-4 w-4 shrink-0" />
-          الدفع والإعلانات يمران بمراجعة الإدارة، ولا يتم اعتبار رفع رقم العملية موافقة تلقائية.
+        {!isFree && (
+          <SurfaceCard className="p-5 sm:p-6">
+            <SectionHeading
+              title="خطط اشتراك المهني"
+              description="اختر مدة الظهور والمزايا المناسبة لملفك المهني."
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
+              {plans
+                .filter(plan => plan.id !== "free")
+                .map(plan => (
+                  <button
+                    key={plan.id}
+                    type="button"
+                    onClick={() => {
+                      setPaymentPlan(plan.id as "monthly" | "yearly");
+                      setPaymentPurpose("subscriptions");
+                    }}
+                    className={`min-h-[140px] rounded-2xl border p-4 text-right transition-all hover:-translate-y-0.5 hover:border-primary hover:shadow-md ${paymentPurpose === "subscriptions" && paymentPlan === plan.id ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20" : "border-border bg-background"}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="font-black text-foreground">
+                        {plan.name}
+                      </span>
+                      <span className="rounded-full bg-primary/10 px-2 py-1 text-[11px] font-black text-primary">
+                        {plan.id === "monthly"
+                          ? `${plan.monthlyPrice} ريال / شهر`
+                          : `${plan.yearlyPrice} ريال`}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                      {plan.description}
+                    </p>
+                    <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
+                      {plan.benefits.map(benefit => (
+                        <li key={benefit}>✓ {benefit}</li>
+                      ))}
+                    </ul>
+                  </button>
+                ))}
+            </div>
+          </SurfaceCard>
+        )}
+
+        {!isFree && (
+          <SurfaceCard className="p-5 sm:p-6">
+            <SectionHeading
+              title="اختر محفظة الدفع"
+              description={`لـ ${paymentPurpose === "subscriptions" ? (selectedPlan?.name ?? "الاشتراك المختار") : selectedAdPackage.title} — اختر المحفظة للانتقال إلى شاشة الدفع الخاصة بها.`}
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
+              {availableWallets.length === 0 ? (
+                <EmptyState
+                  icon={WalletCards}
+                  title="لا توجد محافظ مفعلة"
+                  description="لا توجد محافظ مفعلة لهذا الاستخدام حاليًا."
+                  className="sm:col-span-2"
+                />
+              ) : (
+                availableWallets.map(item => {
+                  const walletMeta = item as typeof item & {
+                    checkoutMode?: "api" | "manual";
+                  };
+                  const selected = wallet === item.wallet;
+                  return (
+                    <button
+                      key={item.wallet}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => setWallet(item.wallet)}
+                      className={`group relative flex min-h-[116px] w-full items-center gap-3 overflow-hidden rounded-2xl border p-3 text-right transition-all active:scale-[0.99] ${selected ? "border-primary/70 bg-primary/10 shadow-sm ring-2 ring-primary/15" : "border-border bg-background hover:border-primary/50 hover:bg-muted/40"}`}
+                    >
+                      <span
+                        className={`absolute inset-y-3 right-0 w-1 rounded-full ${selected ? "bg-primary" : "bg-transparent group-hover:bg-primary/40"}`}
+                      />
+                      <span
+                        className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border p-1.5 ${selected ? "border-primary/30 bg-card" : "border-border bg-card"}`}
+                      >
+                        {item.logoUrl ? (
+                          <img
+                            src={item.logoUrl}
+                            alt={`شعار ${item.displayName}`}
+                            className="h-full w-full object-contain"
+                          />
+                        ) : (
+                          <WalletCards className="h-7 w-7 text-primary" />
+                        )}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2">
+                          <span className="truncate text-base font-black text-foreground">
+                            {item.displayName}
+                          </span>
+                          {selected && (
+                            <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
+                          )}
+                        </span>
+                        {item.description && (
+                          <span className="mt-1 block truncate text-[11px] text-muted-foreground">
+                            {item.description}
+                          </span>
+                        )}
+                        <span
+                          className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold ${walletMeta.checkoutMode === "api" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-primary/10 text-primary"}`}
+                        >
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${walletMeta.checkoutMode === "api" ? "bg-emerald-500" : "bg-primary"}`}
+                          />
+                          {walletMeta.checkoutMode === "api"
+                            ? "دفع مباشر"
+                            : "جاهزة للربط"}
+                        </span>
+                      </span>
+                      <ArrowRight
+                        className={`h-5 w-5 shrink-0 ${selected ? "text-primary" : "text-muted-foreground"}`}
+                      />
+                    </button>
+                  );
+                })
+              )}
+            </div>
+            {selectedWallet && (
+              <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm leading-6">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="font-black text-primary">
+                      تم اختيار {selectedWallet.displayName}
+                    </p>
+                    <p className="mt-1 text-muted-foreground">
+                      بعد استلام رابط API وبيانات التاجر الرسمية سيتم فتح الدفع
+                      الإلكتروني تلقائياً، ويتوفر التحويل اليدوي مؤقتاً.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </SurfaceCard>
+        )}
+
+        <SurfaceCard className="p-5 sm:p-6">
+          <SectionHeading
+            title="طلبات الدفع السابقة"
+            description="لا يتم تفعيل أي اشتراك قبل الاعتماد."
+          />
+          {payments.length === 0 ? (
+            <EmptyState
+              icon={Receipt}
+              title="لا توجد عمليات دفع حتى الآن"
+              className="border-0 bg-transparent py-8"
+            />
+          ) : (
+            <div className="space-y-2">
+              {payments.slice(0, 5).map(payment => (
+                <div
+                  key={payment.id}
+                  className="flex items-center justify-between gap-3 rounded-xl bg-muted/40 px-3 py-3 text-xs"
+                >
+                  <span className="min-w-0 truncate">
+                    {payment.transactionReference} ·{" "}
+                    {payment.plan === "yearly" ? "سنوي" : "شهري"}
+                    {payment.receiptUrl && (
+                      <a
+                        className="mr-2 font-bold text-primary underline"
+                        href={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/api/storage${payment.receiptUrl}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        الإيصال
+                      </a>
+                    )}
+                  </span>
+                  <span className="shrink-0 font-bold text-muted-foreground">
+                    {paymentStatus[payment.status] ?? payment.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </SurfaceCard>
+
+        <SurfaceCard className="p-5 sm:p-6">
+          <SectionHeading
+            title="إنشاء إعلان مدفوع"
+            description="يظهر بوضوح كإعلان بعد اعتماد الإدارة."
+          />
+          {verificationStatus !== "approved" && (
+            <div className="rounded-2xl border border-accent/35 bg-accent/10 p-4 text-sm leading-6 text-accent-foreground">
+              <b>التوثيق مطلوب قبل نشر الإعلان</b>
+              <p className="mt-1 opacity-80">
+                أرسل مستنداتك وانتظر اعتماد فريق فزعة، ثم ستتمكن من إنشاء إعلان.
+              </p>
+              <Link
+                href="/verify"
+                className="mt-3 inline-block font-black text-primary underline"
+              >
+                الانتقال إلى التوثيق
+              </Link>
+            </div>
+          )}
+          <fieldset disabled={verificationStatus !== "approved"}>
+            <form onSubmit={submitAd} className="mt-5 space-y-4">
+              <label className="flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-xs">
+                <Upload className="h-5 w-5 shrink-0 text-primary" />
+                <span className="flex-1 font-bold">
+                  {adImageFile
+                    ? adImageFile.name
+                    : "إضافة صورة رئيسية للإعلان أو من أعمالك"}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={event =>
+                    setAdImageFile(event.target.files?.[0] ?? null)
+                  }
+                />
+              </label>
+              <Input
+                value={adForm.title}
+                onChange={event =>
+                  setAdForm({ ...adForm, title: event.target.value })
+                }
+                placeholder="عنوان الإعلان"
+                className="h-12 rounded-xl"
+              />
+              <Textarea
+                value={adForm.description}
+                onChange={event =>
+                  setAdForm({ ...adForm, description: event.target.value })
+                }
+                placeholder="وصف مختصر للخدمة"
+                className="min-h-24 rounded-xl"
+              />
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Input
+                  value={adForm.city}
+                  onChange={event =>
+                    setAdForm({ ...adForm, city: event.target.value })
+                  }
+                  placeholder="المدينة"
+                  className="h-12 rounded-xl"
+                />
+                <Input
+                  value={adForm.district}
+                  onChange={event =>
+                    setAdForm({ ...adForm, district: event.target.value })
+                  }
+                  placeholder="المنطقة"
+                  className="h-12 rounded-xl"
+                />
+              </div>
+              <div>
+                <p className="mb-2 text-xs font-black text-foreground">
+                  اختر باقة الإعلان
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {adPackages.map(item => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        setPaymentPurpose("advertisements");
+                        setAdForm({
+                          ...adForm,
+                          plan: item.id as AdvertisementInput["plan"],
+                          durationDays:
+                            item.days as AdvertisementInput["durationDays"],
+                        });
+                      }}
+                      className={`flex min-h-[76px] items-center justify-between gap-3 rounded-xl border p-3 text-right transition-colors ${adForm.plan === item.id ? "border-primary bg-primary/5 ring-1 ring-primary/15" : "border-border bg-background hover:border-primary/40"}`}
+                    >
+                      <span>
+                        <span className="block text-sm font-black">
+                          {item.title}
+                        </span>
+                        <span className="mt-1 block text-[11px] leading-5 text-muted-foreground">
+                          {item.description} · {item.placement}
+                        </span>
+                      </span>
+                      <span className="shrink-0 rounded-full bg-muted px-2 py-1 text-[10px] font-bold">
+                        {item.days} يوماً
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
+                الباقة المختارة:{" "}
+                <b className="text-foreground">{selectedAdPackage.title}</b> ·
+                مدة الظهور{" "}
+                <b className="text-foreground">
+                  {selectedAdPackage.days} يوماً
+                </b>
+              </div>
+              <Input
+                type="number"
+                min="1"
+                step="1"
+                value={adForm.budget}
+                onChange={event =>
+                  setAdForm({ ...adForm, budget: event.target.value })
+                }
+                placeholder="مبلغ الإعلان بالريال اليمني"
+                className="h-12 rounded-xl"
+              />
+              <Button
+                type="submit"
+                variant="outline"
+                className="h-12 w-full rounded-xl font-black"
+                disabled={createAd.isPending}
+              >
+                <Megaphone className="ml-2 h-4 w-4" />
+                إرسال الإعلان للمراجعة
+              </Button>
+            </form>
+          </fieldset>
+          <div className="mt-6 space-y-3">
+            {ads.length === 0 ? (
+              <EmptyState
+                icon={Megaphone}
+                title="ستظهر إعلاناتك هنا"
+                description="بعد إرسال إعلانك واعتماده ستتمكن من متابعة أدائه."
+                className="py-8"
+              />
+            ) : (
+              ads.map(ad => (
+                <div
+                  key={ad.id}
+                  className="rounded-2xl border border-border p-4 text-xs"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-black">{ad.title}</span>
+                    <span className="text-muted-foreground">
+                      {adStatus[ad.status] ?? ad.status}
+                    </span>
+                  </div>
+                  {ad.imageUrl && (
+                    <img
+                      src={ad.imageUrl}
+                      alt=""
+                      className="mt-3 h-32 w-full rounded-xl object-cover"
+                    />
+                  )}
+                  <p className="mt-2 text-muted-foreground">
+                    #{ad.id} ·{" "}
+                    {ad.plan === "standard"
+                      ? "عادي"
+                      : ad.plan === "featured"
+                        ? "مميز"
+                        : ad.plan === "homepage"
+                          ? "رئيسي"
+                          : "VIP"}{" "}
+                    · {ad.durationDays} يوماً ·{" "}
+                    <b className="text-foreground">
+                      {ad.budget.toLocaleString("ar-YE")} ريال
+                    </b>
+                  </p>
+                  <div className="mt-3 grid grid-cols-4 gap-2 text-center">
+                    {[
+                      ["impressions", "ظهور"],
+                      ["clicks", "نقرات"],
+                      ["callClicks", "اتصالات"],
+                      ["whatsappClicks", "واتساب"],
+                    ].map(([key, label]) => (
+                      <div key={key} className="rounded-lg bg-muted/50 p-2">
+                        <b className="block">
+                          {(ad as any).metrics?.[key] ?? 0}
+                        </b>
+                        <span className="text-[10px] text-muted-foreground">
+                          {label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </SurfaceCard>
+
+        <div className="flex items-start gap-2 rounded-2xl border border-primary/15 bg-primary/5 p-4 text-xs leading-5 text-primary">
+          <Clock3 className="mt-0.5 h-4 w-4 shrink-0" />
+          الدفع والإعلانات يمران بمراجعة الإدارة، ولا يتم اعتبار رفع رقم العملية
+          موافقة تلقائية.
         </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle2 className="h-4 w-4 text-emerald-600" />بيانات الأداء تجمع ضغطات الاتصال وواتساب ومشاهدات الملف.</div>
-      </section>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+          بيانات الأداء تجمع ضغطات الاتصال وواتساب ومشاهدات الملف.
+        </div>
+      </AppPage>
     </main>
   );
 }
