@@ -9,5 +9,6 @@ import com.fazaah.app.domain.model.SubscriptionPlan
 class SubscriptionRepository(private val api: FazaaApi) {
     suspend fun plans(): List<SubscriptionPlan> = api.subscriptionPlans()
     suspend fun status(): ProviderSubscriptionStatus = api.providerSubscription()
+    suspend fun business() = api.providerBusiness()
     suspend fun checkout(request: SubscriptionCheckoutRequest): SubscriptionCheckoutResponse = api.subscriptionCheckout(request)
 }

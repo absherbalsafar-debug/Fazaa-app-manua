@@ -19,3 +19,10 @@ data class ProviderSubscriptionStatus(
 )
 data class SubscriptionCheckoutRequest(val plan: String, val receiptUrl: String? = null)
 data class SubscriptionCheckoutResponse(val success: Boolean = false, val status: String? = null, val message: String? = null, val paymentId: Int? = null)
+data class ProviderBusinessSummary(
+    val subscription: BusinessSubscription = BusinessSubscription(),
+    val metrics: BusinessMetrics = BusinessMetrics(),
+    val freeSlotsRemaining: Int = 0,
+)
+data class BusinessSubscription(val plan: String? = null, val status: String? = null, val freeSlotNumber: Int? = null, val endsAt: String? = null)
+data class BusinessMetrics(val profileViews: Int = 0, val callClicks: Int = 0, val whatsappClicks: Int = 0, val serviceRequests: Int = 0)

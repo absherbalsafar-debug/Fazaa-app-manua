@@ -51,8 +51,9 @@ import com.fazaah.app.domain.model.SubscriptionCheckoutRequest
 import kotlinx.coroutines.launch
 
 @Composable
-fun ProviderBusinessScreen(repository: CatalogRepository, navController: NavHostController) {
+fun ProviderBusinessScreen(repository: CatalogRepository, subscriptionRepository: SubscriptionRepository, navController: NavHostController) {
     val profile by produceState<com.fazaah.app.domain.model.ProviderSummary?>(initialValue = null) { value = runCatching { repository.providerProfile() }.getOrNull() }
+    val business by produceState<com.fazaah.app.domain.model.ProviderBusinessSummary?>(initialValue = null) { value = runCatching { subscriptionRepository.business() }.getOrNull() }
     var name by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
     var specialty by remember { mutableStateOf("") }
@@ -64,6 +65,11 @@ fun ProviderBusinessScreen(repository: CatalogRepository, navController: NavHost
     LaunchedEffect(profile) { profile?.let { name = it.name; specialty = it.specialty; bio = it.bio; whatsapp = it.phone } }
     FormPage("بيانات النشاط المهني", "أكمل بيانات نشاطك ليظهر ملفك بشكل واضح للعملاء.", navController) {
         if (profile == null) CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+        business?.let { summary ->
+            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary), shape = RoundedCornerShape(22.dp)) { Column(Modifier.padding(18.dp)) { Text("الاشتراك والإعلانات", color = androidx.compose.ui.graphics.Color.White, fontWeight = FontWeight.Black, style = MaterialTheme.typography.titleLarge); Text(if (summary.subscription.status == "active") "اشتراك ${summary.subscription.plan ?: "نشط"}" else "لا يوجد اشتراك فعال", color = androidx.compose.ui.graphics.Color.White.copy(alpha = .72f)); Text("المقاعد المجانية المتبقية: ${summary.freeSlotsRemaining}", color = androidx.compose.ui.graphics.Color.White.copy(alpha = .72f), style = MaterialTheme.typography.bodySmall) } }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) { BusinessMetric("مشاهدات الملف", summary.metrics.profileViews, Modifier.weight(1f)); BusinessMetric("طلبات الخدمة", summary.metrics.serviceRequests, Modifier.weight(1f)) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) { BusinessMetric("ضغطات الاتصال", summary.metrics.callClicks, Modifier.weight(1f)); BusinessMetric("ضغطات واتساب", summary.metrics.whatsappClicks, Modifier.weight(1f)) }
+        }
         OutlinedTextField(name, { name = it }, label = { Text("اسم النشاط") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
         OutlinedTextField(category, { category = it }, label = { Text("المجال") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
         OutlinedTextField(specialty, { specialty = it }, label = { Text("التخصص") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
@@ -73,6 +79,9 @@ fun ProviderBusinessScreen(repository: CatalogRepository, navController: NavHost
         Button(onClick = { profile?.let { current -> scope.launch { saving = true; message = runCatching { repository.updateBusiness(current.id, name.trim(), specialty.trim(), bio.trim(), whatsapp.trim()); "تم حفظ بيانات النشاط" }.getOrElse { it.message ?: "تعذر حفظ البيانات" }; saving = false } } }, enabled = profile != null && !saving && name.isNotBlank(), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) { Text(if (saving) "جارٍ الحفظ..." else "حفظ بيانات النشاط", fontWeight = FontWeight.Bold) }
     }
 }
+
+@Composable
+private fun BusinessMetric(label: String, value: Int, modifier: Modifier) { Card(modifier = modifier, shape = RoundedCornerShape(16.dp)) { Column(Modifier.padding(14.dp)) { Text(value.toString(), fontWeight = FontWeight.Black, style = MaterialTheme.typography.titleLarge); Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } } }
 
 @Composable
 fun VerifyProviderScreen(authRepository: AuthRepository, navController: NavHostController) {

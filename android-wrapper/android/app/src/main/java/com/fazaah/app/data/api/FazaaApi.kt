@@ -20,6 +20,7 @@ import com.fazaah.app.domain.model.SubscriptionCheckoutRequest
 import com.fazaah.app.domain.model.SubscriptionCheckoutResponse
 import com.fazaah.app.domain.model.SubscriptionPlan
 import com.fazaah.app.domain.model.ProviderSubscriptionStatus
+import com.fazaah.app.domain.model.ProviderBusinessSummary
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -101,6 +102,8 @@ interface FazaaApi {
 
     @GET("providers/me/subscription")
     suspend fun providerSubscription(): ProviderSubscriptionStatus
+    @GET("providers/me/business")
+    suspend fun providerBusiness(): ProviderBusinessSummary
 
     @POST("subscriptions/checkout")
     suspend fun subscriptionCheckout(@Body request: SubscriptionCheckoutRequest): SubscriptionCheckoutResponse
