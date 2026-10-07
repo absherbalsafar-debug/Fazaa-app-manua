@@ -1,4 +1,7 @@
-import { ProviderSummary, useTrackProviderContactClick } from "@/lib/api-client-react";
+import {
+  ProviderSummary,
+  useTrackProviderContactClick,
+} from "@/lib/api-client-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star, MapPin, CheckCircle2, Briefcase, Zap } from "lucide-react";
 import { MessageCircle, Phone } from "lucide-react";
@@ -17,164 +20,212 @@ export function ProviderCard({ provider, compact = false }: ProviderCardProps) {
   const completedJobs = Number(provider.completedJobs ?? 0);
   const yearsExperience = Number(provider.yearsExperience ?? 0);
   const providerName = provider.name || "مهني فزعة";
+
   if (compact) {
     return (
       <Link href={`/providers/${provider.id}`}>
-        <div className="flex-shrink-0 w-44 bg-white rounded-2xl p-3 border border-border card-shadow cursor-pointer hover:border-primary/30 hover:card-shadow-lg transition-all">
-          <div className="relative mb-2.5">
-            <Avatar className="w-full h-32 rounded-xl">
-              <AvatarImage src={provider.avatarUrl || ""} className="object-cover" />
-              <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold rounded-xl">
+        <article className="group w-44 shrink-0 rounded-3xl border border-border/80 bg-card p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-lg">
+          <div className="relative mb-3">
+            <Avatar className="h-32 w-full rounded-2xl">
+              <AvatarImage
+                src={provider.avatarUrl || ""}
+                alt={providerName}
+                className="object-cover"
+              />
+              <AvatarFallback className="rounded-2xl bg-primary/10 text-2xl font-bold text-primary">
                 {providerName.charAt(0)}
               </AvatarFallback>
             </Avatar>
             {provider.isAvailable && (
-              <span className="absolute top-2 right-2 flex items-center gap-1 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+              <span className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-green-500 px-2 py-1 text-[10px] font-bold text-white shadow-sm">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
                 متاح
               </span>
             )}
             {provider.isVerified && (
-              <span className="absolute top-2 left-2 w-5 h-5 bg-accent rounded-full flex items-center justify-center">
-                <CheckCircle2 className="w-3 h-3 text-white" />
+              <span
+                className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-primary shadow-sm"
+                aria-label="موثق"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
               </span>
             )}
           </div>
-          <p className="font-bold text-sm truncate mb-0.5">{providerName}</p>
-          <p className="text-xs text-muted-foreground truncate">{provider.categoryName || "خدمات مهنية"}</p>
-          {provider.specialty && <p className="mt-1 truncate rounded-full bg-accent/15 px-2 py-1 text-[10px] font-bold text-amber-800">التخصص الفرعي: {provider.specialty}</p>}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-0.5 text-amber-500">
-              <Star className="w-3 h-3 fill-amber-500" />
-              <span className="text-xs font-bold text-foreground">{rating.toFixed(1)}</span>
+          <p className="truncate text-sm font-extrabold text-foreground">
+            {providerName}
+          </p>
+          <p className="mt-1 truncate text-xs text-muted-foreground">
+            {provider.categoryName || "خدمات مهنية"}
+          </p>
+          {provider.specialty && (
+            <p className="mt-2 truncate rounded-full bg-accent/15 px-2 py-1 text-[10px] font-bold text-amber-800">
+              التخصص الفرعي: {provider.specialty}
+            </p>
+          )}
+          <div className="mt-3 flex items-center justify-between border-t border-border/70 pt-3">
+            <div className="flex items-center gap-1 text-amber-600">
+              <Star className="h-3.5 w-3.5 fill-current" />
+              <span className="text-xs font-extrabold text-foreground">
+                {rating.toFixed(1)}
+              </span>
             </div>
-            <span className="text-xs text-muted-foreground">{completedJobs} مشروع</span>
+            <span className="text-xs text-muted-foreground">
+              {completedJobs} مشروع
+            </span>
           </div>
-        </div>
+        </article>
       </Link>
     );
   }
 
   return (
-    <motion.div
+    <motion.article
       whileTap={{ scale: 0.99 }}
-      className="bg-white rounded-2xl border border-border card-shadow overflow-hidden hover:border-primary/25 hover:card-shadow-lg transition-all duration-200"
+      className="overflow-hidden rounded-3xl border border-border/80 bg-card shadow-sm transition-all duration-200 hover:border-primary/25 hover:shadow-lg"
     >
-      <Link href={`/providers/${provider.id}`}>
-        <div className="p-4">
-          <div className="flex gap-3.5">
-            {/* Avatar */}
+      <Link
+        href={`/providers/${provider.id}`}
+        className="block focus-visible:outline-none"
+      >
+        <div className="p-5 sm:p-6">
+          <div className="flex gap-4">
             <div className="relative shrink-0">
-              <Avatar className="w-16 h-16 rounded-2xl">
-                <AvatarImage src={provider.avatarUrl || ""} className="object-cover" />
-                <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold rounded-2xl">
+              <Avatar className="h-[4.5rem] w-[4.5rem] rounded-2xl border border-primary/10 sm:h-20 sm:w-20">
+                <AvatarImage
+                  src={provider.avatarUrl || ""}
+                  alt={providerName}
+                  className="object-cover"
+                />
+                <AvatarFallback className="rounded-2xl bg-primary/10 text-xl font-bold text-primary">
                   {providerName.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               {provider.isAvailable && (
-                <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full" />
+                <span
+                  className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-card bg-green-500"
+                  aria-label="متاح الآن"
+                />
               )}
             </div>
 
-            <div className="flex-1 min-w-0">
-              {/* Name + verified + rating */}
-              <div className="flex items-start justify-between gap-2 mb-1">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <h3 className="font-bold text-sm truncate text-foreground">{providerName}</h3>
-                  {provider.isVerified && (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-accent shrink-0 fill-accent/10" />
-                  )}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="truncate text-base font-extrabold text-foreground">
+                      {providerName}
+                    </h3>
+                    {provider.isVerified && (
+                      <CheckCircle2
+                        className="h-4 w-4 shrink-0 fill-primary/10 text-primary"
+                        aria-label="موثق"
+                      />
+                    )}
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
+                    <span aria-hidden="true">{provider.categoryIcon}</span>
+                    <span className="font-medium">
+                      {provider.categoryName || "خدمات مهنية"}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-0.5 bg-amber-50 border border-amber-100 text-amber-600 px-1.5 py-0.5 rounded-lg text-xs font-bold shrink-0">
-                  <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                <div className="flex shrink-0 items-center gap-1 rounded-xl bg-accent/15 px-2.5 py-1.5 text-sm font-extrabold text-foreground">
+                  <Star className="h-3.5 w-3.5 fill-accent text-accent" />
                   {rating.toFixed(1)}
                 </div>
               </div>
 
-              {/* Category + specialty */}
-              <div className="flex flex-wrap items-center gap-1 mb-1.5">
-                <span className="text-sm">{provider.categoryIcon}</span>
-                <span className="text-xs text-muted-foreground font-medium">{provider.categoryName || "خدمات مهنية"}</span>
-                {provider.specialty && <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold text-amber-800">التخصص الفرعي: {provider.specialty}</span>}
-              </div>
+              {provider.specialty && (
+                <span className="mt-2 inline-flex max-w-full truncate rounded-full bg-accent/15 px-2.5 py-1 text-[11px] font-bold text-amber-800">
+                  التخصص الفرعي: {provider.specialty}
+                </span>
+              )}
 
-              {/* Location + jobs */}
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3 shrink-0" />
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 shrink-0 text-primary/70" />
                   <span className="truncate">{provider.city}</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Briefcase className="w-3 h-3 shrink-0" />
+                <div className="flex items-center gap-1.5">
+                  <Briefcase className="h-3.5 w-3.5 shrink-0 text-primary/70" />
                   <span>{completedJobs} مشروع</span>
                 </div>
                 {yearsExperience > 0 && (
-                  <span>{yearsExperience} سنوات</span>
+                  <span>{yearsExperience} سنوات خبرة</span>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Tags row */}
-          <div className="flex items-center gap-2 mt-3 flex-wrap">
+          <div className="mt-4 flex flex-wrap items-center gap-2">
             {provider.isVerified && (
-              <span className="text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                <CheckCircle2 className="w-2.5 h-2.5" />
-                موثق
+              <span className="inline-flex items-center gap-1 rounded-full border border-primary/10 bg-primary/5 px-2.5 py-1 text-[11px] font-bold text-primary">
+                <CheckCircle2 className="h-3 w-3" /> موثق
               </span>
             )}
             {provider.isAvailable && (
-              <span className="flex items-center gap-1 rounded-full border border-green-100 bg-green-50 px-2 py-0.5 text-[10px] font-bold text-green-700">
-                <Zap className="h-2.5 w-2.5 fill-current" /> متاح الآن
+              <span className="inline-flex items-center gap-1 rounded-full border border-green-100 bg-green-50 px-2.5 py-1 text-[11px] font-bold text-green-700">
+                <Zap className="h-3 w-3 fill-current" /> متاح الآن
               </span>
             )}
             {provider.distanceKm != null && (
-              <span className="flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
-                <MapPin className="h-2.5 w-2.5" /> {provider.distanceKm.toFixed(1)} كم
+              <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[11px] text-muted-foreground">
+                <MapPin className="h-3 w-3" /> {provider.distanceKm.toFixed(1)}{" "}
+                كم
               </span>
             )}
           </div>
         </div>
       </Link>
 
-      {/* Action buttons */}
-      <div className="flex items-center justify-between border-t border-border px-4 py-2 text-[10px] text-muted-foreground">
+      <div className="flex items-center gap-3 border-t border-border/70 bg-background/35 px-5 py-2.5 text-[11px] text-muted-foreground sm:px-6">
         <span dir="ltr">{maskPhone(provider.phone)}</span>
-        {provider.whatsapp && <span dir="ltr">{maskPhone(provider.whatsapp)}</span>}
+        {provider.whatsapp && (
+          <span dir="ltr">واتساب: {maskPhone(provider.whatsapp)}</span>
+        )}
       </div>
-      <div className="flex border-t border-border divide-x divide-border rtl:divide-x-reverse">
-        <Link href={`/request/new?providerId=${provider.id}`} className="flex-1">
-          <button className="w-full py-2.5 text-xs font-bold text-primary hover:bg-primary/5 transition-colors flex items-center justify-center gap-1.5">
-            طلب خدمة
-          </button>
+      <div className="grid border-t border-border/70 text-xs font-extrabold sm:grid-cols-3">
+        <Link
+          href={`/request/new?providerId=${provider.id}`}
+          className="flex min-h-12 items-center justify-center text-primary transition-colors hover:bg-primary/5"
+        >
+          طلب خدمة
         </Link>
         <a
           href={toTelHref(provider.phone)}
-          className="flex-1"
+          className="flex min-h-12 items-center justify-center gap-1.5 border-t border-border/70 text-primary transition-colors hover:bg-primary/5 sm:border-r sm:border-t-0"
           onClick={event => event.stopPropagation()}
-          onMouseDown={() => trackContactClick.mutate({ id: provider.id, data: { kind: "call" } })}
+          onMouseDown={() =>
+            trackContactClick.mutate({
+              id: provider.id,
+              data: { kind: "call" },
+            })
+          }
         >
-          <button className="w-full py-2.5 text-xs font-bold text-primary hover:bg-primary/5 transition-colors flex items-center justify-center gap-1.5">
-            <Phone className="h-3.5 w-3.5" />
-            اتصال
-          </button>
+          <Phone className="h-4 w-4" />
+          اتصال
         </a>
-        {provider.whatsapp && (
+        {provider.whatsapp ? (
           <a
             href={toWhatsAppHref(provider.whatsapp)}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1"
+            className="flex min-h-12 items-center justify-center gap-1.5 border-t border-border/70 text-green-700 transition-colors hover:bg-green-50 sm:border-r"
             onClick={event => event.stopPropagation()}
-            onMouseDown={() => trackContactClick.mutate({ id: provider.id, data: { kind: "whatsapp" } })}
+            onMouseDown={() =>
+              trackContactClick.mutate({
+                id: provider.id,
+                data: { kind: "whatsapp" },
+              })
+            }
           >
-            <button className="w-full py-2.5 text-xs font-bold text-green-600 hover:bg-green-50 transition-colors flex items-center justify-center gap-1.5">
-              <MessageCircle className="h-3.5 w-3.5" />
-              واتساب
-            </button>
+            <MessageCircle className="h-4 w-4" />
+            واتساب
           </a>
+        ) : (
+          <span className="hidden sm:block" />
         )}
       </div>
-    </motion.div>
+    </motion.article>
   );
 }

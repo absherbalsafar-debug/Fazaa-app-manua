@@ -5,12 +5,19 @@ import { apiRequest, useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Send, Loader2, Phone, MoreVertical, CheckCheck } from "lucide-react";
+import {
+  ArrowLeft,
+  Send,
+  Loader2,
+  Phone,
+  MoreVertical,
+  CheckCheck,
+  MessageCircle,
+} from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
-
 interface ChatTarget {
   id: number;
   otherUserId: number;
@@ -18,12 +25,9 @@ interface ChatTarget {
   otherUserAvatarUrl?: string | null;
   otherUserPhone?: string | null;
 }
-
 function getApiErrorMessage(error: unknown) {
-  if (error instanceof Error) return error.message;
-  return "الرجاء المحاولة مرة أخرى";
+  return error instanceof Error ? error.message : "الرجاء المحاولة مرة أخرى";
 }
-
 export default function Chat() {
   const [, params] = useRoute("/messages/:id");
   const [, setLocation] = useLocation();
@@ -35,208 +39,255 @@ export default function Chat() {
   const [isResolvingTarget, setIsResolvingTarget] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
   useEffect(() => {
     let cancelled = false;
     setTarget(null);
     setIsResolvingTarget(true);
-
     if (!otherUserId) {
       setIsResolvingTarget(false);
       return;
     }
-
     apiRequest(`/conversations/with/${otherUserId}`, { method: "POST" })
-      .then((conversation) => {
-        if (!cancelled) setTarget(conversation as ChatTarget);
+      .then(c => {
+        if (!cancelled) setTarget(c as ChatTarget);
       })
       .catch((error: unknown) => {
-        if (!cancelled) {
+        if (!cancelled)
           toast({
             title: "تعذر فتح المحادثة",
-            description: error instanceof Error ? error.message : "الرجاء المحاولة مرة أخرى",
+            description:
+              error instanceof Error
+                ? error.message
+                : "الرجاء المحاولة مرة أخرى",
             variant: "destructive",
           });
-        }
       })
       .finally(() => {
         if (!cancelled) setIsResolvingTarget(false);
       });
-
     return () => {
       cancelled = true;
     };
   }, [otherUserId, toast]);
-
-  const { data: messages, isLoading: isMessagesLoading, refetch } = useGetMessages(target?.id ?? 0, {
-    query: { enabled: !!target?.id, queryKey: ['messages', target?.id], refetchInterval: 3000 }
+  const {
+    data: messages,
+    isLoading: isMessagesLoading,
+    refetch,
+  } = useGetMessages(target?.id ?? 0, {
+    query: {
+      enabled: !!target?.id,
+      queryKey: ["messages", target?.id],
+      refetchInterval: 3000,
+    },
   });
-
   const sendMutation = useSendMessage();
-
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current)
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
   }, [messages]);
-
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = content.trim();
     if (!trimmed || !target?.id) return;
-    sendMutation.mutate({ id: target.id, data: { content: trimmed } }, {
-      onSuccess: () => { setContent(""); refetch(); inputRef.current?.focus(); },
-      onError: (error) => {
-        toast({
-          title: "تعذر إرسال الرسالة",
-          description: error instanceof Error ? error.message : "الرجاء المحاولة مرة أخرى",
-          variant: "destructive",
-        });
-      },
-    });
+    sendMutation.mutate(
+      { id: target.id, data: { content: trimmed } },
+      {
+        onSuccess: () => {
+          setContent("");
+          refetch();
+          inputRef.current?.focus();
+        },
+        onError: error =>
+          toast({
+            title: "تعذر إرسال الرسالة",
+            description:
+              error instanceof Error
+                ? error.message
+                : "الرجاء المحاولة مرة أخرى",
+            variant: "destructive",
+          }),
+      }
+    );
   };
-
   const otherMessage = messages?.find(m => m.senderId === otherUserId);
-  const otherName = target?.otherUserName || otherMessage?.senderName || "مستخدم";
+  const otherName =
+    target?.otherUserName || otherMessage?.senderName || "مستخدم";
   const otherAvatar = target?.otherUserAvatarUrl || "";
-
   const handleCall = () => {
     if (target?.otherUserId) {
       apiRequest("/calls", {
         method: "POST",
         body: JSON.stringify({ calleeId: target.otherUserId }),
       })
-        .then((call) => setLocation(`/call/${(call as { id: string }).id}`))
-        .catch((error: unknown) => {
+        .then(call => setLocation(`/call/${(call as { id: string }).id}`))
+        .catch(error =>
           toast({
             title: "تعذر بدء المكالمة",
             description: getApiErrorMessage(error),
             variant: "destructive",
-          });
-        });
+          })
+        );
       return;
     }
     toast({ title: "تعذر تحديد المستخدم", variant: "destructive" });
   };
-
-  if (isResolvingTarget || isMessagesLoading) {
+  if (isResolvingTarget || isMessagesLoading)
     return (
-      <div className="h-[100dvh] flex flex-col items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div
+        className="flex h-[100dvh] flex-col items-center justify-center gap-3 bg-background px-6 text-center"
+        dir="rtl"
+      >
+        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <Loader2 className="h-7 w-7 animate-spin" />
+        </span>
+        <p className="text-sm font-bold text-muted-foreground">
+          جاري فتح المحادثة...
+        </p>
       </div>
     );
-  }
-
   return (
-    <div className="flex flex-col h-[100dvh] bg-background" dir="rtl">
-      {/* Header */}
-      <div className="shrink-0 gradient-primary px-4 pt-3 pb-3 flex items-center gap-3">
-        <Link href="/messages">
-          <button className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center shrink-0">
-            <ArrowLeft className="w-5 h-5 text-white" />
-          </button>
-        </Link>
-        <Avatar className="w-10 h-10 border-2 border-white/20 shrink-0">
-          <AvatarImage src={otherAvatar} />
-          <AvatarFallback className="bg-white/20 text-white font-bold">
-            {otherName.charAt(0)}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-1 min-w-0">
-          <h1 className="font-bold text-white text-sm truncate">{otherName}</h1>
-          <p className="text-white/60 text-[10px]">آخر ظهور منذ قليل</p>
+    <div className="flex h-[100dvh] flex-col bg-background" dir="rtl">
+      <header className="shrink-0 border-b border-border/60 bg-card px-4 pb-3 pt-3 shadow-sm sm:px-6">
+        <div className="mx-auto flex max-w-3xl items-center gap-3">
+          <Link href="/messages">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-11 w-11 shrink-0 rounded-2xl"
+              aria-label="العودة للرسائل"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <Avatar className="h-11 w-11 shrink-0 border border-border">
+            <AvatarImage src={otherAvatar} />
+            <AvatarFallback className="bg-primary/10 font-extrabold text-primary">
+              {otherName.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-sm font-extrabold text-foreground">
+              {otherName}
+            </h1>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              محادثة آمنة داخل فزعة
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={handleCall}
+            className="h-11 w-11 shrink-0 rounded-2xl text-primary"
+            aria-label="اتصال"
+          >
+            <Phone className="h-5 w-5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="hidden h-11 w-11 shrink-0 rounded-2xl sm:inline-flex"
+            aria-label="المزيد"
+          >
+            <MoreVertical className="h-5 w-5" />
+          </Button>
         </div>
-        <button
-          type="button"
-          onClick={handleCall}
-          aria-label="اتصال"
-          className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center shrink-0"
-        >
-          <Phone className="w-4.5 h-4.5 text-white" />
-        </button>
-        <button className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center shrink-0">
-          <MoreVertical className="w-4.5 h-4.5 text-white" />
-        </button>
-      </div>
-
-      {/* Messages */}
+      </header>
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto bg-background px-4 py-4 space-y-3"
+        className="flex-1 overflow-y-auto bg-background px-4 py-5 sm:px-6"
       >
-        {messages?.length === 0 && (
-          <div className="h-full flex flex-col items-center justify-center text-center gap-3 py-12">
-            <div className="w-16 h-16 bg-primary/8 rounded-3xl flex items-center justify-center">
-              <span className="text-3xl">💬</span>
+        <div className="mx-auto max-w-3xl space-y-3">
+          {messages?.length === 0 && (
+            <div className="flex min-h-[55vh] flex-col items-center justify-center gap-3 py-12 text-center">
+              <span className="flex h-16 w-16 items-center justify-center rounded-3xl bg-primary/10 text-primary">
+                <MessageCircle className="h-7 w-7" />
+              </span>
+              <p className="text-sm font-bold text-muted-foreground">
+                أرسل أول رسالة لبدء المحادثة
+              </p>
+              <p className="max-w-xs text-xs leading-5 text-muted-foreground">
+                تواصل مع مقدم الخدمة بسهولة ووضوح.
+              </p>
             </div>
-            <p className="text-muted-foreground text-sm font-medium">أرسل أول رسالة لبدء المحادثة</p>
-          </div>
-        )}
-
-        {messages?.map((msg, i) => {
-          const isMe = msg.senderId === user?.id;
-          const showTime = i === 0 || (messages[i - 1] && msg.senderId !== messages[i - 1].senderId);
-          return (
-            <AnimatePresence key={msg.id}>
-              <motion.div
-                initial={{ opacity: 0, y: 6, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.2 }}
-                className={`flex ${isMe ? 'justify-start' : 'justify-end'} items-end gap-2`}
-              >
-                {!isMe && showTime && (
-                  <Avatar className="w-7 h-7 shrink-0 mb-0.5">
-                    <AvatarImage src={otherAvatar} />
-                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                      {otherName.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-                {!isMe && !showTime && <div className="w-7 shrink-0" />}
-
-                <div className={`max-w-[72%] ${isMe ? 'items-start' : 'items-end'} flex flex-col gap-0.5`}>
+          )}
+          {messages?.map((msg, i) => {
+            const isMe = msg.senderId === user?.id;
+            const showTime =
+              i === 0 ||
+              (messages[i - 1] && msg.senderId !== messages[i - 1].senderId);
+            return (
+              <AnimatePresence key={msg.id}>
+                <motion.div
+                  initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.2 }}
+                  className={`flex items-end gap-2 ${isMe ? "justify-start" : "justify-end"}`}
+                >
+                  {!isMe && showTime && (
+                    <Avatar className="mb-0.5 h-7 w-7 shrink-0">
+                      <AvatarImage src={otherAvatar} />
+                      <AvatarFallback className="bg-primary/10 text-xs font-bold text-primary">
+                        {otherName.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                  {!isMe && !showTime && <div className="w-7 shrink-0" />}
                   <div
-                    className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                      isMe
-                        ? 'gradient-primary text-white rounded-tr-sm shadow-sm'
-                         : 'bg-card text-foreground rounded-tl-sm border border-border/60 shadow-sm'
-                    }`}
+                    className={`flex max-w-[84%] flex-col gap-1 sm:max-w-[72%] ${isMe ? "items-start" : "items-end"}`}
                   >
-                    {msg.content}
+                    <div
+                      className={`rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm ${isMe ? "rounded-tr-sm bg-primary text-primary-foreground" : "rounded-tl-sm border border-border/70 bg-card text-foreground"}`}
+                    >
+                      {msg.content}
+                    </div>
+                    <div
+                      className={`flex items-center gap-1 ${isMe ? "pr-1" : "pl-1"}`}
+                    >
+                      <time className="text-[9px] text-muted-foreground">
+                        {msg.createdAt
+                          ? format(new Date(msg.createdAt), "hh:mm a", {
+                              locale: ar,
+                            })
+                          : ""}
+                      </time>
+                      {isMe && (
+                        <CheckCheck className="h-3 w-3 text-primary/60" />
+                      )}
+                    </div>
                   </div>
-                  <div className={`flex items-center gap-1 ${isMe ? 'pr-1' : 'pl-1'}`}>
-                    <span className="text-[9px] text-muted-foreground">
-                      {msg.createdAt ? format(new Date(msg.createdAt), 'hh:mm a', { locale: ar }) : ''}
-                    </span>
-                    {isMe && <CheckCheck className="w-3 h-3 text-primary/60" />}
-                  </div>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-          );
-        })}
+                </motion.div>
+              </AnimatePresence>
+            );
+          })}
+        </div>
       </div>
-
-      {/* Input bar */}
-      <div className="shrink-0 bg-card border-t border-border px-3 py-3 pb-safe">
-        <form onSubmit={handleSend} className="flex items-center gap-2 max-w-lg mx-auto">
+      <div className="shrink-0 border-t border-border/60 bg-card px-3 py-3 pb-safe sm:px-6">
+        <form
+          onSubmit={handleSend}
+          className="mx-auto flex max-w-3xl items-center gap-2"
+        >
           <Input
             ref={inputRef}
             value={content}
             onChange={e => setContent(e.target.value)}
             placeholder="اكتب رسالتك..."
-            className="flex-1 rounded-2xl bg-muted/60 border-transparent focus-visible:ring-1 focus-visible:ring-primary text-sm h-10"
+            className="h-12 flex-1 rounded-2xl border-border/70 bg-background text-sm focus-visible:ring-1 focus-visible:ring-primary"
+            aria-label="نص الرسالة"
           />
           <Button
             type="submit"
             size="icon"
-            className="rounded-2xl w-10 h-10 gradient-primary hover:opacity-90 shrink-0 transition-opacity"
+            className="h-12 w-12 shrink-0 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90"
             disabled={!content.trim() || sendMutation.isPending}
+            aria-label="إرسال الرسالة"
           >
-            {sendMutation.isPending
-              ? <Loader2 className="w-4.5 h-4.5 animate-spin" />
-              : <Send className="w-4.5 h-4.5 rtl:-scale-x-100" />
-            }
+            {sendMutation.isPending ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Send className="h-5 w-5 rtl:-scale-x-100" />
+            )}
           </Button>
         </form>
       </div>

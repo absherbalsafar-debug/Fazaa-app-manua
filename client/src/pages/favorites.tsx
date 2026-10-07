@@ -1,44 +1,75 @@
 import { useListFavorites } from "@/lib/api-client-react";
 import { ProviderCard } from "@/components/provider-card";
-import { Heart, Loader2 } from "lucide-react";
+import { Heart, Loader2, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  AppPage,
+  EmptyState,
+  PageHeading,
+  SurfaceCard,
+} from "@/components/app-ui";
 
 export default function Favorites() {
-  const { data: favorites, isLoading } = useListFavorites({
-    query: { queryKey: ['favorites'] }
+  const {
+    data: favorites,
+    isLoading,
+    isError,
+    refetch,
+  } = useListFavorites({
+    query: { queryKey: ["favorites"] },
   });
 
   return (
-    <div className="pb-24 bg-background min-h-screen">
-      <div className="bg-primary pt-6 pb-8 px-4 rounded-b-[2rem] shadow-sm">
-        <div className="max-w-md mx-auto text-center">
-          <h1 className="text-2xl font-bold text-primary-foreground">المفضلة</h1>
-          <p className="text-primary-foreground/80 mt-1 text-sm">المهنيين الذين قمت بحفظهم</p>
-        </div>
-      </div>
+    <div className="app-stage min-h-[100dvh] bg-background" dir="rtl">
+      <AppPage width="mobile">
+        <PageHeading
+          eyebrow="مساحتك المحفوظة"
+          title="المفضلة"
+          description="ارجع إلى المهنيين الذين تثق بهم وابدأ طلبك بسهولة."
+        />
 
-      <div className="max-w-md mx-auto px-4 mt-6">
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        ) : !favorites || favorites.length === 0 ? (
-          <div className="text-center py-16 flex flex-col items-center">
-            <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-4">
-              <Heart className="w-10 h-10 text-muted-foreground opacity-50" />
+          <SurfaceCard className="flex min-h-64 flex-col items-center justify-center gap-4 text-center">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/8 text-primary">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </span>
+            <div>
+              <p className="font-extrabold">جارٍ تحميل المفضلة</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                لحظات ونجهز لك القائمة.
+              </p>
             </div>
-            <h3 className="font-bold text-lg mb-2">لا يوجد مهنيين مفضلين</h3>
-            <p className="text-muted-foreground text-sm">
-              قم بإضافة المهنيين إلى المفضلة للرجوع إليهم لاحقاً
-            </p>
-          </div>
+          </SurfaceCard>
+        ) : isError ? (
+          <EmptyState
+            icon={RefreshCw}
+            title="تعذر تحميل المفضلة"
+            description="تحقق من اتصالك بالإنترنت وحاول مرة أخرى."
+            action={
+              <Button
+                type="button"
+                onClick={() => refetch()}
+                className="min-h-11 rounded-xl bg-primary px-5 font-bold"
+              >
+                <RefreshCw className="ml-2 h-4 w-4" />
+                إعادة المحاولة
+              </Button>
+            }
+          />
+        ) : !favorites || favorites.length === 0 ? (
+          <EmptyState
+            icon={Heart}
+            title="لا يوجد مهنيون مفضلون"
+            description="قم بإضافة المهنيين إلى المفضلة للرجوع إليهم لاحقاً."
+          />
         ) : (
-          <div className="space-y-3">
-            {favorites.map((provider) => (
+          <section aria-label="المهنيون المفضلون" className="space-y-4">
+            {favorites.map(provider => (
               <ProviderCard key={provider.id} provider={provider} />
             ))}
-          </div>
+          </section>
         )}
-      </div>
+      </AppPage>
     </div>
   );
 }
