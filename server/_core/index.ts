@@ -6,6 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { registerPhoneAuthRoutes } from "../phoneAuth";
+import { registerEmailAuthRoutes } from "../emailAuth";
 import { registerGoogleAuthRoutes } from "../googleAuth";
 import { registerProviderCatalogRoutes } from "../providerCatalog";
 import { registerProviderVerificationRoutes } from "../providerVerification";
@@ -59,6 +60,7 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerPhoneAuthRoutes(app);
+  registerEmailAuthRoutes(app);
   registerGoogleAuthRoutes(app);
   registerProviderCatalogRoutes(app);
   registerProviderVerificationRoutes(app);

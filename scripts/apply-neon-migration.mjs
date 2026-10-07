@@ -11,6 +11,7 @@ try {
   const pushNotificationsSql = await readFile(new URL("../drizzle/0007_push_notifications.sql", import.meta.url), "utf8");
   const providerCategoryChangeSql = await readFile(new URL("../drizzle/0011_provider_category_change_requests.sql", import.meta.url), "utf8");
   const phonePinSql = await readFile(new URL("../drizzle/0012_phone_pin_login.sql", import.meta.url), "utf8");
+  const passwordResetSql = await readFile(new URL("../drizzle/0013_password_reset_tokens.sql", import.meta.url), "utf8");
 
   await pool.query(baseSql);
   await pool.query(providerSql);
@@ -18,12 +19,13 @@ try {
   await pool.query(pushNotificationsSql);
   await pool.query(providerCategoryChangeSql);
   await pool.query(phonePinSql);
+  await pool.query(passwordResetSql);
 
   const result = await pool.query(`
     SELECT table_name
     FROM information_schema.tables
     WHERE table_schema = 'public'
-      AND table_name IN ('users','phone_users','phone_otp_codes','phone_auth_sessions','provider_verification_requests','provider_verification_documents','service_requests','notifications','provider_favorites','push_tokens')
+      AND table_name IN ('users','phone_users','phone_otp_codes','phone_auth_sessions','password_reset_tokens','provider_verification_requests','provider_verification_documents','service_requests','notifications','provider_favorites','push_tokens')
     ORDER BY table_name
   `);
   console.log(`Neon migration applied; verified ${result.rows.length} tables: ${result.rows.map(row => row.table_name).join(", ")}`);

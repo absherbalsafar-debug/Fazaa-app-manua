@@ -17,6 +17,7 @@ export const users = pgTable("users", {
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
+  passwordHash: varchar("passwordHash", { length: 255 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: userRole("role").default("user").notNull(),
   createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
@@ -32,6 +33,7 @@ export const phoneUsers = pgTable("phone_users", {
   phone: varchar("phone", { length: 20 }).notNull().unique(),
   name: varchar("name", { length: 160 }).notNull(),
   email: varchar("email", { length: 320 }),
+  passwordHash: varchar("passwordHash", { length: 255 }),
   googleId: varchar("googleId", { length: 255 }).unique(),
   avatarUrl: varchar("avatarUrl", { length: 512 }),
   emailVerified: integer("emailVerified").default(0).notNull(),
@@ -83,6 +85,17 @@ export const phoneAuthSessions = pgTable("phone_auth_sessions", {
   expiryIndex: index("phone_session_expires_idx").on(table.expiresAt),
 }));
 
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  tokenHash: varchar("tokenHash", { length: 128 }).primaryKey(),
+  phone: varchar("phone", { length: 320 }).notNull(),
+  expiresAt: timestamp("expiresAt", { withTimezone: true }).notNull(),
+  attempts: integer("attempts").default(0).notNull(),
+  usedAt: timestamp("usedAt", { withTimezone: true }),
+  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
+}, table => ({
+  phoneIndex: index("password_reset_phone_idx").on(table.phone),
+  expiryIndex: index("password_reset_expiry_idx").on(table.expiresAt),
+}));
 export const providerVerificationRequests = pgTable("provider_verification_requests", {
   id: serial("id").primaryKey(),
   providerId: integer("providerId").notNull(),
