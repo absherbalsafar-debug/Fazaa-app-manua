@@ -1,0 +1,1 @@
+enum AccountRole { customer, professional }

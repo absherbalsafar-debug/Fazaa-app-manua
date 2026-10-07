@@ -2,6 +2,8 @@
   "routes": [
     { "path": "/", "title": "بداية فزعة" },
     { "path": "/#/login/customer", "title": "تسجيل دخول العميل" },
-    { "path": "/#/login/provider", "title": "تسجيل دخول المهني" }
+    { "path": "/#/login/provider", "title": "تسجيل دخول المهني" },
+    { "path": "/#/dashboard/customer", "title": "لوحة العميل" },
+    { "path": "/#/dashboard/provider", "title": "لوحة المهني" }
   ]
 }

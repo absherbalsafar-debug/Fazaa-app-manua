@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../app/theme/fazaah_theme.dart';
-
-enum AccountRole { customer, professional }
+import '../domain/account_role.dart';
 
 enum _LoginMethod { phone, email }
 
@@ -46,6 +46,12 @@ class _LoginPageState extends State<LoginPage> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
+  void _openDemoDashboard() {
+    Navigator.of(context).pushReplacementNamed(
+      _isCustomer ? AppRoutes.customerDashboard : AppRoutes.providerDashboard,
+    );
+  }
+
   void _continueWithPhone() {
     if (_formKey.currentState?.validate() ?? false) {
       setState(() => _otpStep = true);
@@ -54,15 +60,13 @@ class _LoginPageState extends State<LoginPage> {
 
   void _submitEmail() {
     if (_formKey.currentState?.validate() ?? false) {
-      _showNotConnectedMessage(
-        'واجهة الدخول جاهزة، لكن التحقق من الحساب غير مربوط بالخادم بعد.',
-      );
+      _openDemoDashboard();
     }
   }
 
   void _verifyOtp() {
     if (_formKey.currentState?.validate() ?? false) {
-      _showNotConnectedMessage('التحقق غير متصل بالخادم بعد. لم يُرسل أي رمز.');
+      _openDemoDashboard();
     }
   }
 
@@ -284,7 +288,9 @@ class _LoginPageState extends State<LoginPage> {
             style: Theme.of(context).textTheme.bodyLarge
                 ?.copyWith(fontSize: 14),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
+          const _OtpDemoNote(),
+          const SizedBox(height: 12),
           TextFormField(
             key: const ValueKey('login-otp-field'),
             controller: _otpController,
@@ -594,6 +600,38 @@ class _ConnectionNotice extends StatelessWidget {
           Expanded(
             child: Text(
               'واجهة أولية: لن تُرسل بيانات الدخول أو رسائل التحقق حتى ربط المصادقة بالخادم.',
+              style: TextStyle(
+                color: FazaaColors.ink,
+                fontSize: 12,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OtpDemoNote extends StatelessWidget {
+  const _OtpDemoNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: FazaaColors.gold.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(13),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline_rounded, color: FazaaColors.navy, size: 18),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'للمعاينة فقط: لم يُرسل رمز فعلي؛ إدخال 6 أرقام يفتح لوحة تجريبية.',
               style: TextStyle(
                 color: FazaaColors.ink,
                 fontSize: 12,
