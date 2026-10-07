@@ -18,7 +18,7 @@ import com.fazaah.app.domain.model.AppNotification
 import com.fazaah.app.domain.model.SuccessResult
 import com.fazaah.app.domain.model.SubscriptionCheckoutRequest
 import com.fazaah.app.domain.model.SubscriptionCheckoutResponse
-import com.fazaah.app.domain.model.SubscriptionPlansResponse
+import com.fazaah.app.domain.model.SubscriptionPlan
 import com.fazaah.app.domain.model.ProviderSubscriptionStatus
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -97,7 +97,7 @@ interface FazaaApi {
     suspend fun markAllNotificationsRead(): SuccessResult
 
     @GET("subscription-plans")
-    suspend fun subscriptionPlans(): SubscriptionPlansResponse
+    suspend fun subscriptionPlans(): List<SubscriptionPlan>
 
     @GET("providers/me/subscription")
     suspend fun providerSubscription(): ProviderSubscriptionStatus

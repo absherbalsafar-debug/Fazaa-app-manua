@@ -107,7 +107,7 @@ private fun UploadRow(label: String, selected: Boolean, onPick: () -> Unit) {
 @Composable
 fun ProviderSubscriptionScreen(repository: SubscriptionRepository, navController: NavHostController) {
     val state by produceState<SubscriptionUiState>(initialValue = SubscriptionUiState(loading = true)) {
-        value = runCatching { SubscriptionUiState(plans = repository.plans().plans) }.getOrElse { SubscriptionUiState(error = it.message ?: "تعذر تحميل الباقات") }
+        value = runCatching { SubscriptionUiState(plans = repository.plans()) }.getOrElse { SubscriptionUiState(error = it.message ?: "تعذر تحميل الباقات") }
     }
     val scope = rememberCoroutineScope()
     var checkoutMessage by remember { mutableStateOf<String?>(null) }
@@ -116,7 +116,7 @@ fun ProviderSubscriptionScreen(repository: SubscriptionRepository, navController
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         if (!state.loading && state.plans.isEmpty() && state.error == null) Text("لا توجد باقات متاحة حاليًا.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         checkoutMessage?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
-        state.plans.forEach { plan -> Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) { Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) { Text(plan.name ?: "باقة فزعة", fontWeight = FontWeight.Black, style = MaterialTheme.typography.titleMedium); Text(plan.description ?: "ظهور أفضل وميزات إضافية لملفك.", color = MaterialTheme.colorScheme.onSurfaceVariant); Text("${plan.price ?: 0.0} ر.ي", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary); Button(onClick = { plan.id?.let { id -> scope.launch { checkoutMessage = runCatching { repository.checkout(SubscriptionCheckoutRequest(id)).checkoutUrl ?: "تم تجهيز الاشتراك" }.getOrElse { it.message ?: "تعذر تجهيز الاشتراك" } } } }) { Text("اختيار الباقة") } } } }
+        state.plans.forEach { plan -> Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) { Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) { Text(plan.title ?: plan.name ?: "باقة فزعة", fontWeight = FontWeight.Black, style = MaterialTheme.typography.titleMedium); Text(plan.description ?: "ظهور أفضل وميزات إضافية لملفك.", color = MaterialTheme.colorScheme.onSurfaceVariant); Text("${plan.amount ?: plan.monthlyPrice ?: 0.0} ر.ي", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary); Button(onClick = { plan.id?.let { id -> scope.launch { checkoutMessage = runCatching { repository.checkout(SubscriptionCheckoutRequest(id)).message ?: "تم تسجيل طلب الاشتراك" }.getOrElse { it.message ?: "تعذر تجهيز الاشتراك" } } } }) { Text("اختيار الباقة") } } } }
     }
 }
 

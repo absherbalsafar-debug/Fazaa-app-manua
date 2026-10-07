@@ -1,14 +1,21 @@
 package com.fazaah.app.domain.model
 
 data class SubscriptionPlan(
-    val id: Int? = null,
+    val id: String? = null,
     val name: String? = null,
-    val price: Double? = null,
-    val durationDays: Int? = null,
+    val title: String? = null,
+    val amount: Double? = null,
+    val monthlyPrice: Double? = null,
+    val yearlyPrice: Double? = null,
+    val days: Int? = null,
     val description: String? = null,
 )
 
-data class SubscriptionPlansResponse(val plans: List<SubscriptionPlan> = emptyList())
-data class ProviderSubscriptionStatus(val active: Boolean = false, val plan: SubscriptionPlan? = null, val expiresAt: String? = null)
-data class SubscriptionCheckoutRequest(val planId: Int, val successUrl: String? = null, val cancelUrl: String? = null)
-data class SubscriptionCheckoutResponse(val checkoutUrl: String? = null, val sessionId: String? = null)
+data class ProviderSubscriptionStatus(
+    val approved: Boolean = false,
+    val active: Boolean = false,
+    val plan: String? = null,
+    val expiresAt: String? = null,
+)
+data class SubscriptionCheckoutRequest(val plan: String, val receiptUrl: String? = null)
+data class SubscriptionCheckoutResponse(val success: Boolean = false, val status: String? = null, val message: String? = null, val paymentId: Int? = null)
