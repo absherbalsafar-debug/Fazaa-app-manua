@@ -1,6 +1,9 @@
 package com.fazaah.app.data.api
 
 import com.fazaah.app.domain.model.AuthUser
+import com.fazaah.app.domain.model.EmailAuthRequest
+import com.fazaah.app.domain.model.ForgotPasswordRequest
+import com.fazaah.app.domain.model.ForgotPasswordResponse
 import com.fazaah.app.domain.model.Category
 import com.fazaah.app.domain.model.ProvidersPage
 import com.fazaah.app.domain.model.ProviderUpdateRequest
@@ -21,6 +24,7 @@ import com.fazaah.app.domain.model.SubscriptionCheckoutResponse
 import com.fazaah.app.domain.model.SubscriptionPlan
 import com.fazaah.app.domain.model.ProviderSubscriptionStatus
 import com.fazaah.app.domain.model.ProviderBusinessSummary
+import com.fazaah.app.domain.model.Advertisement
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -30,6 +34,12 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface FazaaApi {
+    @POST("auth/login/email")
+    suspend fun loginEmail(@Body request: EmailAuthRequest): VerifyOtpResponse
+    @POST("auth/register/email")
+    suspend fun registerEmail(@Body request: EmailAuthRequest): VerifyOtpResponse
+    @POST("auth/forgot-password")
+    suspend fun forgotPassword(@Body request: ForgotPasswordRequest): ForgotPasswordResponse
     @POST("auth/send-otp")
     suspend fun sendOtp(@Body request: SendOtpRequest): SendOtpResponse
 
@@ -104,6 +114,8 @@ interface FazaaApi {
     suspend fun providerSubscription(): ProviderSubscriptionStatus
     @GET("providers/me/business")
     suspend fun providerBusiness(): ProviderBusinessSummary
+    @GET("ads/featured")
+    suspend fun featuredAdvertisements(): List<Advertisement>
 
     @POST("subscriptions/checkout")
     suspend fun subscriptionCheckout(@Body request: SubscriptionCheckoutRequest): SubscriptionCheckoutResponse

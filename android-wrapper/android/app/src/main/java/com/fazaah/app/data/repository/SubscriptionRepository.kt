@@ -10,5 +10,6 @@ class SubscriptionRepository(private val api: FazaaApi) {
     suspend fun plans(): List<SubscriptionPlan> = api.subscriptionPlans()
     suspend fun status(): ProviderSubscriptionStatus = api.providerSubscription()
     suspend fun business() = api.providerBusiness()
+    suspend fun featuredAdvertisements() = api.featuredAdvertisements()
     suspend fun checkout(request: SubscriptionCheckoutRequest): SubscriptionCheckoutResponse = api.subscriptionCheckout(request)
 }

@@ -144,6 +144,13 @@ export function registerProviderSubscriptionRoutes(app: Express) {
     return res.json(rows.map(toAdvertisement));
   });
 
+  app.get("/api/ads/featured", async (_req, res) => {
+    const db = await getDb();
+    if (!db) return res.json([]);
+    const rows = await db.select().from(providerAdvertisements).where(eq(providerAdvertisements.status, "active")).orderBy(desc(providerAdvertisements.createdAt)).limit(20);
+    return res.json(rows.map(toAdvertisement));
+  });
+
   app.post("/api/ads", async (req, res) => {
     const provider = await currentProvider(req);
     if (!provider) return error(res, 401, "تحتاج إلى تسجيل الدخول كمهني");

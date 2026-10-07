@@ -18,10 +18,18 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
 
     fun setRole(role: UserRole) = _uiState.update { it.copy(role = role) }
     fun setPhone(value: String) = _uiState.update { it.copy(phone = value.filter(Char::isDigit), message = null) }
+    fun setEmail(value: String) = _uiState.update { it.copy(email = value.trim(), message = null) }
+    fun setPassword(value: String) = _uiState.update { it.copy(password = value, message = null) }
+    fun setEmailMode(enabled: Boolean) = _uiState.update { it.copy(emailMode = enabled, message = null) }
+    fun setRegisterEmailMode(enabled: Boolean) = _uiState.update { it.copy(registerEmailMode = enabled, message = null) }
+    fun setResetEmail(value: String) = _uiState.update { it.copy(resetEmail = value.trim(), message = null) }
+    fun openForgotPassword() = _uiState.update { it.copy(step = AuthStep.FORGOT, resetEmail = it.email, message = null, resetToken = null) }
     fun setCode(value: String) = _uiState.update { it.copy(code = value.filter(Char::isDigit).take(6), message = null) }
     fun setName(value: String) = _uiState.update { it.copy(name = value, message = null) }
     fun setLatitude(value: String) = _uiState.update { it.copy(latitude = value, message = null) }
     fun setLongitude(value: String) = _uiState.update { it.copy(longitude = value, message = null) }
+    fun setCity(value: String) = _uiState.update { it.copy(city = value, message = null) }
+    fun setDistrict(value: String) = _uiState.update { it.copy(district = value, message = null) }
     fun setWhatsapp(value: String) = _uiState.update { it.copy(whatsapp = value.filter { char -> char.isDigit() }, message = null) }
     fun setNationalId(value: String) = _uiState.update { it.copy(nationalId = value.filter(Char::isDigit).take(11), message = null) }
     fun setYearsExperience(value: String) = _uiState.update { it.copy(yearsExperience = value.filter(Char::isDigit).take(2), message = null) }
@@ -40,6 +48,30 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
             repository.sendOtp(state.phone, state.role.apiValue, "login")
         }, onSuccess = { response ->
             _uiState.update { it.copy(step = AuthStep.OTP, developmentOtp = response.otp) }
+        })
+    }
+
+    fun loginEmail() {
+        val state = _uiState.value
+        if (!state.email.contains("@") || state.password.length < 6) return
+        execute(request = { repository.loginEmail(state.email, state.password) }, onSuccess = { response ->
+            _uiState.update { it.copy(role = if (response.user?.role == "provider") UserRole.PROVIDER else UserRole.CLIENT, step = AuthStep.HOME) }
+        })
+    }
+
+    fun registerEmail() {
+        val state = _uiState.value
+        if (state.name.trim().split(" ").filter(String::isNotBlank).size < 4 || !state.email.contains("@") || state.password.length < 6) return
+        execute(request = { repository.registerEmail(state.name.trim(), state.email, state.password) }, onSuccess = {
+            _uiState.update { it.copy(role = UserRole.CLIENT, step = AuthStep.HOME) }
+        })
+    }
+
+    fun forgotPassword() {
+        val state = _uiState.value
+        if (!state.resetEmail.contains("@")) return
+        execute(request = { repository.forgotPassword(state.resetEmail) }, onSuccess = { response ->
+            _uiState.update { it.copy(resetToken = response.resetToken, message = response.message ?: "تم إرسال رابط الاستعادة") }
         })
     }
 
@@ -70,6 +102,8 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
                 mode = "register",
                 latitude = state.latitude.toDoubleOrNull(),
                 longitude = state.longitude.toDoubleOrNull(),
+                city = state.city.trim(),
+                district = state.district.trim(),
                 whatsapp = state.whatsapp.trim(),
                 nationalId = state.nationalId.trim(),
                 categoryId = state.categoryId,
@@ -99,6 +133,7 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
         state.copy(step = when (state.step) {
             AuthStep.PROFILE -> AuthStep.OTP
             AuthStep.OTP -> AuthStep.PHONE
+            AuthStep.FORGOT -> AuthStep.PHONE
             else -> state.step
         }, message = null)
     }

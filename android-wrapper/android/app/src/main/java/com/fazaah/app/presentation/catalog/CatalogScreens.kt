@@ -91,6 +91,7 @@ import com.fazaah.app.presentation.utility.ProviderSubscriptionScreen
 import com.fazaah.app.presentation.utility.EarningsScreen
 import com.fazaah.app.presentation.utility.WalletScreen
 import com.fazaah.app.presentation.utility.HelpSupportScreen
+import com.fazaah.app.presentation.utility.SponsoredPreviewScreen
 import com.fazaah.app.presentation.emergency.EmergencyScreen
 
 @Composable
@@ -139,6 +140,7 @@ fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepos
             composable(Routes.Earnings) { EarningsScreen(navController) }
             composable(Routes.Wallet) { WalletScreen(navController) }
             composable(Routes.HelpSupport) { HelpSupportScreen(navController) }
+            composable(Routes.SponsoredPreview) { SponsoredPreviewScreen(subscriptionRepository, navController) }
         }
     }
 }

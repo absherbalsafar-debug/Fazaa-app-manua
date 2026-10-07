@@ -11,6 +11,16 @@ data class SendOtpResponse(
     val expiresInSeconds: Int? = null,
 )
 
+data class EmailAuthRequest(
+    val email: String,
+    val password: String,
+    val name: String? = null,
+    val role: String? = null,
+)
+
+data class ForgotPasswordRequest(val email: String)
+data class ForgotPasswordResponse(val message: String? = null, val resetToken: String? = null)
+
 data class VerifyOtpRequest(
     val phone: String,
     val code: String,
@@ -41,6 +51,7 @@ data class AuthUser(
     val governorate: String? = null,
     val district: String? = null,
     val whatsapp: String? = null,
+    val email: String? = null,
 )
 
 data class UpdateProfileRequest(

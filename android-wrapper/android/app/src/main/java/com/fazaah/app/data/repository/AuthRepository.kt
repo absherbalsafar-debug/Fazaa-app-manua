@@ -9,6 +9,9 @@ import com.fazaah.app.domain.model.VerifyOtpResponse
 import com.fazaah.app.domain.model.AuthUser
 import com.fazaah.app.domain.model.UpdateProfileRequest
 import com.fazaah.app.domain.model.VerificationDocumentRequest
+import com.fazaah.app.domain.model.EmailAuthRequest
+import com.fazaah.app.domain.model.ForgotPasswordRequest
+import com.fazaah.app.domain.model.ForgotPasswordResponse
 
 class AuthRepository(
     private val api: FazaaApi,
@@ -21,6 +24,14 @@ class AuthRepository(
         api.verifyOtp(request).also { response ->
             response.token?.takeIf { it.isNotBlank() }?.let { sessionStore.saveToken(it) }
         }
+
+    suspend fun loginEmail(email: String, password: String): VerifyOtpResponse =
+        api.loginEmail(EmailAuthRequest(email, password)).also { response -> response.token?.takeIf { it.isNotBlank() }?.let { sessionStore.saveToken(it) } }
+
+    suspend fun registerEmail(name: String, email: String, password: String): VerifyOtpResponse =
+        api.registerEmail(EmailAuthRequest(email, password, name = name, role = "client")).also { response -> response.token?.takeIf { it.isNotBlank() }?.let { sessionStore.saveToken(it) } }
+
+    suspend fun forgotPassword(email: String): ForgotPasswordResponse = api.forgotPassword(ForgotPasswordRequest(email))
 
     suspend fun logout() {
         runCatching { api.logoutAll() }

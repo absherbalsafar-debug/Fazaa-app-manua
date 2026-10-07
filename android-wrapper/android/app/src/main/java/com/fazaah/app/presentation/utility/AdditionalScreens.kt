@@ -48,6 +48,7 @@ import androidx.navigation.NavHostController
 import com.fazaah.app.data.repository.SubscriptionRepository
 import com.fazaah.app.data.repository.CatalogRepository
 import com.fazaah.app.domain.model.SubscriptionCheckoutRequest
+import com.fazaah.app.presentation.navigation.Routes
 import kotlinx.coroutines.launch
 
 @Composable
@@ -70,6 +71,7 @@ fun ProviderBusinessScreen(repository: CatalogRepository, subscriptionRepository
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) { BusinessMetric("مشاهدات الملف", summary.metrics.profileViews, Modifier.weight(1f)); BusinessMetric("طلبات الخدمة", summary.metrics.serviceRequests, Modifier.weight(1f)) }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) { BusinessMetric("ضغطات الاتصال", summary.metrics.callClicks, Modifier.weight(1f)); BusinessMetric("ضغطات واتساب", summary.metrics.whatsappClicks, Modifier.weight(1f)) }
         }
+        TextButton(onClick = { navController.navigate(Routes.SponsoredPreview) }, modifier = Modifier.fillMaxWidth()) { Text("معاينة الإعلانات الممولة") }
         OutlinedTextField(name, { name = it }, label = { Text("اسم النشاط") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
         OutlinedTextField(category, { category = it }, label = { Text("المجال") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
         OutlinedTextField(specialty, { specialty = it }, label = { Text("التخصص") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
@@ -153,5 +155,15 @@ private fun FormPage(title: String, subtitle: String, navController: NavHostCont
         item { Row(verticalAlignment = Alignment.CenterVertically) { TextButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null); Text("رجوع") }; Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black) } }
         item { Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         item { Column(verticalArrangement = Arrangement.spacedBy(12.dp), content = content) }
+    }
+}
+
+@Composable
+fun SponsoredPreviewScreen(repository: SubscriptionRepository, navController: NavHostController) {
+    val ads by produceState<List<com.fazaah.app.domain.model.Advertisement>>(initialValue = emptyList()) { value = runCatching { repository.featuredAdvertisements() }.getOrDefault(emptyList()) }
+    FormPage("الإعلانات الممولة", "معاينة الظهور المدفوع داخل تجربة العميل.", navController) {
+        Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary), shape = RoundedCornerShape(22.dp)) { Column(Modifier.padding(18.dp)) { Text("معاينة الظهور المدفوع", color = androidx.compose.ui.graphics.Color.White, fontWeight = FontWeight.Black, style = MaterialTheme.typography.titleLarge); Text("إعلانات واضحة ومميزة مع شارة تعريف حتى تبقى تجربة البحث شفافة للعميل.", color = androidx.compose.ui.graphics.Color.White.copy(alpha = .72f), style = MaterialTheme.typography.bodySmall) } }
+        if (ads.isEmpty()) Text("لا توجد إعلانات نشطة حاليًا.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        ads.forEach { ad -> Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) { Text(if (ad.plan == "vip") "إعلان VIP" else "إعلان ممول", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold); Text(ad.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black); ad.description?.takeIf { it.isNotBlank() }?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }; Text(ad.city ?: "خدمات متنوعة", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall); TextButton(onClick = { navController.navigate("${Routes.Providers}/${ad.providerId}") }) { Text("عرض الملف") } } } }
     }
 }

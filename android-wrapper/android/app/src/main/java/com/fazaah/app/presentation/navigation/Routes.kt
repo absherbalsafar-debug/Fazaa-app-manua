@@ -24,4 +24,5 @@ object Routes {
     const val Earnings = "earnings"
     const val Wallet = "wallet"
     const val HelpSupport = "help-support"
+    const val SponsoredPreview = "sponsored-preview"
 }

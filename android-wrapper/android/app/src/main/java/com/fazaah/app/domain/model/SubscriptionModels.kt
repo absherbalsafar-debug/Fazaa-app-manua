@@ -26,3 +26,4 @@ data class ProviderBusinessSummary(
 )
 data class BusinessSubscription(val plan: String? = null, val status: String? = null, val freeSlotNumber: Int? = null, val endsAt: String? = null)
 data class BusinessMetrics(val profileViews: Int = 0, val callClicks: Int = 0, val whatsappClicks: Int = 0, val serviceRequests: Int = 0)
+data class Advertisement(val id: Int = 0, val providerId: Int = 0, val title: String = "", val description: String? = null, val city: String? = null, val plan: String? = null, val imageUrl: String? = null)

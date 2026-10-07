@@ -1,6 +1,6 @@
 package com.fazaah.app.presentation.auth
 
-enum class AuthStep { PHONE, OTP, PROFILE, HOME }
+enum class AuthStep { PHONE, OTP, PROFILE, FORGOT, HOME }
 
 enum class UserRole(val apiValue: String) { CLIENT("client"), PROVIDER("provider") }
 
@@ -8,10 +8,14 @@ data class AuthUiState(
     val step: AuthStep = AuthStep.PHONE,
     val role: UserRole = UserRole.CLIENT,
     val phone: String = "",
+    val email: String = "",
+    val password: String = "",
     val code: String = "",
     val name: String = "",
     val latitude: String = "",
     val longitude: String = "",
+    val city: String = "صنعاء",
+    val district: String = "",
     val whatsapp: String = "",
     val nationalId: String = "",
     val yearsExperience: String = "",
@@ -25,4 +29,8 @@ data class AuthUiState(
     val developmentOtp: String? = null,
     val loading: Boolean = false,
     val message: String? = null,
+    val emailMode: Boolean = false,
+    val registerEmailMode: Boolean = false,
+    val resetEmail: String = "",
+    val resetToken: String? = null,
 )
