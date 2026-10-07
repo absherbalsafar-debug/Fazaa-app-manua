@@ -133,8 +133,8 @@ fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepos
             composable(Routes.Terms) { TermsScreen(navController) }
             composable(Routes.Emergency) { EmergencyScreen(catalogRepository, authRepository, navController) }
             composable(Routes.ProviderDashboard) { ProviderDashboardScreen(catalogRepository, navController) }
-            composable(Routes.ProviderBusiness) { ProviderBusinessScreen(navController) }
-            composable(Routes.Verify) { VerifyProviderScreen(navController) }
+            composable(Routes.ProviderBusiness) { ProviderBusinessScreen(catalogRepository, navController) }
+            composable(Routes.Verify) { VerifyProviderScreen(authRepository, navController) }
             composable(Routes.ProviderSubscription) { ProviderSubscriptionScreen(subscriptionRepository, navController) }
             composable(Routes.Earnings) { EarningsScreen(navController) }
             composable(Routes.Wallet) { WalletScreen(navController) }

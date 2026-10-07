@@ -112,7 +112,7 @@ private fun PhoneStep(state: AuthUiState, viewModel: AuthViewModel) {
                     state.message?.let { Text(it, color = Color(0xFFB42318), fontSize = 12.sp) }
                     Button(onClick = viewModel::sendOtp, enabled = state.phone.length >= 9 && !state.loading, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = Navy)) { if (state.loading) CircularProgressIndicator(color = Gold, modifier = Modifier.size(20.dp)) else { Text("المتابعة برمز التحقق", fontWeight = FontWeight.Black); Spacer(Modifier.width(7.dp)); Icon(Icons.Default.ArrowBack, null, tint = Gold) } }
                     Text("أو", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = Muted, fontSize = 12.sp)
-                    OutlinedButton(onClick = {}, modifier = Modifier.fillMaxWidth().height(48.dp), shape = RoundedCornerShape(14.dp)) { Icon(Icons.Default.Email, null, tint = Color(0xFF4285F4)); Spacer(Modifier.width(8.dp)); Text("المتابعة بالبريد الإلكتروني") }
+                    OutlinedButton(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth().height(48.dp), shape = RoundedCornerShape(14.dp)) { Icon(Icons.Default.Email, null, tint = Color(0xFF4285F4)); Spacer(Modifier.width(8.dp)); Text("الدخول بالبريد الإلكتروني قريبًا") }
                 }
             }
         } else {

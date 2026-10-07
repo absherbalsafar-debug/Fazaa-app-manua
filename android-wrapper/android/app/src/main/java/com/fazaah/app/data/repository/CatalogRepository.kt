@@ -22,6 +22,7 @@ class CatalogRepository(private val api: FazaaApi) {
     suspend fun provider(id: Int) = api.provider(id)
     suspend fun providerProfile() = api.providerProfile()
     suspend fun updateAvailability(id: Int, isAvailable: Boolean) = api.updateProvider(id, ProviderUpdateRequest(isAvailable))
+    suspend fun updateBusiness(id: Int, name: String, specialty: String, bio: String, whatsapp: String) = api.updateProvider(id, ProviderUpdateRequest(name = name, specialty = specialty, bio = bio, whatsapp = whatsapp))
     suspend fun favorites() = api.favorites()
     suspend fun addFavorite(providerId: Int) = api.addFavorite(providerId)
     suspend fun removeFavorite(providerId: Int) = api.removeFavorite(providerId)

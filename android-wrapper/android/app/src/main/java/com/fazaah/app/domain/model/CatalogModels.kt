@@ -28,7 +28,13 @@ data class ProviderSummary(
     val isFavorited: Boolean = false,
 )
 
-data class ProviderUpdateRequest(val isAvailable: Boolean)
+data class ProviderUpdateRequest(
+    val isAvailable: Boolean? = null,
+    val name: String? = null,
+    val specialty: String? = null,
+    val bio: String? = null,
+    val whatsapp: String? = null,
+)
 
 data class ProvidersPage(
     val providers: List<ProviderSummary> = emptyList(),
