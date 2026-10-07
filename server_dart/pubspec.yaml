@@ -1,0 +1,7 @@
+name: fazaah_api_dart
+description: "Initial Dart HTTP API scaffold for Fazaa."
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.13.5

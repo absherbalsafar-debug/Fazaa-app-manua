@@ -1,0 +1,7 @@
+{
+  "routes": [
+    { "path": "/", "title": "بداية فزعة" },
+    { "path": "/#/customer", "title": "مسار العميل" },
+    { "path": "/#/provider", "title": "مسار المهني" }
+  ]
+}
