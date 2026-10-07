@@ -24,11 +24,11 @@ export function BrandLoadingScreen({
       <div className="flex flex-col items-center">
         <BrandLogo className="h-[112px] w-[92px] object-contain" />
         <div className="mt-4 flex items-center gap-2" aria-hidden="true">
-          <span className="h-2 w-2 animate-bounce rounded-full bg-[#182d53]" style={{ animationDelay: "0ms" }} />
-          <span className="h-2 w-2 animate-bounce rounded-full bg-[#f0b046]" style={{ animationDelay: "120ms" }} />
-          <span className="h-2 w-2 animate-bounce rounded-full bg-[#182d53]" style={{ animationDelay: "240ms" }} />
+          <span className="h-2 w-2 animate-bounce rounded-full bg-[#102443]" style={{ animationDelay: "0ms" }} />
+          <span className="h-2 w-2 animate-bounce rounded-full bg-[#F5B335]" style={{ animationDelay: "120ms" }} />
+          <span className="h-2 w-2 animate-bounce rounded-full bg-[#102443]" style={{ animationDelay: "240ms" }} />
         </div>
-        <p className="mt-3 text-sm font-semibold text-[#182d53]">{message}</p>
+        <p className="mt-3 text-sm font-semibold text-[#102443]">{message}</p>
       </div>
     </div>
   );

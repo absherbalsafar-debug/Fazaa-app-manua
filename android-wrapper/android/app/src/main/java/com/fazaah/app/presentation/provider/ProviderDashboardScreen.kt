@@ -79,7 +79,7 @@ fun ProviderDashboardScreen(repository: CatalogRepository, navController: NavHos
     val completed = state.requests.count { it.status == "completed" }
     LazyColumn(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentPadding = PaddingValues(bottom = 28.dp)) {
         item {
-            Column(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF182D53), Color(0xFF17559A)))).padding(horizontal = 16.dp, vertical = 26.dp)) {
+            Column(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF102443), Color(0xFF17559A)))).padding(horizontal = 16.dp, vertical = 26.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
                     Column(Modifier.weight(1f)) {
                         Image(painterResource(R.drawable.fazaah_logo), "فزعة", colorFilter = ColorFilter.tint(Color.White), modifier = Modifier.width(96.dp).height(48.dp))

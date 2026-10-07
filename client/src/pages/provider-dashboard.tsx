@@ -118,7 +118,7 @@ export default function ProviderDashboard() {
         <div className="mx-auto max-w-lg">
           <div className="flex items-start justify-between">
             <div>
-              <BrandLogo className="mb-4 h-12 w-24 object-contain brightness-0 invert" />
+              <BrandLogo className="mb-4 h-12 w-24 object-contain" />
               <p className="text-sm text-white/65">لوحة المهني</p>
               <h1 className="mt-1 text-2xl font-extrabold">أهلًا {profile.name.trim().split(/\s+/)[0] || "بك"}</h1>
           <p className="mt-2 text-xs text-white/70">{profile.categoryName} · {profile.city}</p>

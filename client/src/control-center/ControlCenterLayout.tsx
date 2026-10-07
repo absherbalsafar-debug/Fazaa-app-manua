@@ -37,8 +37,8 @@ export function ControlCenterLayout({ children }: { children: React.ReactNode })
   const sidebar = (
     <aside className={`flex h-full flex-col border-l border-white/10 bg-[#102443] text-white shadow-2xl transition-all duration-200 ${collapsed ? "w-[84px]" : "w-[276px]"}`}>
       <div className="flex h-20 items-center justify-between border-b border-white/10 px-5">
-        {!collapsed && <div className="min-w-0"><BrandLogo className="h-10 w-24 object-contain brightness-0 invert" /><p className="mt-1 text-[10px] text-white/50">مركز إدارة منصة فزعة</p></div>}
-        {collapsed && <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-[#f0b046] text-xl font-black text-[#102443]">ف</span>}
+        {!collapsed && <div className="min-w-0"><BrandLogo className="h-10 w-24 object-contain" /><p className="mt-1 text-[10px] text-white/50">مركز إدارة منصة فزعة</p></div>}
+        {collapsed && <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-[#F5B335] text-xl font-black text-[#102443]">ف</span>}
         <button type="button" onClick={() => setCollapsed(value => !value)} className="hidden rounded-xl p-2 text-white/60 transition hover:bg-white/10 hover:text-white lg:block" aria-label={collapsed ? "توسيع القائمة" : "طي القائمة"}>
           {collapsed ? <PanelRightOpen className="h-5 w-5" /> : <PanelRightClose className="h-5 w-5" />}
         </button>
@@ -47,7 +47,7 @@ export function ControlCenterLayout({ children }: { children: React.ReactNode })
         {!collapsed && <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">الإدارة</p>}
         {navigation.map(item => {
           const isActive = item.href === location;
-          return <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold transition ${isActive ? "bg-[#f0b046] text-[#102443] shadow-lg shadow-[#f0b046]/10" : "text-white/65 hover:bg-white/10 hover:text-white"}`} title={collapsed ? item.label : undefined}><item.icon className="h-5 w-5 shrink-0" /><span className={collapsed ? "sr-only" : ""}>{item.label}</span>{isActive && !collapsed && <ChevronLeft className="mr-auto h-4 w-4" />}</Link>;
+          return <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold transition ${isActive ? "bg-[#F5B335] text-[#102443] shadow-lg shadow-[#F5B335]/10" : "text-white/65 hover:bg-white/10 hover:text-white"}`} title={collapsed ? item.label : undefined}><item.icon className="h-5 w-5 shrink-0" /><span className={collapsed ? "sr-only" : ""}>{item.label}</span>{isActive && !collapsed && <ChevronLeft className="mr-auto h-4 w-4" />}</Link>;
         })}
       </nav>
       <div className="border-t border-white/10 p-4">

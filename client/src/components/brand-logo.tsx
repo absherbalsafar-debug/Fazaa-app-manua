@@ -16,7 +16,7 @@ export function BrandLogo({
       <span
         role="img"
         aria-label={alt}
-        className={`inline-flex items-center justify-center rounded-xl bg-[#182d53] px-2 py-1 text-center text-sm font-black text-[#f0b046] ${className}`}
+        className={`inline-flex items-center justify-center rounded-xl bg-[#102443] px-2 py-1 text-center text-sm font-black text-[#F5B335] ${className}`}
       >
         فزعة
       </span>
@@ -25,10 +25,10 @@ export function BrandLogo({
 
   return (
     <img
-      src="/assets/fazaah-logo-mark.webp"
+      src="/assets/fazaah-logo.png"
       alt={alt}
-      width={192}
-      height={233}
+      width={964}
+      height={1172}
       className={`brand-logo-image ${className}`}
       loading="eager"
       decoding="async"

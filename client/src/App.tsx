@@ -66,12 +66,12 @@ class RuntimeErrorBoundary extends Component<{ children: ReactNode }, { hasError
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-[#f5f3ee] px-6 text-center" dir="rtl">
         <div className="w-full max-w-sm rounded-[28px] bg-white p-7 shadow-[0_18px_50px_rgba(14,47,98,0.12)]">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#182d53] text-2xl font-black text-[#f0b046]">ف</div>
-          <h1 className="mt-5 text-xl font-black text-[#182d53]">تعذر تحميل الصفحة</h1>
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#102443] text-2xl font-black text-[#F5B335]">ف</div>
+          <h1 className="mt-5 text-xl font-black text-[#102443]">تعذر تحميل الصفحة</h1>
           <p className="mt-2 text-sm leading-6 text-[#66758a]">حدث خلل مؤقت. أعد المحاولة أو ارجع إلى الصفحة الرئيسية.</p>
           <div className="mt-6 flex gap-2">
-            <button type="button" onClick={() => window.location.reload()} className="flex-1 rounded-2xl bg-[#182d53] px-4 py-3 text-sm font-bold text-white">إعادة المحاولة</button>
-            <a href="/welcome" className="flex-1 rounded-2xl border border-[#d9dfe7] px-4 py-3 text-sm font-bold text-[#182d53]">البدء من جديد</a>
+            <button type="button" onClick={() => window.location.reload()} className="flex-1 rounded-2xl bg-[#102443] px-4 py-3 text-sm font-bold text-white">إعادة المحاولة</button>
+            <a href="/welcome" className="flex-1 rounded-2xl border border-[#d9dfe7] px-4 py-3 text-sm font-bold text-[#102443]">البدء من جديد</a>
           </div>
         </div>
       </div>

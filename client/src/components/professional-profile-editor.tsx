@@ -162,7 +162,7 @@ export function ProfessionalProfileEditor({ open, onOpenChange, profile, onSaved
       <DialogContent className="max-h-[92dvh] max-w-xl overflow-y-auto rounded-[28px] border-0 bg-[#f8f9fb] p-0 shadow-2xl" dir="rtl">
         <div className="rounded-t-[28px] bg-gradient-to-l from-[#152b50] to-[#254879] px-6 pb-6 pt-7 text-white">
           <DialogHeader className="text-right">
-            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-[#f0b046]"><UserRound className="h-5 w-5" /></div>
+            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-[#F5B335]"><UserRound className="h-5 w-5" /></div>
             <DialogTitle className="text-xl font-black text-white">الملف المهني</DialogTitle>
             <DialogDescription className="text-sm leading-6 text-white/75">راجع بياناتك وحدث معلوماتك المهنية من مكان واحد.</DialogDescription>
           </DialogHeader>

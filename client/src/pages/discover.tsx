@@ -5,9 +5,9 @@ import { useListProviders, useListCategories } from "@/lib/api-client-react";
 import { ProviderCard } from "@/components/provider-card";
 
 const OFFERS = [
-  { id: 1, title: "خصم ٢٠٪ على خدمات الكهرباء", sub: "صالح حتى نهاية الشهر", color: "from-[#f0b046] to-[#c9851d]", icon: Zap },
+  { id: 1, title: "خصم ٢٠٪ على خدمات الكهرباء", sub: "صالح حتى نهاية الشهر", color: "from-[#F5B335] to-[#c9851d]", icon: Zap },
   { id: 2, title: "أول طلب مجاناً للمستخدمين الجدد", sub: "للمستخدمين الجدد فقط", color: "from-[#167d68] to-[#0b5a4d]", icon: Gift },
-  { id: 3, title: "خدمة تنظيف شاملة بسعر مميز", sub: "احجز الآن واحصل على عرض خاص", color: "from-[#355e91] to-[#182d53]", icon: Sparkles },
+  { id: 3, title: "خدمة تنظيف شاملة بسعر مميز", sub: "احجز الآن واحصل على عرض خاص", color: "from-[#355e91] to-[#102443]", icon: Sparkles },
 ];
 
 const BADGES = [

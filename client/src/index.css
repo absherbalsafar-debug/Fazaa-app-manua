@@ -61,20 +61,14 @@
   object-position: center top;
 }
 
-.dark .home-brand-mark img,
-.dark .brand-logo-image,
-.dark .auth-brand-image {
-  filter: brightness(0) saturate(100%) invert(73%) sepia(81%) saturate(690%) hue-rotate(354deg) brightness(102%) contrast(91%);
-}
-
 :root {
   color-scheme: light;
   /* Background: Very light blue-grey */
   --background: 220 25% 97%;
-  --foreground: 216 54% 21%;
+  --foreground: 216 61% 16%;
   --border: 215 20% 88%;
   --input: 215 20% 90%;
-  --ring: 216 54% 28%;
+  --ring: 216 61% 24%;
 
   --card: 0 0% 100%;
   --card-foreground: 215 60% 12%;
@@ -85,7 +79,7 @@
   --popover-border: 215 20% 90%;
 
   /* Primary: Deep Navy Blue */
-  --primary: 216 54% 21%;
+  --primary: 216 61% 16%;
   --primary-foreground: 0 0% 100%;
 
   /* Secondary: Soft Blue-Grey */
@@ -96,8 +90,8 @@
   --muted-foreground: 215 25% 45%;
 
   /* Accent: Gold */
-  --accent: 37 84% 60%;
-  --accent-foreground: 0 0% 100%;
+  --accent: 39 91% 58%;
+  --accent-foreground: 216 61% 16%;
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
@@ -116,10 +110,6 @@
   color: hsl(var(--muted-foreground)) !important;
   opacity: 0.9 !important;
   -webkit-text-fill-color: hsl(var(--muted-foreground)) !important;
-}
-
-.dark .auth-logo {
-  filter: brightness(0) saturate(100%) invert(73%) sepia(81%) saturate(690%) hue-rotate(354deg) brightness(102%) contrast(91%) drop-shadow(0 0 5px rgb(255 255 255 / 0.45)) drop-shadow(0 8px 16px rgb(240 176 70 / 0.18));
 }
 
 input,
@@ -158,7 +148,7 @@ textarea::placeholder {
   --popover-foreground: 215 15% 92%;
   --popover-border: 215 20% 18%;
 
-  --primary: 216 54% 38%;
+  --primary: 216 61% 26%;
   --primary-foreground: 0 0% 100%;
 
   --secondary: 215 20% 16%;
@@ -167,8 +157,8 @@ textarea::placeholder {
   --muted: 215 20% 15%;
   --muted-foreground: 215 15% 55%;
 
-  --accent: 37 84% 60%;
-  --accent-foreground: 218 30% 8%;
+  --accent: 39 91% 58%;
+  --accent-foreground: 216 61% 16%;
 
   --destructive: 0 62% 40%;
   --destructive-foreground: 0 0% 100%;
@@ -215,8 +205,8 @@ textarea::placeholder {
   border-color: hsl(var(--border)) !important;
 }
 
-.dark [class~="text-[#182d53]"],
-.dark [class~="text-[#182d53]"],
+.dark [class~="text-[#102443]"],
+.dark [class~="text-[#102443]"],
 .dark [class~="text-[#35577f]"] {
   color: hsl(var(--foreground)) !important;
 }
@@ -244,13 +234,13 @@ textarea::placeholder {
   color: hsl(var(--accent)) !important;
 }
 
-.dark [class~="bg-[#f0b046]"],
-.dark [class~="bg-[#f0b046]"] {
+.dark [class~="bg-[#F5B335]"],
+.dark [class~="bg-[#F5B335]"] {
   background-color: hsl(var(--accent)) !important;
 }
 
-.dark [class~="text-[#f0b046]"],
-.dark [class~="text-[#f0b046]"] {
+.dark [class~="text-[#F5B335]"],
+.dark [class~="text-[#F5B335]"] {
   color: hsl(var(--accent)) !important;
 }
 
@@ -469,5 +459,5 @@ div[data-manus-badge],
   height: 0 !important;
   clip: rect(0, 0, 0, 0) !important;
 }
-.onboarding-wave-gold { position: absolute; top: -12px; left: -8%; width: 116%; height: 54px; border-top: 7px solid #f0b046; border-radius: 50%; opacity: .95; }
+.onboarding-wave-gold { position: absolute; top: -12px; left: -8%; width: 116%; height: 54px; border-top: 7px solid #F5B335; border-radius: 50%; opacity: .95; }
 @media (prefers-reduced-motion: reduce) { .onboarding-wave-gold { transition: none; } }
