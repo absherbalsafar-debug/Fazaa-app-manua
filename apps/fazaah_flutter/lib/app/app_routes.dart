@@ -1,4 +1,4 @@
 abstract final class AppRoutes {
-  static const customer = '/customer';
-  static const provider = '/provider';
+  static const customer = '/login/customer';
+  static const provider = '/login/provider';
 }
