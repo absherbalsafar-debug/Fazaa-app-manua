@@ -45,7 +45,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
 import androidx.compose.ui.text.font.FontWeight
@@ -82,7 +81,7 @@ fun ProviderDashboardScreen(repository: CatalogRepository, navController: NavHos
             Column(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF102443), Color(0xFF17559A)))).padding(horizontal = 16.dp, vertical = 26.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
                     Column(Modifier.weight(1f)) {
-                        Image(painterResource(R.drawable.fazaah_logo), "فزعة", colorFilter = ColorFilter.tint(Color.White), modifier = Modifier.width(96.dp).height(48.dp))
+                        Image(painterResource(R.drawable.fazaah_logo), "فزعة", modifier = Modifier.width(96.dp).height(48.dp))
                         Text("لوحة المهني", color = Color.White.copy(alpha = .65f), fontSize = 14.sp, modifier = Modifier.padding(top = 10.dp))
                         Text("أهلًا ${profile.name.trim().substringBefore(' ')}", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black)
                         Text("${profile.categoryName} · ${profile.city}", color = Color.White.copy(alpha = .7f), fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
@@ -106,7 +105,7 @@ fun ProviderDashboardScreen(repository: CatalogRepository, navController: NavHos
         } }
         item { DashboardLink("الاشتراك والإعلانات", "تابع أداء ملفك، فعّل اشتراكك وأنشئ إعلاناً مدفوعاً.", Icons.Default.Visibility) { navController.navigate(Routes.ProviderSubscription) } }
         item { Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) { InfoTile("الأرباح", "قيد التفعيل", "ستظهر بعد اكتمال أول طلب", Icons.Default.AccountBalanceWallet, Modifier.weight(1f)); InfoTile("الخبرة", "${profile.yearsExperience} سنوات", "${profile.reviewCount} تقييم موثق", Icons.AutoMirrored.Filled.TrendingUp, Modifier.weight(1f)) } }
-        if (!profile.isVerified) item { Card(onClick = { navController.navigate(Routes.Profile) }, modifier = Modifier.fillMaxWidth().padding(16.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFBEB)), border = BorderStroke(1.dp, Color(0xFFFDE68A)), shape = RoundedCornerShape(16.dp)) { Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.Shield, null, tint = Color(0xFFD97706)); Column(Modifier.weight(1f).padding(horizontal = 12.dp)) { Text("وثّق ملفك لزيادة الثقة", fontWeight = FontWeight.Bold, color = Color(0xFF78350F)); Text("ارفع الهوية والشهادات لإظهار شارة التوثيق.", fontSize = 12.sp, color = Color(0xFFB45309)) }; Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } } }
+        if (!profile.isVerified) item { Card(onClick = { navController.navigate(Routes.Verify) }, modifier = Modifier.fillMaxWidth().padding(16.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFBEB)), border = BorderStroke(1.dp, Color(0xFFFDE68A)), shape = RoundedCornerShape(16.dp)) { Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.Shield, null, tint = Color(0xFFD97706)); Column(Modifier.weight(1f).padding(horizontal = 12.dp)) { Text("وثّق ملفك لزيادة الثقة", fontWeight = FontWeight.Bold, color = Color(0xFF78350F)); Text("ارفع الهوية والشهادات لإظهار شارة التوثيق.", fontSize = 12.sp, color = Color(0xFFB45309)) }; Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } } }
         item { RecentRequests(state.requests.take(4), navController) }
         item { OutlinedButton(onClick = model::reload, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) { Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(8.dp)); Text("تحديث الطلبات") } }
         state.error?.let { error -> item { Text(error, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp)) } }

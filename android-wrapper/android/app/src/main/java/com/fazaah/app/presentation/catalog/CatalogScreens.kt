@@ -17,6 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -68,6 +69,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.fazaah.app.data.repository.CatalogRepository
 import com.fazaah.app.data.repository.AuthRepository
+import com.fazaah.app.data.repository.SubscriptionRepository
 import com.fazaah.app.presentation.auth.AuthViewModel
 import com.fazaah.app.presentation.auth.UserRole
 import com.fazaah.app.presentation.navigation.Routes
@@ -83,10 +85,16 @@ import com.fazaah.app.presentation.favorites.FavoritesScreen
 import com.fazaah.app.presentation.utility.SettingsScreen
 import com.fazaah.app.presentation.utility.PrivacyScreen
 import com.fazaah.app.presentation.utility.TermsScreen
+import com.fazaah.app.presentation.utility.ProviderBusinessScreen
+import com.fazaah.app.presentation.utility.VerifyProviderScreen
+import com.fazaah.app.presentation.utility.ProviderSubscriptionScreen
+import com.fazaah.app.presentation.utility.EarningsScreen
+import com.fazaah.app.presentation.utility.WalletScreen
+import com.fazaah.app.presentation.utility.HelpSupportScreen
 import com.fazaah.app.presentation.emergency.EmergencyScreen
 
 @Composable
-fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepository, role: UserRole, onLogout: () -> Unit) {
+fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepository, subscriptionRepository: SubscriptionRepository, role: UserRole, onLogout: () -> Unit) {
     val navController = rememberNavController()
     val catalogViewModel: CatalogViewModel = viewModel(factory = CatalogViewModel.factory(catalogRepository))
     val state by catalogViewModel.uiState.collectAsStateWithLifecycle()
@@ -113,17 +121,24 @@ fun CatalogShell(catalogRepository: CatalogRepository, authRepository: AuthRepos
             ) { entry ->
                 ProviderDetailsScreen(catalogRepository, entry.arguments?.getInt("providerId") ?: 0, navController)
             }
-            composable(Routes.Profile) { ProfileScreen(authRepository, onLogout) }
+            composable(Routes.Profile) { ProfileScreen(authRepository, navController, onLogout) }
             composable(Routes.Requests) { RequestsScreen(requestViewModel, authRepository, navController) }
             composable("${Routes.RequestDetail}/{requestId}", arguments = listOf(navArgument("requestId") { type = NavType.IntType })) { entry -> RequestDetailScreen(requestViewModel, entry.arguments?.getInt("requestId") ?: 0) }
-            composable("${Routes.NewRequest}/{providerId}", arguments = listOf(navArgument("providerId") { type = NavType.IntType })) { entry -> NewRequestScreen(requestViewModel, entry.arguments?.getInt("providerId") ?: 0) }
+            composable(Routes.NewRequest) { NewRequestScreen(requestViewModel, 0) { requestId -> navController.navigate("${Routes.RequestDetail}/$requestId") } }
+            composable("${Routes.NewRequest}/{providerId}", arguments = listOf(navArgument("providerId") { type = NavType.IntType })) { entry -> NewRequestScreen(requestViewModel, entry.arguments?.getInt("providerId") ?: 0) { requestId -> navController.navigate("${Routes.RequestDetail}/$requestId") } }
             composable(Routes.Notifications) { NotificationsScreen(notificationsViewModel) }
             composable(Routes.Favorites) { FavoritesScreen(catalogRepository) }
             composable(Routes.Settings) { SettingsScreen(navController) }
-            composable(Routes.Privacy) { PrivacyScreen() }
-            composable(Routes.Terms) { TermsScreen() }
+            composable(Routes.Privacy) { PrivacyScreen(navController) }
+            composable(Routes.Terms) { TermsScreen(navController) }
             composable(Routes.Emergency) { EmergencyScreen(catalogRepository, authRepository, navController) }
             composable(Routes.ProviderDashboard) { ProviderDashboardScreen(catalogRepository, navController) }
+            composable(Routes.ProviderBusiness) { ProviderBusinessScreen(navController) }
+            composable(Routes.Verify) { VerifyProviderScreen(navController) }
+            composable(Routes.ProviderSubscription) { ProviderSubscriptionScreen(subscriptionRepository, navController) }
+            composable(Routes.Earnings) { EarningsScreen(navController) }
+            composable(Routes.Wallet) { WalletScreen(navController) }
+            composable(Routes.HelpSupport) { HelpSupportScreen(navController) }
         }
     }
 }
@@ -171,11 +186,12 @@ private fun HomeScreen(state: CatalogUiState, viewModel: CatalogViewModel, navCo
         }
         item { Text("أهلًا بك", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }
         item {
-            Card(shape = RoundedCornerShape(25.dp), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary), modifier = Modifier.fillMaxWidth().height(178.dp)) {
+            Card(shape = RoundedCornerShape(25.dp), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary), modifier = Modifier.fillMaxWidth().height(210.dp)) {
                 Column(modifier = Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.Center) {
                     Text("احتياجك .. نوصلك بالشخص المناسب", color = Color.White.copy(alpha = .75f), style = MaterialTheme.typography.bodySmall)
                     Text("تحتاج شيء؟\nفزعت لك!", color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                     Text("ابحث عن المهني المناسب لإنجاز احتياجك بسهولة.", color = Color.White.copy(alpha = .72f), style = MaterialTheme.typography.bodySmall)
+                    Button(onClick = { navController.navigateSingleTop(Routes.Providers) }, colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = MaterialTheme.colorScheme.primary), modifier = Modifier.padding(top = 8.dp)) { Text("استعرض المهنيين", fontWeight = FontWeight.Bold) }
                 }
             }
         }
@@ -287,7 +303,7 @@ private fun ProviderDetailsScreen(repository: CatalogRepository, providerId: Int
                     Button(onClick = { context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:${provider.phone}"))) }, enabled = provider.phone.isNotBlank(), modifier = Modifier.weight(1f)) { Text("اتصال") }
                     Button(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/${provider.phone}"))) }, enabled = provider.phone.isNotBlank(), modifier = Modifier.weight(1f)) { Text("واتساب") }
                 }
-                Button(onClick = { /* ربط إنشاء الطلب في المرحلة التالية */ }, modifier = Modifier.fillMaxWidth()) { Text("طلب خدمة") }
+                Button(onClick = { navController.navigate("${Routes.NewRequest}/${provider.id}") }, modifier = Modifier.fillMaxWidth()) { Text("طلب خدمة") }
             }
         }
     }
@@ -333,7 +349,7 @@ private fun LoadingRow() { Row(modifier = Modifier.fillMaxWidth(), horizontalArr
 private fun EmptyState(text: String) { Text(text, modifier = Modifier.fillMaxWidth().padding(32.dp), color = MaterialTheme.colorScheme.onSurfaceVariant) }
 
 @Composable
-private fun ProfileScreen(authRepository: AuthRepository, onLogout: () -> Unit) {
+private fun ProfileScreen(authRepository: AuthRepository, navController: NavHostController, onLogout: () -> Unit) {
     val viewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.factory(authRepository))
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -365,8 +381,8 @@ private fun ProfileScreen(authRepository: AuthRepository, onLogout: () -> Unit) 
                 TextButton(onClick = onLogout, modifier = Modifier.fillMaxWidth()) { Text("تسجيل الخروج") }
                 Card(modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color.White)) {
                     Column {
-                        listOf("طلباتي", "المفضلة", "الإشعارات", "الإعدادات").forEachIndexed { index, label ->
-                            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) { Text(label, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium); Text("‹", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        listOf("طلباتي" to Routes.Requests, "المفضلة" to Routes.Favorites, "الإشعارات" to Routes.Notifications, "الإعدادات" to Routes.Settings).forEachIndexed { index, item ->
+                            Row(modifier = Modifier.fillMaxWidth().clickable { navController.navigate(item.second) }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) { Text(item.first, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium); Text("‹", color = MaterialTheme.colorScheme.onSurfaceVariant) }
                             if (index < 3) androidx.compose.material3.HorizontalDivider(color = Color(0xFFE5E9EE))
                         }
                     }

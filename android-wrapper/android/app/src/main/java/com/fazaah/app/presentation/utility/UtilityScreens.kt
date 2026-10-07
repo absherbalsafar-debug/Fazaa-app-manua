@@ -13,6 +13,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -29,6 +30,7 @@ fun SettingsScreen(navController: NavHostController) {
         SettingSection("الأمان والخصوصية", listOf("توثيق رقم الهاتف", "الإشعارات"))
         Button(onClick = { navController.navigate(Routes.Privacy) }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("سياسة الخصوصية") }
         OutlinedButton(onClick = { navController.navigate(Routes.Terms) }, modifier = Modifier.fillMaxWidth()) { Text("شروط الاستخدام") }
+        TextButton(onClick = { navController.navigate(Routes.HelpSupport) }, modifier = Modifier.fillMaxWidth()) { Text("الدعم والمساعدة") }
     }
 }
 
@@ -50,7 +52,7 @@ fun LegalScreen(title: String, heading: String, intro: String, paragraphs: List<
 }
 
 @Composable
-fun PrivacyScreen() = LegalScreen("سياسة الخصوصية", "خصوصيتك أولوية", "نوضح هنا ما نحتاجه لتقديم تجربة آمنة وواضحة.", listOf("نستخدم بيانات الحساب لتسجيل الدخول وتشغيل خدمات فزعة وربط العميل بالمهني المناسب.", "نطلب الموقع عند الحاجة لعرض المهنيين القريبين وتحديد موقع تنفيذ الخدمة. لا نطلب إذن الموقع إلا عند استخدام هذه الوظيفة.", "تُراجع مستندات المهني لأغراض الاعتماد فقط، ويجب عدم رفع مستندات لا تملك حق تقديمها."), onBack = {})
+fun PrivacyScreen(navController: NavHostController) = LegalScreen("سياسة الخصوصية", "خصوصيتك أولوية", "نوضح هنا ما نحتاجه لتقديم تجربة آمنة وواضحة.", listOf("نستخدم بيانات الحساب لتسجيل الدخول وتشغيل خدمات فزعة وربط العميل بالمهني المناسب.", "نطلب الموقع عند الحاجة لعرض المهنيين القريبين وتحديد موقع تنفيذ الخدمة. لا نطلب إذن الموقع إلا عند استخدام هذه الوظيفة.", "تُراجع مستندات المهني لأغراض الاعتماد فقط، ويجب عدم رفع مستندات لا تملك حق تقديمها."), onBack = { navController.popBackStack() })
 
 @Composable
-fun TermsScreen() = LegalScreen("شروط الاستخدام", "شروط واضحة للجميع", "تهدف هذه الشروط إلى تنظيم العلاقة بين العملاء ومقدمي الخدمات.", listOf("يلتزم المستخدم بتقديم بيانات صحيحة وعدم انتحال هوية شخص آخر.", "تُستخدم منصة فزعة للتواصل بين العميل والمهني، ويتحمل الطرفان مسؤولية الاتفاق على تفاصيل الخدمة.", "يحق للمنصة مراجعة حسابات المهنيين ومستنداتهم واتخاذ الإجراء المناسب عند وجود بيانات غير صحيحة."), onBack = {})
+fun TermsScreen(navController: NavHostController) = LegalScreen("شروط الاستخدام", "شروط واضحة للجميع", "تهدف هذه الشروط إلى تنظيم العلاقة بين العملاء ومقدمي الخدمات.", listOf("يلتزم المستخدم بتقديم بيانات صحيحة وعدم انتحال هوية شخص آخر.", "تُستخدم منصة فزعة للتواصل بين العميل والمهني، ويتحمل الطرفان مسؤولية الاتفاق على تفاصيل الخدمة.", "يحق للمنصة مراجعة حسابات المهنيين ومستنداتهم واتخاذ الإجراء المناسب عند وجود بيانات غير صحيحة."), onBack = { navController.popBackStack() })

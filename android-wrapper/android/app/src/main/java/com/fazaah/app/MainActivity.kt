@@ -55,6 +55,7 @@ private fun FazaaNativeApp(container: AppContainer) {
         CatalogShell(
             catalogRepository = container.catalogRepository,
             authRepository = container.authRepository,
+            subscriptionRepository = container.subscriptionRepository,
             role = resolvedRole!!,
             onLogout = { resolvedRole = null },
         )

@@ -40,10 +40,10 @@ class RequestViewModel(private val repository: CatalogRepository) : ViewModel() 
             .onFailure { error -> _state.update { it.copy(loading = false, error = error.message ?: "تعذر تحميل الطلب") } }
     }
 
-    fun create(input: ServiceRequestInput, onSuccess: () -> Unit) = viewModelScope.launch {
+    fun create(input: ServiceRequestInput, onSuccess: (ServiceRequest) -> Unit = {}) = viewModelScope.launch {
         _state.update { it.copy(saving = true, error = null, message = null) }
         runCatching { repository.createRequest(input) }
-            .onSuccess { request -> _state.update { it.copy(saving = false, message = "تم إرسال الطلب بنجاح", selected = request) }; onSuccess() }
+            .onSuccess { request -> _state.update { it.copy(saving = false, message = "تم إرسال الطلب بنجاح", selected = request) }; onSuccess(request) }
             .onFailure { error -> _state.update { it.copy(saving = false, error = error.message ?: "لم نتمكن من إرسال الطلب") } }
     }
 

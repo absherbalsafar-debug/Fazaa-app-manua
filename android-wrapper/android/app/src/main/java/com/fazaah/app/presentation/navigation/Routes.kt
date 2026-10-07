@@ -18,7 +18,10 @@ object Routes {
     const val Terms = "terms"
     const val Emergency = "emergency"
     const val ProviderDashboard = "provider/dashboard"
+    const val ProviderBusiness = "provider/business"
+    const val Verify = "provider/verify"
     const val ProviderSubscription = "provider/subscription"
     const val Earnings = "earnings"
     const val Wallet = "wallet"
+    const val HelpSupport = "help-support"
 }

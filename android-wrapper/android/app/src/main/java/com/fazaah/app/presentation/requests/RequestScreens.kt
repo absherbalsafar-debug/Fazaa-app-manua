@@ -87,7 +87,7 @@ fun RequestDetailScreen(viewModel: RequestViewModel, requestId: Int) {
 }
 
 @Composable
-fun NewRequestScreen(viewModel: RequestViewModel, providerId: Int) {
+fun NewRequestScreen(viewModel: RequestViewModel, providerId: Int, onCreated: (Int) -> Unit = {}) {
     var serviceType by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var city by remember { mutableStateOf("") }
@@ -97,12 +97,13 @@ fun NewRequestScreen(viewModel: RequestViewModel, providerId: Int) {
     Column(modifier = Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("طلب خدمة جديدة", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Text("فزعة تربطك بالمهني فقط، ويتم الاتفاق على السعر والتنفيذ مباشرة.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (providerId <= 0) Text("اختر مهنيًا من القائمة أولًا، ثم عد لإرسال طلبك إليه.", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
         OutlinedTextField(serviceType, { serviceType = it }, label = { Text("نوع الخدمة المطلوبة") }, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(description, { description = it }, label = { Text("وصف المشكلة") }, minLines = 4, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(city, { city = it }, label = { Text("المدينة") }, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(district, { district = it }, label = { Text("المنطقة / الحي") }, modifier = Modifier.fillMaxWidth())
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Column { Text("أحتاج الخدمة الآن", fontWeight = FontWeight.Bold); Text("أريد من المهني الحضور بأسرع وقت", style = MaterialTheme.typography.bodySmall) }; Switch(checked = immediate, onCheckedChange = { immediate = it }) }
-        Button(enabled = !state.saving && providerId > 0 && serviceType.trim().length >= 2 && description.trim().length >= 10 && city.trim().length >= 2 && district.trim().length >= 2, onClick = { viewModel.create(ServiceRequestInput(providerId, serviceType.trim(), description.trim(), city.trim(), district.trim(), isImmediate = immediate), {}) }, modifier = Modifier.fillMaxWidth()) { Text(if (state.saving) "جارٍ الإرسال..." else "تأكيد وإرسال الطلب") }
+        Button(enabled = !state.saving && providerId > 0 && serviceType.trim().length >= 2 && description.trim().length >= 10 && city.trim().length >= 2 && district.trim().length >= 2, onClick = { viewModel.create(ServiceRequestInput(providerId, serviceType.trim(), description.trim(), city.trim(), district.trim(), isImmediate = immediate)) { request -> onCreated(request.id) } }, modifier = Modifier.fillMaxWidth()) { Text(if (state.saving) "جارٍ الإرسال..." else "تأكيد وإرسال الطلب") }
         state.message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
     }
