@@ -161,42 +161,34 @@ private fun NavHostController.navigateSingleTop(route: String) {
 
 @Composable
 private fun HomeScreen(state: CatalogUiState, viewModel: CatalogViewModel, navController: NavHostController) {
-    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp).background(Color(0xFFF7F8FA)), verticalArrangement = Arrangement.spacedBy(14.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 10.dp, bottom = 24.dp)) {
+    val navy = Color(0xFF082846)
+    LazyColumn(modifier = Modifier.fillMaxSize().background(Color(0xFFF7F9FB)), verticalArrangement = Arrangement.spacedBy(16.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 28.dp)) {
         item {
-            Row(modifier = Modifier.fillMaxWidth().height(70.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Row(verticalAlignment = Alignment.CenterVertically) { Text("صنعاء", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary); Spacer(Modifier.width(4.dp)); Text("⌄", color = MaterialTheme.colorScheme.primary) }
-                Image(painterResource(com.fazaah.app.R.drawable.fazaah_logo), contentDescription = "فزعة", modifier = Modifier.height(62.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) { Text("◉", color = MaterialTheme.colorScheme.primary); Text("♙", color = MaterialTheme.colorScheme.primary) }
-            }
-        }
-        item { Text("أهلًا بك", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }
-        item {
-            Card(shape = RoundedCornerShape(25.dp), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary), modifier = Modifier.fillMaxWidth().height(178.dp)) {
-                Column(modifier = Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.Center) {
-                    Text("احتياجك .. نوصلك بالشخص المناسب", color = Color.White.copy(alpha = .75f), style = MaterialTheme.typography.bodySmall)
-                    Text("تحتاج شيء؟\nفزعت لك!", color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                    Text("ابحث عن المهني المناسب لإنجاز احتياجك بسهولة.", color = Color.White.copy(alpha = .72f), style = MaterialTheme.typography.bodySmall)
+            Column(Modifier.fillMaxWidth().background(navy).padding(horizontal = 18.dp, vertical = 16.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Column { Text("موقعك الحالي", color = Color.White.copy(alpha = .6f), fontSize = 11.sp); Text("صنعاء، اليمن ⌄", color = Color.White, fontWeight = FontWeight.Bold) }
+                    Image(painterResource(com.fazaah.app.R.drawable.fazaah_logo), contentDescription = "فزعة", modifier = Modifier.height(54.dp))
+                    Text("♧", color = Color.White, fontSize = 25.sp)
                 }
+                Spacer(Modifier.height(18.dp))
+                Text("أهلًا بك في فزعة", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+                Text("احتياجك.. نوصلك بالشخص المناسب", color = Color.White.copy(alpha = .72f), fontSize = 13.sp)
+                Spacer(Modifier.height(16.dp))
+                OutlinedTextField(value = state.search, onValueChange = viewModel::setSearch, placeholder = { Text("ابحث عن خدمة أو مهني...", color = Color.White.copy(alpha = .55f)) }, leadingIcon = { Icon(Icons.Default.Search, null, tint = Color.White) }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Color(0xFF173B5D), focusedContainerColor = Color(0xFF173B5D), unfocusedBorderColor = Color(0xFF3D688A), focusedBorderColor = Color(0xFFF6C107), unfocusedTextColor = Color.White, focusedTextColor = Color.White))
             }
         }
         item {
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(value = state.search, onValueChange = viewModel::setSearch, placeholder = { Text("ما الذي تحتاجه؟ ابحث عن الخدمة أو المهني...") }, singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(28.dp))
-                Spacer(Modifier.width(8.dp)); Button(onClick = { viewModel.search(); navController.navigateSingleTop(Routes.Providers) }, modifier = Modifier.size(54.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp), shape = RoundedCornerShape(28.dp)) { Icon(Icons.Default.Search, contentDescription = "بحث") }
-            }
-        }
-        item { SectionTitle("اختر نوع الخدمة") }
-        item {
-            LazyVerticalGrid(columns = GridCells.Fixed(4), modifier = Modifier.height(210.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(state.categories.take(8)) { category -> CategoryCard(category.name, category.icon) { viewModel.selectCategory(category.id); navController.navigateSingleTop(Routes.Providers) } }
+            Column(Modifier.padding(horizontal = 16.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) { Text("الخدمات الرئيسية", color = navy, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold); TextButton(onClick = { navController.navigateSingleTop(Routes.Providers) }) { Text("عرض الكل", color = Color(0xFFB58900)) } }
+                LazyVerticalGrid(columns = GridCells.Fixed(4), modifier = Modifier.height(190.dp), horizontalArrangement = Arrangement.spacedBy(9.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) { items(state.categories.take(8)) { category -> CategoryCard(category.name, category.icon) { viewModel.selectCategory(category.id); navController.navigateSingleTop(Routes.Providers) } } }
             }
         }
         item {
-            Card(shape = RoundedCornerShape(20.dp), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = Color(0xFFFFF5DB)), modifier = Modifier.fillMaxWidth().height(104.dp)) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.Center) { Text("محتاج مساعدة أكثر؟", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold); Text("تصفح جميع المهنيين والخدمات المتاحة.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall); TextButton(onClick = { navController.navigateSingleTop(Routes.Providers) }) { Text("تصفح الكل", color = Color(0xFF8C6B00), fontWeight = FontWeight.Bold) } }
+            Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(132.dp), shape = RoundedCornerShape(22.dp), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = navy)) {
+                Row(Modifier.fillMaxSize().padding(18.dp), verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("تحتاج خدمة الآن؟", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold); Text("اعثر على مهني موثوق بالقرب منك", color = Color.White.copy(alpha = .7f), fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp)); Button(onClick = { navController.navigateSingleTop(Routes.Providers) }, colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFFF6C107), contentColor = navy), shape = RoundedCornerShape(10.dp), modifier = Modifier.padding(top = 10.dp)) { Text("استعرض المهنيين", fontWeight = FontWeight.Bold, fontSize = 12.sp) } }; Text("⌖", color = Color(0xFFF6C107), fontSize = 56.sp) }
             }
         }
-        item { SectionTitle("مهنيون متاحون") }
+        item { Text("مهنيون متاحون الآن", color = navy, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(horizontal = 16.dp)) }
         if (state.isLoading) item { LoadingRow() }
         items(state.providers.take(5)) { provider -> ProviderCard(provider) { navController.navigate("${Routes.Providers}/${provider.id}") } }
         if (state.providers.isEmpty() && !state.isLoading) item { EmptyState("لا توجد نتائج متاحة حاليًا") }

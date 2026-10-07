@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -18,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,6 +31,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.navigation.NavHostController
 import com.fazaah.app.data.repository.AuthRepository
 import com.fazaah.app.domain.model.ServiceRequestInput
@@ -48,18 +53,26 @@ fun RequestsScreen(viewModel: RequestViewModel, authRepository: AuthRepository, 
     val role by produceState(initialValue = "client") { value = runCatching { authRepository.currentUser().role ?: "client" }.getOrDefault("client") }
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(role) { viewModel.load(role) }
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("طلباتي", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text(if (role == "provider") "الطلبات الواردة إليك" else "متابعة طلبات الخدمة الخاصة بك", color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF7F9FB))) {
+        Column(Modifier.fillMaxWidth().background(Color(0xFF082846)).padding(horizontal = 18.dp, vertical = 24.dp)) {
+            Text(if (role == "provider") "الطلبات الواردة" else "طلباتي", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
+            Text(if (role == "provider") "راجع طلبات العملاء وتابع أعمالك" else "تابع حالة طلبات الخدمة الخاصة بك", color = Color.White.copy(alpha = .7f), modifier = Modifier.padding(top = 5.dp))
+        }
+        Column(Modifier.padding(16.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { StatusPill("الكل", true); StatusPill("قيد الانتظار", false); StatusPill("مكتملة", false) }
         Spacer(Modifier.height(16.dp))
         when {
-            state.loading -> CircularProgressIndicator()
+            state.loading -> CircularProgressIndicator(color = Color(0xFFF6C107))
             state.error != null -> Text(state.error!!, color = MaterialTheme.colorScheme.error)
             state.requests.isEmpty() -> Text(if (role == "provider") "لم تتلقى أي طلبات عمل بعد." else "لم تقم بطلب أي خدمة بعد.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) { items(state.requests) { request -> Card(onClick = { navController.navigate("requests/detail/${request.id}") }, modifier = Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(request.serviceType, fontWeight = FontWeight.Bold); Text(statusLabel(request.status), color = MaterialTheme.colorScheme.primary) }; Text(request.description, maxLines = 2, color = MaterialTheme.colorScheme.onSurfaceVariant); Text(if (role == "provider") "العميل: ${request.clientName ?: "—"}" else "المهني: ${request.providerName ?: "—"}", style = MaterialTheme.typography.bodySmall) } } } }
+            else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) { items(state.requests) { request -> Card(onClick = { navController.navigate("requests/detail/${request.id}") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) { Column(Modifier.padding(16.dp)) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Column { Text(request.serviceType, fontWeight = FontWeight.ExtraBold, color = Color(0xFF082846)); Text(if (role == "provider") "العميل: ${request.clientName ?: "—"}" else "المهني: ${request.providerName ?: "—"}", style = MaterialTheme.typography.bodySmall, color = Color.Gray) }; Text(statusLabel(request.status), color = Color(0xFFB58900), fontWeight = FontWeight.Bold) }; Text(request.description, maxLines = 2, color = Color(0xFF5E6B76), modifier = Modifier.padding(top = 12.dp)); Text("${request.city} · ${request.district}", style = MaterialTheme.typography.bodySmall, color = Color.Gray, modifier = Modifier.padding(top = 8.dp)) } } } }
+        }
         }
     }
 }
+
+@Composable
+private fun StatusPill(label: String, selected: Boolean) { Text(label, color = if (selected) Color(0xFF082846) else Color(0xFF526273), fontWeight = FontWeight.Bold, modifier = Modifier.background(if (selected) Color(0xFFF6C107) else Color.White, RoundedCornerShape(20.dp)).padding(horizontal = 14.dp, vertical = 8.dp)) }
 
 @Composable
 fun RequestDetailScreen(viewModel: RequestViewModel, requestId: Int) {
