@@ -37,6 +37,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -142,7 +143,7 @@ fun RegistrationProfileScreen(
 
 @Composable
 private fun LocationCard(latitude: String, longitude: String, message: String?, onRead: () -> Unit) {
-    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.LocationOn, null, tint = RegistrationGold, modifier = Modifier.size(30.dp))
             Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
@@ -166,7 +167,7 @@ private fun CategoryMenu(categories: List<Category>, selected: Int?, onSelect: (
 
 @Composable
 private fun DocumentButton(title: String, uploaded: Boolean, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), colors = CardDefaults.cardColors(containerColor = if (uploaded) Color(0xFFE8F5E9) else Color.White)) {
+    Card(onClick = onClick, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), colors = CardDefaults.cardColors(containerColor = if (uploaded) Color(0xFFE8F5E9) else MaterialTheme.colorScheme.surface)) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) { Icon(if (uploaded) Icons.Default.CheckCircle else Icons.Default.UploadFile, null, tint = if (uploaded) Color(0xFF2E7D32) else RegistrationNavy); Spacer(Modifier.width(10.dp)); Text(if (uploaded) "$title — تم الإرفاق" else title, color = RegistrationNavy, fontWeight = FontWeight.Bold) }
     }
 }

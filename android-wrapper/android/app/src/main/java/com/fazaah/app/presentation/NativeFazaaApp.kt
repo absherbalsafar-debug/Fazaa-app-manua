@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,12 +48,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -82,6 +85,21 @@ private val FazaaNavy = Color(0xFF092F62)
 private val FazaaBlue = Color(0xFF0B4C8C)
 private val FazaaGold = Color(0xFFF6C107)
 private val FazaaCream = Color(0xFFF7F8FA)
+private val FazaaLightSurface = Color(0xFFF9FBFD)
+private val FazaaDarkSurface = Color(0xFF061D35)
+
+@Composable
+private fun FazaaTheme(content: @Composable () -> Unit) {
+    val dark = isSystemInDarkTheme()
+    val colors = if (dark) darkColorScheme(primary = FazaaGold, secondary = FazaaBlue, background = FazaaDarkSurface, surface = Color(0xFF0B2948), onBackground = Color.White, onSurface = Color.White)
+    else lightColorScheme(primary = FazaaNavy, secondary = FazaaGold, background = FazaaLightSurface, surface = Color.White, onBackground = FazaaNavy, onSurface = FazaaNavy)
+    MaterialTheme(colorScheme = colors, content = content)
+}
+
+@Composable
+private fun FazaaCityBackdrop(modifier: Modifier = Modifier) {
+    Image(painter = painterResource(R.drawable.fazaah_hero), contentDescription = null, modifier = modifier, contentScale = androidx.compose.ui.layout.ContentScale.Crop, alpha = if (isSystemInDarkTheme()) .30f else .18f, alignment = Alignment.BottomCenter)
+}
 
 @Composable
 fun NativeFazaaApp(
@@ -106,14 +124,17 @@ fun NativeFazaaApp(
         }
     }
 
-    MaterialTheme(colorScheme = lightColorScheme(primary = FazaaNavy, secondary = FazaaGold, background = FazaaCream)) {
-        Surface(modifier = Modifier.fillMaxSize(), color = FazaaCream) {
+    FazaaTheme {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             NavHost(navController = navController, startDestination = initialRoute) {
                 composable("welcome") {
                     WelcomeScreen(onStart = {
                         onWelcomeSeen()
-                        navController.navigate("phone")
+                        navController.navigate("role")
                     })
+                }
+                composable("role") {
+                    AccountTypeScreen(selected = state.role, onRole = authViewModel::setRole, onContinue = { navController.navigate("phone") }, onBack = { navController.popBackStack() })
                 }
                 composable("phone") {
                     PhoneLoginScreen(
@@ -195,43 +216,41 @@ fun NativeFazaaApp(
 
 @Composable
 private fun WelcomeScreen(onStart: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize().background(FazaaNavy).padding(horizontal = 24.dp, vertical = 28.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Spacer(Modifier.height(18.dp))
-            Logo(modifier = Modifier.size(118.dp))
-            Text("خدمة تستحق الثقة", color = FazaaGold, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(26.dp))
-            Text("أهلاً وسهلاً بك في", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
-            Text("فزعة", color = FazaaGold, fontSize = 36.sp, fontWeight = FontWeight.ExtraBold)
-            Spacer(Modifier.height(10.dp))
-            Text("منصة توصلك بأفضل المهنيين والفنيين لإنجاز احتياجاتك بسهولة وسرعة.", color = Color.White.copy(alpha = .72f), textAlign = TextAlign.Center, fontSize = 14.sp)
-        }
-        Card(
-            modifier = Modifier.fillMaxWidth().height(245.dp),
-            shape = RoundedCornerShape(32.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = .08f)),
-        ) {
-            Column(Modifier.fillMaxSize().padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                Icon(Icons.Default.Search, contentDescription = null, tint = FazaaGold, modifier = Modifier.size(54.dp))
-                Spacer(Modifier.height(12.dp))
-                Text("خدماتك أقرب", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Text("الشخص المناسب في الوقت المناسب", color = Color.White.copy(alpha = .75f), fontSize = 14.sp)
-                Spacer(Modifier.height(18.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    FeaturePill("مهنيون موثوقون")
-                    FeaturePill("تواصل سريع")
-                }
+    Box(Modifier.fillMaxSize().background(FazaaNavy)) {
+        FazaaCityBackdrop(Modifier.fillMaxSize())
+        Column(Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceBetween) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Spacer(Modifier.height(32.dp))
+                Logo(Modifier.size(150.dp))
+                Text("احتياجك .. نوصلّك بالمناسب", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            }
+            Text("صنعاء • اليمن", color = Color.White, fontSize = 13.sp)
+            Button(onClick = onStart, modifier = Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(18.dp), colors = ButtonDefaults.buttonColors(containerColor = FazaaGold, contentColor = FazaaNavy)) {
+                Text("ابدأ الآن", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+                Spacer(Modifier.width(8.dp))
+                Icon(Icons.Default.ArrowBack, contentDescription = null)
             }
         }
-        Button(onClick = onStart, modifier = Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(18.dp), colors = ButtonDefaults.buttonColors(containerColor = FazaaGold, contentColor = FazaaNavy)) {
-            Text("لنبدأ", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
-            Spacer(Modifier.width(8.dp))
-            Icon(Icons.Default.ArrowBack, contentDescription = null)
+    }
+}
+
+@Composable
+private fun AccountTypeScreen(selected: UserRole, onRole: (UserRole) -> Unit, onContinue: () -> Unit, onBack: () -> Unit) {
+    Column(Modifier.fillMaxSize().padding(horizontal = 22.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowForward, contentDescription = "رجوع", tint = FazaaNavy) }
+            Logo(Modifier.size(82.dp))
+            Text("٠١ / ٠٤", color = FazaaNavy.copy(alpha = .55f), fontSize = 12.sp)
         }
+        Spacer(Modifier.height(55.dp))
+        Text("اختر نوع الحساب", color = FazaaNavy, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold)
+        Text("اختر الطريقة التي ستستخدم بها فزعة", color = Color.Gray, fontSize = 13.sp)
+        Spacer(Modifier.height(28.dp))
+        RoleChoice("عميل", "أبحث عن خدمة أو مقدم خدمة", selected == UserRole.CLIENT, { onRole(UserRole.CLIENT) }, Modifier.fillMaxWidth())
+        Spacer(Modifier.height(14.dp))
+        RoleChoice("مهني", "أقدم خدماتي للعملاء", selected == UserRole.PROVIDER, { onRole(UserRole.PROVIDER) }, Modifier.fillMaxWidth())
+        Spacer(Modifier.weight(1f))
+        Button(onClick = onContinue, modifier = Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = FazaaGold, contentColor = FazaaNavy)) { Text("متابعة", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp) }
     }
 }
 
@@ -252,16 +271,9 @@ private fun PhoneLoginScreen(
         }
         Spacer(Modifier.height(26.dp))
         Icon(Icons.Default.Phone, contentDescription = null, tint = FazaaGold, modifier = Modifier.size(40.dp))
-        Text("التحقق الآمن", color = FazaaGold, fontSize = 13.sp, fontWeight = FontWeight.Bold)
         Text("أدخل رقم هاتفك", color = FazaaNavy, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
-        Text("سنرسل رمزاً قصيراً إلى رقمك لتبدأ تجربتك بأمان.", color = Color.Gray, textAlign = TextAlign.Center, fontSize = 13.sp)
-        Spacer(Modifier.height(22.dp))
-        Text("كيف ستستخدم فزعة؟", color = FazaaNavy, fontWeight = FontWeight.Bold)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            RoleChoice("أبحث عن خدمة", "أفضل الخدمات والمهنيين", state.role == UserRole.CLIENT, { onRole(UserRole.CLIENT) }, Modifier.weight(1f))
-            RoleChoice("أقدّم خدمة", "أدير عملي وأستقبل الطلبات", state.role == UserRole.PROVIDER, { onRole(UserRole.PROVIDER) }, Modifier.weight(1f))
-        }
-        Spacer(Modifier.height(14.dp))
+        Text("سنرسل رمز التحقق إلى رقمك", color = Color.Gray, textAlign = TextAlign.Center, fontSize = 13.sp)
+        Spacer(Modifier.height(30.dp))
         OutlinedTextField(value = state.phone, onValueChange = onPhone, modifier = Modifier.fillMaxWidth(), label = { Text("رقم الهاتف") }, placeholder = { Text("7XXXXXXXX") }, prefix = { Text("+967 ") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), shape = RoundedCornerShape(16.dp))
         Spacer(Modifier.height(14.dp))
         Button(onClick = onSendOtp, enabled = !state.loading && state.phone.length >= 9, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = FazaaNavy)) {
