@@ -95,3 +95,13 @@
 - الوصول إلى GitHub وحده لا يمنح الوصول إلى أسرار WebDev أو قاعدة البيانات أو إعدادات الاستضافة.
 - لمتابعة المعاينة وقاعدة البيانات في جلسة Manus الحالية، استخدم مشروع `fazaapublish`؛ بيانات Neon تُدار منفصلة عن صلاحية مستودع GitHub.
 - لا توجد مفاتيح أو أسرار إنتاجية داخل المستودع.
+
+
+## مزامنة Android Native — 2026-10-07
+
+- تم إنشاء فرع التطوير `android-native-development` من `origin/native-kotlin-android`.
+- تمت مزامنة آخر تحديثات `origin/main` حتى commit `b161e14` بطريقة Fast-forward دون تعارض.
+- أصبحت تحسينات الإشعارات، فحص تحديث التطبيق، زر الرجوع، البصمة، الشعار، والموقع موجودة في فرع Android Native.
+- توجد بنية Kotlin/Jetpack Compose واسعة، لكن نقطة التشغيل الحالية ما تزال WebView؛ لذلك تبدأ المرحلة التالية بتحويل `MainActivity` إلى تشغيل Compose Native فعليًا.
+- تم توثيق خطة الشاشات الناقصة والأولويات ومعايير القبول في `ANDROID_NATIVE_DEVELOPMENT_PLAN_AR.md`.
+- تعذر تنفيذ بناء APK في Sandbox إلى حين توفير Android SDK 35؛ يلزم تشغيل `./gradlew test` و`./gradlew assembleDebug` في Android Studio أو بيئة CI مجهزة.
