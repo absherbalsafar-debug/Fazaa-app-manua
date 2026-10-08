@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../app/theme/fazaah_theme.dart';
+import '../../../core/network/backend_models.dart';
+import '../../../core/network/fazaa_backend.dart';
 import '../../auth/domain/account_role.dart';
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({required this.role, super.key});
+  const DashboardPage({required this.role, required this.backend, super.key});
 
   final AccountRole role;
+  final FazaaBackend backend;
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -16,6 +20,10 @@ class _DashboardPageState extends State<DashboardPage> {
   int _selectedIndex = 0;
   bool _availableForRequests = false;
   bool _notificationsEnabled = true;
+  bool _isLoading = true;
+  bool _isUpdatingAvailability = false;
+  DashboardSnapshot? _snapshot;
+  String? _loadError;
   String _searchQuery = '';
 
   bool get _isCustomer => widget.role == AccountRole.customer;
@@ -38,12 +46,167 @@ class _DashboardPageState extends State<DashboardPage> {
           Icons.settings_outlined,
         ];
 
+  List<(String, IconData)> get _categoryItems {
+    final categories = _snapshot?.categories ?? const <ServiceCategory>[];
+    if (categories.isEmpty) return _CategoryGrid._items;
+    return categories
+        .map((category) => (category.name, _categoryIcon(category.name)))
+        .toList(growable: false);
+  }
+
+  IconData _categoryIcon(String name) {
+    if (name.contains('كهرباء')) return Icons.flash_on_rounded;
+    if (name.contains('سباكة')) return Icons.water_drop_outlined;
+    if (name.contains('تكييف') || name.contains('تبريد')) {
+      return Icons.ac_unit_rounded;
+    }
+    if (name.contains('نجارة')) return Icons.carpenter_rounded;
+    if (name.contains('تنظيف')) return Icons.cleaning_services_rounded;
+    if (name.contains('نقل')) return Icons.local_shipping_rounded;
+    if (name.contains('بناء')) return Icons.construction_rounded;
+    return Icons.home_repair_service_rounded;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboard();
+  }
+
+  Future<void> _loadDashboard() async {
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _loadError = null;
+      });
+    }
+    try {
+      final snapshot = await widget.backend.loadDashboard();
+      if (snapshot.user.accountRole != widget.role) {
+        throw const BackendException(
+          'الدور المرتبط بالجلسة لا يطابق هذه اللوحة.',
+        );
+      }
+      if (!mounted) return;
+      setState(() {
+        _snapshot = snapshot;
+        _availableForRequests = snapshot.user.isAvailable;
+        _isLoading = false;
+        _loadError = null;
+      });
+    } on BackendException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _loadError = error.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _loadError = 'تعذر تحميل بيانات الحساب. حاول مرة أخرى.';
+      });
+    }
+  }
+
+  Future<void> _setAvailability(bool available) async {
+    final previous = _availableForRequests;
+    setState(() {
+      _availableForRequests = available;
+      _isUpdatingAvailability = true;
+    });
+    try {
+      await widget.backend.setProviderAvailability(available);
+      if (mounted && _snapshot != null) {
+        final user = _snapshot!.user;
+        setState(() {
+          _snapshot = DashboardSnapshot(
+            user: BackendUser(
+              id: user.id,
+              name: user.name,
+              role: user.role,
+              status: user.status,
+              phone: user.phone,
+              email: user.email,
+              city: user.city,
+              avatarUrl: user.avatarUrl,
+              providerAccountStatus: user.providerAccountStatus,
+              isAvailable: available,
+            ),
+            metrics: _snapshot!.metrics,
+            recentRequests: _snapshot!.recentRequests,
+            categories: _snapshot!.categories,
+          );
+        });
+      }
+    } on BackendException catch (error) {
+      if (mounted) {
+        setState(() {
+          _availableForRequests = previous;
+        });
+        _showDemoMessage(error.message);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _availableForRequests = previous;
+        });
+        _showDemoMessage('تعذر تحديث حالة التوفر. حاول مرة أخرى.');
+      }
+    } finally {
+      if (mounted) setState(() => _isUpdatingAvailability = false);
+    }
+  }
+
+  Future<void> _endSession() async {
+    try {
+      await widget.backend.logout();
+    } catch (_) {
+      // Remove the local navigation state even if the API cannot be reached.
+    }
+    if (mounted) {
+      Navigator.of(context)
+          .pushNamedAndRemoveUntil(AppRoutes.signedOut, (route) => false);
+    }
+  }
+
+  Widget _buildLoadFailure() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.cloud_off_rounded,
+              size: 42,
+              color: FazaaColors.muted,
+            ),
+            const SizedBox(height: 12),
+            Text(_loadError ?? 'تعذر تحميل لوحة التحكم.'),
+            const SizedBox(height: 14),
+            FilledButton.icon(
+              onPressed: _loadDashboard,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('إعادة المحاولة'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isCustomer ? 'فزعة' : 'لوحة المهني'),
         actions: [
+          IconButton(
+            tooltip: 'تحديث البيانات',
+            onPressed: _isLoading ? null : _loadDashboard,
+            icon: const Icon(Icons.refresh_rounded),
+          ),
           IconButton(
             tooltip: 'الإشعارات',
             onPressed: () =>
@@ -84,14 +247,19 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildSelectedTab(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator.adaptive());
+    }
+    if (_loadError != null || _snapshot == null) return _buildLoadFailure();
+
     if (_isCustomer) {
       return switch (_selectedIndex) {
         0 => _buildCustomerHome(context),
         1 => _buildCustomerBrowse(context),
-        2 => _buildEmptyTab(
+        2 => _buildRequestsTab(
           context,
           title: 'طلباتي',
-          description: 'ستظهر طلبات الخدمات ومراحلها هنا بعد ربط الحساب.',
+          description: 'تابع طلبات الخدمات ومراحلها من مكان واحد.',
           icon: Icons.assignment_outlined,
           actionLabel: 'استكشف الخدمات',
           action: () => setState(() => _selectedIndex = 1),
@@ -102,10 +270,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return switch (_selectedIndex) {
       0 => _buildProfessionalHome(context),
-      1 => _buildEmptyTab(
+      1 => _buildRequestsTab(
         context,
         title: 'الطلبات',
-        description: 'ستظهر طلبات العملاء الجديدة ومتابعة الأعمال هنا.',
+        description: 'تابع طلبات العملاء وحالة الأعمال المسندة إليك.',
         icon: Icons.assignment_outlined,
         actionLabel: 'العودة إلى لوحتي',
         action: () => setState(() => _selectedIndex = 0),
@@ -131,9 +299,9 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildCustomerHome(BuildContext context) {
     return _page(context, [
-      const _Greeting(
-        eyebrow: 'صباح الخير',
-        title: 'أهلًا بك في فزعة',
+      _Greeting(
+        eyebrow: 'مساحة العميل',
+        title: 'أهلًا ${_snapshot!.user.name}',
         description: 'ما الخدمة التي تريد إنجازها اليوم؟',
       ),
       const SizedBox(height: 18),
@@ -153,7 +321,7 @@ class _DashboardPageState extends State<DashboardPage> {
       const SizedBox(height: 22),
       _SectionTitle(title: 'خدمات شائعة', action: null, onAction: null),
       const SizedBox(height: 10),
-      _CategoryGrid(onSelect: (_) => _showDemoMessage()),
+      _CategoryGrid(items: _categoryItems, onSelect: (_) => _showDemoMessage()),
       const SizedBox(height: 22),
       _SectionTitle(
         title: 'آخر الطلبات',
@@ -161,16 +329,17 @@ class _DashboardPageState extends State<DashboardPage> {
         onAction: () => setState(() => _selectedIndex = 2),
       ),
       const SizedBox(height: 10),
-      const _EmptyCard(
+      _recentRequestsOrEmpty(
         icon: Icons.assignment_outlined,
-        title: 'لا توجد طلبات حتى الآن',
-        description: 'ابدأ بطلب خدمة، وستتابع حالتها من هنا.',
+        emptyTitle: 'لا توجد طلبات حتى الآن',
+        emptyDescription: 'ابدأ بطلب خدمة، وستتابع حالتها من هنا.',
+        limit: 3,
       ),
     ]);
   }
 
   Widget _buildCustomerBrowse(BuildContext context) {
-    final categories = _CategoryGrid._items
+    final categories = _categoryItems
         .where((item) => item.$1.contains(_searchQuery.trim()))
         .toList();
 
@@ -205,27 +374,29 @@ class _DashboardPageState extends State<DashboardPage> {
         _CategoryGrid(items: categories, onSelect: (_) => _showDemoMessage()),
       const SizedBox(height: 14),
       const _DemoInlineNote(
-        text: 'هذه تصنيفات توضيحية؛ قائمة المهنيين ستُحمّل من الخدمة لاحقًا.',
+        text:
+            'التصنيفات المعروضة محمّلة من الخادم. تصفح المهنيين سيضاف لاحقًا.',
       ),
     ]);
   }
 
   Widget _buildProfessionalHome(BuildContext context) {
     return _page(context, [
-      const _Greeting(
+      _Greeting(
         eyebrow: 'مساحة عملك',
-        title: 'أهلًا بك، مهني فزعة',
+        title: 'أهلًا ${_snapshot!.user.name}',
         description: 'تابع طلبات العملاء وحالة ملفك المهني من هنا.',
       ),
       const SizedBox(height: 18),
       _AvailabilityCard(
         isAvailable: _availableForRequests,
-        onChanged: (value) => setState(() => _availableForRequests = value),
+        isUpdating: _isUpdatingAvailability,
+        onChanged: _setAvailability,
       ),
       const SizedBox(height: 22),
       const _SectionTitle(title: 'ملخص الأداء', action: null, onAction: null),
       const SizedBox(height: 10),
-      const _MetricsGrid(),
+      _MetricsGrid(snapshot: _snapshot!),
       const SizedBox(height: 20),
       _ActionCard(
         icon: Icons.verified_user_outlined,
@@ -241,15 +412,16 @@ class _DashboardPageState extends State<DashboardPage> {
         onAction: () => setState(() => _selectedIndex = 1),
       ),
       const SizedBox(height: 10),
-      const _EmptyCard(
+      _recentRequestsOrEmpty(
         icon: Icons.inbox_outlined,
-        title: 'لا توجد طلبات حتى الآن',
-        description: 'ستظهر طلبات العملاء هنا عند وصولها.',
+        emptyTitle: 'لا توجد طلبات حتى الآن',
+        emptyDescription: 'ستظهر طلبات العملاء هنا عند وصولها.',
+        limit: 3,
       ),
     ]);
   }
 
-  Widget _buildEmptyTab(
+  Widget _buildRequestsTab(
     BuildContext context, {
     required String title,
     required String description,
@@ -264,18 +436,42 @@ class _DashboardPageState extends State<DashboardPage> {
         description: description,
       ),
       const SizedBox(height: 20),
-      _EmptyCard(
+      _recentRequestsOrEmpty(
         icon: icon,
-        title: _isCustomer ? 'لا توجد بيانات لعرضها' : 'لا توجد طلبات جديدة',
-        description: description,
+        emptyTitle: _isCustomer ? 'لا توجد طلبات مسجلة' : 'لا توجد طلبات جديدة',
+        emptyDescription: _isCustomer
+            ? 'ستظهر طلباتك هنا بعد إنشاء أول طلب.'
+            : 'ستظهر طلبات العملاء هنا عند وصولها.',
         actionLabel: actionLabel,
-        onAction: action,
+        onEmptyAction: action,
       ),
     ]);
   }
 
+  Widget _recentRequestsOrEmpty({
+    required IconData icon,
+    required String emptyTitle,
+    required String emptyDescription,
+    int limit = 8,
+    String? actionLabel,
+    VoidCallback? onEmptyAction,
+  }) {
+    final requests = _snapshot!.recentRequests.take(limit).toList();
+    if (requests.isEmpty) {
+      return _EmptyCard(
+        icon: icon,
+        title: emptyTitle,
+        description: emptyDescription,
+        actionLabel: actionLabel,
+        onAction: onEmptyAction,
+      );
+    }
+    return _RecentRequestList(requests: requests);
+  }
+
   Widget _buildProfileTab(BuildContext context) {
     final roleName = _isCustomer ? 'حساب العميل' : 'الملف المهني';
+    final user = _snapshot!.user;
     return _page(context, [
       _Greeting(
         eyebrow: 'حسابي',
@@ -286,7 +482,8 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
       const SizedBox(height: 18),
       _ProfileCard(
-        roleName: _isCustomer ? 'عميل فزعة' : 'مهني فزعة',
+        roleName: user.name,
+        subtitle: user.email ?? user.phone ?? 'حساب فزعة',
         icon: _isCustomer
             ? Icons.person_outline_rounded
             : Icons.handyman_rounded,
@@ -296,7 +493,9 @@ class _DashboardPageState extends State<DashboardPage> {
         _ActionCard(
           icon: Icons.verified_user_outlined,
           title: 'حالة الملف',
-          description: 'بيانات الملف المهني ستُحمّل بعد ربط الحساب.',
+          description: user.providerAccountStatus == 'approved'
+              ? 'تم اعتماد ملفك المهني.'
+              : 'ملفك المهني قيد المراجعة.',
           actionLabel: 'استكمال الملف',
           onPressed: () =>
               _showDemoMessage('إكمال بيانات الملف يحتاج اتصالًا بالخادم.'),
@@ -311,9 +510,9 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
       const SizedBox(height: 18),
       OutlinedButton.icon(
-        onPressed: _returnToWelcome,
+        onPressed: _endSession,
         icon: const Icon(Icons.logout_rounded),
-        label: const Text('إنهاء المعاينة والعودة'),
+        label: const Text('تسجيل الخروج'),
       ),
     ]);
   }
@@ -348,9 +547,9 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
       const SizedBox(height: 18),
       OutlinedButton.icon(
-        onPressed: _returnToWelcome,
+        onPressed: _endSession,
         icon: const Icon(Icons.logout_rounded),
-        label: const Text('إنهاء المعاينة والعودة'),
+        label: const Text('تسجيل الخروج'),
       ),
     ]);
   }
@@ -361,10 +560,6 @@ class _DashboardPageState extends State<DashboardPage> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  void _returnToWelcome() {
-    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
   }
 }
 
@@ -386,7 +581,7 @@ class _DemoBanner extends StatelessWidget {
           SizedBox(width: 9),
           Expanded(
             child: Text(
-              'لوحة تجريبية — لا توجد جلسة دخول حقيقية أو بيانات محفوظة.',
+              'الحساب والطلبات المعروضة مرتبطة بجلسة الخادم وقاعدة بيانات فزعة.',
               style: TextStyle(
                 color: FazaaColors.ink,
                 fontWeight: FontWeight.w600,
@@ -687,9 +882,14 @@ class _CategoryCard extends StatelessWidget {
 }
 
 class _AvailabilityCard extends StatelessWidget {
-  const _AvailabilityCard({required this.isAvailable, required this.onChanged});
+  const _AvailabilityCard({
+    required this.isAvailable,
+    required this.isUpdating,
+    required this.onChanged,
+  });
 
   final bool isAvailable;
+  final bool isUpdating;
   final ValueChanged<bool> onChanged;
 
   @override
@@ -723,14 +923,17 @@ class _AvailabilityCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 3),
-                const Text(
-                  'تغيير محلي للمعاينة فقط',
+                Text(
+                  isUpdating ? 'جارٍ حفظ الحالة...' : 'تُحفظ الحالة في حسابك',
                   style: TextStyle(color: Colors.white70, fontSize: 11),
                 ),
               ],
             ),
           ),
-          Switch.adaptive(value: isAvailable, onChanged: onChanged),
+          Switch.adaptive(
+            value: isAvailable,
+            onChanged: isUpdating ? null : onChanged,
+          ),
         ],
       ),
     );
@@ -738,15 +941,33 @@ class _AvailabilityCard extends StatelessWidget {
 }
 
 class _MetricsGrid extends StatelessWidget {
-  const _MetricsGrid();
+  const _MetricsGrid({required this.snapshot});
+
+  final DashboardSnapshot snapshot;
 
   @override
   Widget build(BuildContext context) {
-    const metrics = [
-      (title: 'طلبات جديدة', value: '0', icon: Icons.schedule_rounded),
-      (title: 'أعمال نشطة', value: '0', icon: Icons.work_outline_rounded),
-      (title: 'أعمال مكتملة', value: '0', icon: Icons.task_alt_rounded),
-      (title: 'التقييم', value: '—', icon: Icons.star_outline_rounded),
+    final metrics = [
+      (
+        title: 'طلبات جديدة',
+        value: '${snapshot.metric('newRequests')}',
+        icon: Icons.schedule_rounded,
+      ),
+      (
+        title: 'أعمال نشطة',
+        value: '${snapshot.metric('activeRequests')}',
+        icon: Icons.work_outline_rounded,
+      ),
+      (
+        title: 'أعمال مكتملة',
+        value: '${snapshot.metric('completedRequests')}',
+        icon: Icons.task_alt_rounded,
+      ),
+      (
+        title: 'التقييم',
+        value: snapshot.rating?.toStringAsFixed(1) ?? '—',
+        icon: Icons.star_outline_rounded,
+      ),
     ];
 
     return LayoutBuilder(
@@ -924,10 +1145,114 @@ class _EmptyCard extends StatelessWidget {
   }
 }
 
+class _RecentRequestList extends StatelessWidget {
+  const _RecentRequestList({required this.requests});
+
+  final List<ServiceRequestSummary> requests;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (final request in requests)
+          Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: FazaaColors.border),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: FazaaColors.navy.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: const Icon(
+                    Icons.handyman_outlined,
+                    color: FazaaColors.navy,
+                  ),
+                ),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        request.serviceType,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        [request.city, request.district]
+                                .where((value) => value.isNotEmpty)
+                                .join('، ')
+                                .isEmpty
+                            ? 'الموقع غير محدد'
+                            : [
+                                request.city,
+                                request.district,
+                              ].where((value) => value.isNotEmpty).join('، '),
+                        style: const TextStyle(
+                          color: FazaaColors.muted,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: FazaaColors.gold.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    _requestStatusLabel(request.status),
+                    style: const TextStyle(
+                      color: FazaaColors.deepNavy,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+String _requestStatusLabel(String status) => switch (status) {
+  'pending' => 'جديد',
+  'accepted' => 'مقبول',
+  'in_progress' => 'قيد التنفيذ',
+  'completed' => 'مكتمل',
+  'cancelled' => 'ملغي',
+  'rejected' => 'مرفوض',
+  _ => status,
+};
+
 class _ProfileCard extends StatelessWidget {
-  const _ProfileCard({required this.roleName, required this.icon});
+  const _ProfileCard({
+    required this.roleName,
+    required this.subtitle,
+    required this.icon,
+  });
 
   final String roleName;
+  final String subtitle;
   final IconData icon;
 
   @override
@@ -957,9 +1282,14 @@ class _ProfileCard extends StatelessWidget {
                   style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'بيانات توضيحية للمعاينة',
-                  style: TextStyle(color: FazaaColors.muted, fontSize: 12),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: FazaaColors.muted,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),

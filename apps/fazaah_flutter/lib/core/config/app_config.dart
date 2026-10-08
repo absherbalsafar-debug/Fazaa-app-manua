@@ -1,6 +1,6 @@
 abstract final class AppConfig {
-  /// Override at build/run time with --dart-define=FAZAA_API_BASE_URL=... .
-  /// The default is same-origin so a future deployment proxy can route /api.
+  /// Web uses same-origin `/api` by default. Android builds must provide an
+  /// HTTPS server URL with `--dart-define=FAZAA_API_BASE_URL=.../api`.
   static const apiBaseUrl = String.fromEnvironment(
     'FAZAA_API_BASE_URL',
     defaultValue: '/api',

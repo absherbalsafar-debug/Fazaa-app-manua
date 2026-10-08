@@ -1,6 +1,7 @@
 {
   "routes": [
     { "path": "/", "title": "بداية فزعة" },
+    { "path": "/#/signed-out", "title": "تم تسجيل الخروج" },
     { "path": "/#/login/customer", "title": "تسجيل دخول العميل" },
     { "path": "/#/login/provider", "title": "تسجيل دخول المهني" },
     { "path": "/#/dashboard/customer", "title": "لوحة العميل" },
