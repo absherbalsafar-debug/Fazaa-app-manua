@@ -219,45 +219,57 @@ fun NativeFazaaApp(
 private fun WelcomeScreen(onStart: () -> Unit) {
     Box(Modifier.fillMaxSize().background(FazaaNavy)) {
         FazaaCityBackdrop(Modifier.fillMaxSize())
-        Column(Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceBetween) {
+        Column(
+            Modifier.fillMaxSize().padding(horizontal = 22.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Spacer(Modifier.height(32.dp))
-                Logo(Modifier.size(150.dp))
-                Text("احتياجك .. نوصلّك بالمناسب", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Spacer(Modifier.size(44.dp))
+                    Logo(Modifier.size(132.dp))
+                    Text("صنعاء", color = FazaaGold, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                }
+                Spacer(Modifier.height(34.dp))
+                Text("احتياجك.. نوصلك بالمناسب", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(10.dp))
+                Text("خدمات موثوقة بالقرب منك", color = Color.White.copy(alpha = .78f), fontSize = 14.sp, textAlign = TextAlign.Center)
             }
-            Text("صنعاء • اليمن", color = Color.White, fontSize = 13.sp)
-            Button(onClick = onStart, modifier = Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(18.dp), colors = ButtonDefaults.buttonColors(containerColor = FazaaGold, contentColor = FazaaNavy)) {
-                Text("ابدأ الآن", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
-                Spacer(Modifier.width(8.dp))
-                Icon(Icons.Default.ArrowBack, contentDescription = null)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("منصة فزعة للخدمات المهنية في اليمن", color = Color.White.copy(alpha = .84f), fontSize = 13.sp, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(16.dp))
+                Button(onClick = onStart, modifier = Modifier.fillMaxWidth().height(58.dp), shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = FazaaGold, contentColor = FazaaNavy)) {
+                    Text("ابدأ الآن", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+                    Spacer(Modifier.width(8.dp))
+                    Icon(Icons.Default.ArrowBack, contentDescription = null)
+                }
             }
         }
     }
 }
-
 @Composable
 private fun AccountTypeScreen(selected: UserRole, onRole: (UserRole) -> Unit, onContinue: () -> Unit, onBack: () -> Unit) {
-    Column(Modifier.fillMaxSize().background(FazaaNavy).padding(horizontal = 24.dp, vertical = 22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.fillMaxSize().background(FazaaNavy).padding(horizontal = 20.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.Default.ArrowForward, contentDescription = "رجوع", tint = Color.White) }
-            Spacer(Modifier.size(48.dp))
-            Text("إنشاء حساب عميل", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.size(48.dp))
+            Logo(Modifier.size(74.dp))
+            Text("01 / 03", color = Color.White.copy(alpha = .68f), fontSize = 12.sp)
         }
+        Spacer(Modifier.height(8.dp))
         StepProgress(active = 0, total = 3)
-        Spacer(Modifier.height(42.dp))
-        Logo(Modifier.size(112.dp))
-        Spacer(Modifier.height(20.dp))
-        Text("اختر نوع الحساب", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(30.dp))
+        Text("اختر نوع الحساب", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+        Text("اختر الطريقة المناسبة لاستخدام فزعة", color = Color.White.copy(alpha = .7f), fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
+        Spacer(Modifier.height(26.dp))
         DarkRoleCard("عميل", "أبحث عن خدمة أو مقدم خدمة", selected == UserRole.CLIENT, { onRole(UserRole.CLIENT) })
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(14.dp))
         DarkRoleCard("مهني", "أقدم خدماتي للعملاء", selected == UserRole.PROVIDER, { onRole(UserRole.PROVIDER) })
         Spacer(Modifier.weight(1f))
-        Button(onClick = onContinue, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(13.dp), colors = ButtonDefaults.buttonColors(containerColor = FazaaGold, contentColor = Color(0xFF071D36))) { Text("متابعة", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp) }
+        Button(onClick = onContinue, modifier = Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(15.dp), colors = ButtonDefaults.buttonColors(containerColor = FazaaGold, contentColor = Color(0xFF071D36))) {
+            Text("متابعة", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp)
+        }
     }
 }
-
 @Composable
 private fun PhoneLoginScreen(
     state: com.fazaah.app.presentation.auth.AuthUiState,
@@ -267,72 +279,75 @@ private fun PhoneLoginScreen(
     onSendOtp: () -> Unit,
     onOpenPin: () -> Unit,
 ) {
-    Column(Modifier.fillMaxSize().background(FazaaNavy).padding(horizontal = 28.dp, vertical = 22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.fillMaxSize().background(FazaaNavy).padding(horizontal = 24.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.Default.ArrowForward, contentDescription = "رجوع", tint = Color.White) }
-            Text("التحقق من رقم الهاتف", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.size(48.dp))
+            Text(if (state.role == UserRole.PROVIDER) "تسجيل دخول مهني" else "تسجيل الدخول", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Logo(Modifier.size(64.dp))
         }
         StepProgress(active = 0, total = 3)
-        Spacer(Modifier.height(50.dp))
-        Text("أدخل رقم هاتفك", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
-        Spacer(Modifier.height(10.dp))
-        Text("سنرسل لك رمز التحقق على رقم هاتفك", color = Color.White.copy(alpha = .68f), textAlign = TextAlign.Center, fontSize = 13.sp)
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(34.dp))
+        Text(if (state.role == UserRole.PROVIDER) "أدخل رقم هاتفك" else "التحقق من رقم الهاتف", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
+        Text("سنرسل لك رمز التحقق على رقم هاتفك", color = Color.White.copy(alpha = .68f), textAlign = TextAlign.Center, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
+        Spacer(Modifier.height(30.dp))
         DarkPhoneField(state.phone, onPhone)
         Spacer(Modifier.height(18.dp))
-        Button(onClick = onSendOtp, enabled = !state.loading && state.phone.length >= 9, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(13.dp), colors = ButtonDefaults.buttonColors(containerColor = FazaaGold, contentColor = Color(0xFF071D36))) {
-            if (state.loading) CircularProgressIndicator(color = Color(0xFF071D36), modifier = Modifier.size(22.dp)) else Text("إرسال رمز التحقق", fontWeight = FontWeight.ExtraBold)
+        Button(onClick = onSendOtp, enabled = !state.loading && state.phone.length >= 9, modifier = Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(15.dp), colors = ButtonDefaults.buttonColors(containerColor = FazaaGold, contentColor = Color(0xFF071D36))) {
+            if (state.loading) CircularProgressIndicator(color = Color(0xFF071D36), modifier = Modifier.size(22.dp)) else Text("إرسال رمز التحقق", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
         }
-        TextButton(onClick = onOpenPin, enabled = state.phone.length >= 9) { Text("لديك حساب بالفعل؟ تسجيل الدخول", color = Color.White.copy(alpha = .8f), fontWeight = FontWeight.Bold) }
+        Spacer(Modifier.height(12.dp))
+        TextButton(onClick = onOpenPin, enabled = state.phone.length >= 9) { Text("لديك حساب بالفعل؟ تسجيل الدخول", color = Color.White.copy(alpha = .86f), fontWeight = FontWeight.Bold) }
+        Spacer(Modifier.weight(1f))
+        Text("+967  •  اليمن", color = Color.White.copy(alpha = .55f), fontSize = 12.sp)
         state.message?.let { Text(it, color = Color(0xFFFFB4AB), textAlign = TextAlign.Center, modifier = Modifier.padding(top = 12.dp)) }
     }
 }
-
 @Composable
 private fun PinLoginScreen(phone: String, pin: String, loading: Boolean, message: String?, onBack: () -> Unit, onPin: (String) -> Unit, onLogin: () -> Unit, onUseOtp: () -> Unit) {
-    Column(Modifier.fillMaxSize().background(FazaaNavy).padding(horizontal = 28.dp, vertical = 22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.fillMaxSize().background(FazaaNavy).padding(horizontal = 24.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.Default.ArrowForward, contentDescription = "رجوع", tint = Color.White) }
-            Text("تسجيل الدخول", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.size(48.dp))
+            Text("تسجيل الدخول", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Logo(Modifier.size(64.dp))
         }
         StepProgress(active = 2, total = 3)
-        Spacer(Modifier.height(54.dp))
-        Icon(Icons.Default.Lock, contentDescription = null, tint = FazaaGold, modifier = Modifier.size(46.dp))
-        Spacer(Modifier.height(12.dp))
-        Text("أدخل رمز الدخول", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
-        Text("استخدم رمز الدخول للعودة إلى حسابك", color = Color.White.copy(alpha = .7f), fontSize = 13.sp)
-        if (phone.isNotBlank()) Text("+967 $phone", color = Color.White.copy(alpha = .75f), fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp))
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(42.dp))
+        Icon(Icons.Default.Lock, contentDescription = null, tint = FazaaGold, modifier = Modifier.size(54.dp))
+        Spacer(Modifier.height(14.dp))
+        Text("أدخل رمز الدخول", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
+        Text("استخدم الرمز للعودة إلى حسابك", color = Color.White.copy(alpha = .7f), fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
+        if (phone.isNotBlank()) Text("+967 $phone", color = Color.White.copy(alpha = .72f), fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
+        Spacer(Modifier.height(30.dp))
         PinBoxes(value = pin, onValueChange = onPin)
-        Spacer(Modifier.height(26.dp))
-        Button(onClick = onLogin, enabled = !loading && pin.length == 4 && phone.length >= 9, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(13.dp), colors = ButtonDefaults.buttonColors(containerColor = FazaaGold, contentColor = Color(0xFF071D36))) {
-            if (loading) CircularProgressIndicator(color = Color(0xFF071D36), modifier = Modifier.size(22.dp)) else Text("التالي", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp)
+        Spacer(Modifier.height(28.dp))
+        Button(onClick = onLogin, enabled = !loading && pin.length == 4 && phone.length >= 9, modifier = Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(15.dp), colors = ButtonDefaults.buttonColors(containerColor = FazaaGold, contentColor = Color(0xFF071D36))) {
+            if (loading) CircularProgressIndicator(color = Color(0xFF071D36), modifier = Modifier.size(22.dp)) else Text("دخول", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp)
         }
-        TextButton(onClick = onUseOtp) { Text("نسيت رمز الدخول؟", color = Color.White.copy(alpha = .8f)) }
+        TextButton(onClick = onUseOtp) { Text("نسيت رمز الدخول؟", color = Color.White.copy(alpha = .84f)) }
         message?.let { Text(it, color = Color(0xFFFFB4AB), textAlign = TextAlign.Center) }
     }
 }
-
 @Composable
 private fun OtpScreen(phone: String, otp: String, developmentOtp: String?, loading: Boolean, message: String?, onBack: () -> Unit, onOtp: (String) -> Unit, onVerify: () -> Unit, onResend: () -> Unit) {
-    Column(Modifier.fillMaxSize().background(FazaaNavy).padding(horizontal = 28.dp, vertical = 22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowForward, contentDescription = "رجوع", tint = Color.White) }; Text("التحقق من رقم الهاتف", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold); Spacer(Modifier.size(48.dp)) }
+    Column(Modifier.fillMaxSize().background(FazaaNavy).padding(horizontal = 24.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowForward, contentDescription = "رجوع", tint = Color.White) }
+            Text("التحقق من رقم الهاتف", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Logo(Modifier.size(64.dp))
+        }
         StepProgress(active = 1, total = 3)
-        Spacer(Modifier.height(45.dp))
-        Text("تحقق من رقم الجوال", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
-        Text("أدخل الرمز المرسل إلى +967 $phone", color = Color.White.copy(alpha = .7f), textAlign = TextAlign.Center)
+        Spacer(Modifier.height(36.dp))
+        Text("أدخل رمز التحقق", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
+        Text("أدخل الرمز المرسل إلى +967 $phone", color = Color.White.copy(alpha = .7f), textAlign = TextAlign.Center, fontSize = 13.sp, modifier = Modifier.padding(top = 9.dp))
         Spacer(Modifier.height(28.dp))
         OtpBoxes(value = otp, onValueChange = onOtp)
-        developmentOtp?.let { Card(Modifier.fillMaxWidth().padding(top = 22.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF173D61))) { Text("رمز التطوير: $it", Modifier.padding(16.dp).fillMaxWidth(), color = FazaaGold, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) } }
+        developmentOtp?.let { Card(Modifier.fillMaxWidth().padding(top = 20.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF173D61))) { Text("رمز التطوير: $it", Modifier.padding(14.dp).fillMaxWidth(), color = FazaaGold, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) } }
         Spacer(Modifier.height(22.dp))
-        Button(onClick = onVerify, enabled = !loading && otp.length == 6, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(13.dp), colors = ButtonDefaults.buttonColors(containerColor = FazaaGold, contentColor = Color(0xFF071D36))) { if (loading) CircularProgressIndicator(color = Color(0xFF071D36), modifier = Modifier.size(22.dp)) else Text("تأكيد الرمز", fontWeight = FontWeight.ExtraBold) }
-        TextButton(onClick = onResend) { Text("إعادة إرسال الرمز", color = Color.White.copy(alpha = .8f)) }
+        Button(onClick = onVerify, enabled = !loading && otp.length == 6, modifier = Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(15.dp), colors = ButtonDefaults.buttonColors(containerColor = FazaaGold, contentColor = Color(0xFF071D36))) { if (loading) CircularProgressIndicator(color = Color(0xFF071D36), modifier = Modifier.size(22.dp)) else Text("تأكيد الرمز", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp) }
+        TextButton(onClick = onResend) { Text("إعادة إرسال الرمز", color = Color.White.copy(alpha = .84f)) }
         message?.let { Text(it, color = Color(0xFFFFB4AB), textAlign = TextAlign.Center) }
     }
 }
-
 @Composable
 fun PinBoxes(value: String, onValueChange: (String) -> Unit) = BasicTextField(value = value, onValueChange = { onValueChange(it.filter(Char::isDigit).take(4)) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), visualTransformation = PasswordVisualTransformation(), singleLine = true, textStyle = TextStyle(color = Color.Transparent), decorationBox = { inner -> PinRow(value, 4, inner) })
 
